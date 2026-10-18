@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+#### Security
+- Push monitor tokens are now generated with `secrets` and are 32 characters long (were `random`, 10 chars).
+
 #### Bugfixes
 - `get_status_page` now reads the `incidents` list returned by Kuma 2.5.x (previously incidents were silently dropped). The result has a new `incidents` key; `incident` is kept as the first incident (or `None`) for compatibility.
 - `get_status_page` no longer crashes with `KeyError: 'incident'` against Kuma 2.x. Kuma 2.x's public status page response (`/api/status-page/{slug}`) omits the `incident` and `maintenanceList` keys when no incident has been posted and no maintenance window exists. Switched to `.get(...)` with safe defaults and only call `parse_incident_style` when an incident is actually present.
