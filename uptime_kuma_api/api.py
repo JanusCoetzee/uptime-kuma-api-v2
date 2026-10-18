@@ -213,6 +213,28 @@ def _build_docker_host_data(
     return data
 
 
+def _build_status_page_response(config, r2) -> dict:
+    config.update(r2.get("config", {}))
+    # Kuma 2.5+ returns a list under "incidents"; older versions a single "incident".
+    # Keep "incident" (first one) for backwards compatibility.
+    incidents = r2.get("incidents")
+    if incidents is None:
+        incidents = [r2["incident"]] if r2.get("incident") else []
+    data = {
+        **config,
+        "incident": incidents[0] if incidents else None,
+        "incidents": incidents,
+        "publicGroupList": r2.get("publicGroupList", []),
+        "maintenanceList": r2.get("maintenanceList", []),
+    }
+    parse_incident_style(incidents)
+    # convert sendUrl from int to bool
+    for i in data["publicGroupList"]:
+        for j in i["monitorList"]:
+            int_to_bool(j, ["sendUrl"])
+    return data
+
+
 def _build_tag_data(
     name: str,
     color: str
@@ -1978,6 +2000,7 @@ class UptimeKumaApi(object):
                     'style': <IncidentStyle.DANGER: 'danger'>,
                     'title': 'title 1'
                 },
+                'incidents': [<same as 'incident'>],
                 'maintenanceList': [],
                 'publicGroupList': [
                     {
@@ -2009,25 +2032,7 @@ class UptimeKumaApi(object):
         except requests.exceptions.Timeout as e:
             raise Timeout(e)
 
-        config = r1["config"]
-        config.update(r2.get("config", {}))
-
-        # Kuma 2.x sometimes omits these response keys on a clean instance
-        # (no incident posted, no maintenance window). The previous code
-        # unconditionally indexed them and crashed with KeyError.
-        data = {
-            **config,
-            "incident": r2.get("incident"),
-            "publicGroupList": r2.get("publicGroupList", []),
-            "maintenanceList": r2.get("maintenanceList", []),
-        }
-        if data["incident"] is not None:
-            parse_incident_style(data["incident"])
-        # convert sendUrl from int to bool
-        for i in data["publicGroupList"]:
-            for j in i["monitorList"]:
-                int_to_bool(j, ["sendUrl"])
-        return data
+        return _build_status_page_response(r1["config"], r2)
 
     def add_status_page(self, slug: str, title: str) -> dict:
         """
