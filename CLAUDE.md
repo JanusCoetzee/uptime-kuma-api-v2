@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Install dev deps: `pip install -r requirements.txt -r dev-requirements.txt`
 - Unit tests (no server needed, offline): `python -m unittest discover -s tests/unit -t .`. They need `python-socketio`, `packaging` and `requests` installed (importing the package pulls them in). Known bugs are pinned with `@unittest.expectedFailure`.
-  - Coverage (ratchet in `.coveragerc`, target 90, see #57): `pytest tests/unit --cov`.
+  - Coverage (`fail_under = 90` in `.coveragerc`, only ever raise it; see #57): `pytest tests/unit --cov`. The unit tests use the offline fake client in `tests/unit/fake_kuma.py` (`make_api()`), which records requests and answers from canned replies.
   - Lint (PEP 8 via ruff `E,W,F,B`, config in `pyproject.toml`; per-file ignores there are debt, never add to them): `pre-commit run --all-files`. Install the hooks once with `pre-commit install`. `master` is blocked from direct commits by a hook.
   - Mutation testing (slow, runs weekly in CI): `mutmut run`, then `mutmut results`.
 - The tests in `tests/` (outside `unit/`) are **integration tests** that need a live Uptime Kuma at `http://127.0.0.1:3001` (admin / secret123, auto-setup by [tests/uptime_kuma_test_case.py](tests/uptime_kuma_test_case.py)). Each `setUp` deletes all monitors and notifications.
