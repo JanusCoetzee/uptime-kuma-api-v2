@@ -314,6 +314,8 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.TAILSCALE_PING: ["hostname"],
     }
     type_ = kwargs["type"]
+    if type_ not in required_args_by_type:
+        raise ValueError(f"unsupported monitor type: {type_}")
     required_args = required_args_by_type[type_]
     _check_missing_arguments(required_args, kwargs)
 
@@ -349,7 +351,7 @@ def _check_arguments_monitor(kwargs) -> None:
     accepted_statuscodes = kwargs["accepted_statuscodes"]
     for accepted_statuscode in accepted_statuscodes:
         if accepted_statuscode not in allowed_accepted_statuscodes:
-            raise ValueError(f"Unknown accepted_statuscodes value: {allowed_accepted_statuscodes}")
+            raise ValueError(f"Unknown accepted_statuscodes value: {accepted_statuscode!r}, expected 'NNN' (100-999) or 'N00-N99' (for example '200-299')")
 
     dns_resolve_type = kwargs["dns_resolve_type"]
     if dns_resolve_type not in [
@@ -367,7 +369,10 @@ def _check_arguments_monitor(kwargs) -> None:
         raise ValueError(f"Unknown dns_resolve_type value: {dns_resolve_type}")
 
     if type_ == MonitorType.KAFKA_PRODUCER:
-        kafkaProducerSaslOptions_mechanism = kwargs["kafkaProducerSaslOptions"]["mechanism"]
+        # a missing or None option means the server default mechanism
+        kafkaProducerSaslOptions_mechanism = (kwargs.get("kafkaProducerSaslOptions") or {}).get("mechanism")
+        if kafkaProducerSaslOptions_mechanism is None:
+            kafkaProducerSaslOptions_mechanism = "None"
         if kafkaProducerSaslOptions_mechanism not in [
             "None",
             "plain",
