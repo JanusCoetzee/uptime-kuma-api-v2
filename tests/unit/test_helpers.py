@@ -164,10 +164,9 @@ class TestChecks(unittest.TestCase):
         for t in MonitorType:
             try:
                 _check_arguments_monitor(self.monitor(type=t))
-            except KeyError:
-                self.fail(f"{t} missing from required_args_by_type")
-            except (TypeError, ValueError):
-                pass
+            except (TypeError, ValueError) as e:
+                if "unsupported monitor type" in str(e):
+                    self.fail(f"{t} missing from required_args_by_type")
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
