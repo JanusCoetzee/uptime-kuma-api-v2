@@ -1,0 +1,152 @@
+.. _guide:
+
+User guide
+----------
+
+Connecting
+==========
+
+Create an :class:`~uptime_kuma_api.UptimeKumaApi` and log in. Using it as a
+context manager disconnects for you:
+
+.. code-block:: python
+
+    from uptime_kuma_api import UptimeKumaApi
+
+    with UptimeKumaApi("http://127.0.0.1:3001") as api:
+        api.login("admin", "secret123")
+        print(api.info()["version"])
+
+Without a context manager, call ``disconnect()`` yourself:
+
+.. code-block:: python
+
+    api = UptimeKumaApi("http://127.0.0.1:3001")
+    try:
+        api.login("admin", "secret123")
+    finally:
+        api.disconnect()
+
+Other constructor options:
+
+* ``ssl_verify=False`` skips certificate verification, for servers with a
+  self-signed certificate. It applies to the socket connection and to
+  ``get_status_page``.
+* ``headers`` are sent with the connection, for example for a reverse proxy
+  that needs a token.
+
+.. code-block:: python
+
+    with UptimeKumaApi(
+        "http://127.0.0.1:3001",
+        headers={"X-Example": "value"},
+        ssl_verify=False,
+    ) as api:
+        api.login("admin", "secret123")
+
+Authentication
+==============
+
+**Username and password**: ``api.login(username, password)`` returns a dict
+with a ``token``. Reuse it with ``login_by_token`` so you do not need to keep
+the password:
+
+.. code-block:: python
+
+    with UptimeKumaApi("http://127.0.0.1:3001") as api:
+        token = api.login("admin", "secret123")["token"]
+
+    with UptimeKumaApi("http://127.0.0.1:3001") as api:
+        api.login_by_token(token)
+
+**Two-factor authentication**: if 2FA is enabled on the user, pass the current
+code as ``api.login(username, password, token="123456")``. You can check
+whether it is enabled with ``twofa_status``:
+
+.. code-block:: python
+
+    with UptimeKumaApi("http://127.0.0.1:3001") as api:
+        api.login("admin", "secret123")
+        print(api.twofa_status())
+
+**Auto-login**: when the server runs with authentication disabled
+(``disableAuth``), call ``api.login()`` with no arguments. If the server does
+require credentials, this raises a ``Timeout`` whose message says so.
+
+First-time setup of a fresh server is ``api.setup(username, password)``;
+``api.need_setup()`` tells you whether it is needed.
+
+Exceptions
+==========
+
+Errors from the library use two kinds of exceptions:
+
+* :class:`~uptime_kuma_api.UptimeKumaException`: the server refused a request
+  or the connection failed. :class:`~uptime_kuma_api.Timeout` is a subclass,
+  raised when an expected event or response does not arrive within ``timeout``
+  seconds.
+* Built-in ``TypeError`` and ``ValueError``: raised before anything is sent
+  when arguments are wrong. A missing or unknown argument is a ``TypeError``,
+  an invalid value is a ``ValueError``.
+
+.. code-block:: python
+
+    from uptime_kuma_api import MonitorType, Timeout, UptimeKumaException
+
+    with UptimeKumaApi("http://127.0.0.1:3001") as api:
+        api.login("admin", "secret123")
+        try:
+            api.add_monitor(type=MonitorType.PORT, name="no host or port")
+        except TypeError as e:
+            print("missing argument:", e)
+        try:
+            api.get_monitor(999999)
+        except Timeout:
+            print("no answer from the server")
+        except UptimeKumaException as e:
+            print("server error:", e)
+
+``Timeout`` is also an ``UptimeKumaException``, so list it first if you want
+to treat it separately.
+
+Timing: ``timeout`` and ``wait_events``
+=======================================
+
+Uptime Kuma pushes its state (monitors, notifications, heartbeats, ...) as
+events and does not say when the last one has arrived. Getters such as
+``get_monitors`` therefore read a local cache and, after the first event of the
+type has arrived, wait ``wait_events`` seconds (default ``0.2``) for more.
+
+* ``timeout`` (default ``10``): how long to wait for the connection, for a
+  response, or for the first event. Raise it for slow or remote servers.
+* ``wait_events``: raise it if getters return incomplete lists on a server with
+  many monitors; lower it if you want faster calls and the server is small.
+
+.. code-block:: python
+
+    with UptimeKumaApi(
+        "http://127.0.0.1:3001", timeout=30, wait_events=0.5
+    ) as api:
+        api.login("admin", "secret123")
+        print(len(api.get_monitors()))
+
+Compatibility
+=============
+
+========================  ===============================
+Uptime Kuma               uptime-kuma-api-v2
+========================  ===============================
+2.0.0-beta.2              1.0.0 - 1.0.3
+2.5.6                     unreleased (``master``)
+========================  ===============================
+
+Integration tests run against Uptime Kuma 2.5.6, built from source in CI.
+
+For contributors: generated code
+================================
+
+``notification_providers.py`` and parts of ``monitor_type.py`` and
+``docstrings.py`` are generated by the scripts in ``scripts/`` from a checkout
+of the Uptime Kuma source (expected at ``uptime-kuma/``). Regenerate them with
+those scripts instead of editing by hand, and put one-off exceptions in the
+scripts' ignore tables.

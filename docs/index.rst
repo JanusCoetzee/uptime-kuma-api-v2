@@ -30,4 +30,5 @@ this part of the documentation is for you.
    :maxdepth: 3
 
    install
+   guide
    api

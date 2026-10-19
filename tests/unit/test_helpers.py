@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 from unittest import mock
 
@@ -18,6 +19,7 @@ from uptime_kuma_api.api import (
     _build_status_page_response,
     _check_missing_arguments,
     _merge_settings,
+    _warned_values,
     _convert_monitor_input,
     gen_secret,
     int_to_bool,
@@ -304,6 +306,58 @@ class TestHeartbeatCap(unittest.TestCase):
         beats = api._event_data[Event.HEARTBEAT_LIST][1]
         self.assertEqual(len(beats), 150)
         self.assertEqual((beats[0]["id"], beats[-1]["id"]), (50, 199))
+
+
+class TestAddMonitorTagCache(unittest.TestCase):
+    def api(self, cache):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.MONITOR_LIST: cache}
+        raw = {"id": 1, "notificationIDList": {"3": True}}
+        api._call = lambda event, data=None: (
+            {"monitor": raw} if event == "getMonitor" else {"msg": "ok"})
+        return api, raw
+
+    def test_none_cache_does_not_raise(self):
+        api, _ = self.api(None)
+        api.add_monitor_tag(1, 1)
+        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+    def test_cache_gets_raw_monitor(self):
+        api, raw = self.api({})
+        api.add_monitor_tag(1, 1)
+        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
+        self.assertEqual(raw["notificationIDList"], {"3": True})
+
+    def delete_api(self, cache):
+        api, raw = self.api(cache)
+        api.wait_for_event = lambda event: contextlib.nullcontext()
+        api.get_monitors = lambda: [{"tags": [
+            {"monitor_id": 1, "tag_id": 1, "value": ""}]}]
+        return api, raw
+
+    def test_delete_returns_response_with_none_cache(self):
+        api, _ = self.delete_api(None)
+        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
+        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+    def test_delete_caches_raw_monitor(self):
+        api, raw = self.delete_api({})
+        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
+        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
+
+
+class TestUnknownEnumLogging(unittest.TestCase):
+    def setUp(self):
+        _warned_values.clear()
+
+    def test_warns_once_and_keeps_raw_value(self):
+        d = {"type": "brand-new-type"}
+        with self.assertLogs("uptime_kuma_api.api", "WARNING") as cm:
+            parse_value(d, "type", MonitorType)
+        self.assertEqual(d["type"], "brand-new-type")
+        self.assertIn("brand-new-type", cm.output[0])
+        with self.assertNoLogs("uptime_kuma_api.api", "WARNING"):
+            parse_value(dict(d), "type", MonitorType)
 
 
 if __name__ == "__main__":

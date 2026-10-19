@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import secrets
 import string
 import time
 from contextlib import contextmanager
 from copy import deepcopy
+from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
@@ -51,6 +53,10 @@ def int_to_bool(data, keys) -> None:
                 data[key] = True if data[key] == 1 else False
 
 
+logger = logging.getLogger(__name__)
+_warned_values = set()
+
+
 def parse_value(data, key, type_, default=None) -> None:
     if not data:
         return
@@ -63,8 +69,13 @@ def parse_value(data, key, type_, default=None) -> None:
                 try:
                     data[key] = type_(data[key])
                 except ValueError:
-                    # todo: add warning to logs
-                    pass
+                    # keep the raw value, but tell the user once per value
+                    if (key, data[key]) not in _warned_values:
+                        _warned_values.add((key, data[key]))
+                        logger.warning(
+                            "Unknown %s value %r (not a %s); keeping the raw "
+                            "value. The server may be newer than this library.",
+                            key, data[key], type_.__name__)
             elif default is not None:
                 data[key] = default
 
@@ -549,19 +560,15 @@ class UptimeKumaApi(object):
         self.disconnect()
 
     @contextmanager
-    def wait_for_event(self, event: Event) -> None:
+    def wait_for_event(self, event: Event) -> Iterator[None]:
         # waits for the first event of the given type to arrive
 
-        try:
-            yield
-        except:
-            raise
-        else:
-            timestamp = time.time()
-            while self._event_data[event] is None:
-                if time.time() - timestamp > self.timeout:
-                    raise Timeout(f"Timed out while waiting for event {event}")
-                time.sleep(0.01)
+        yield
+        timestamp = time.time()
+        while self._event_data[event] is None:
+            if time.time() - timestamp > self.timeout:
+                raise Timeout(f"Timed out while waiting for event {event}")
+            time.sleep(0.01)
 
     def _get_event_data(self, event) -> Any:
         monitor_events = [Event.AVG_PING, Event.UPTIME, Event.HEARTBEAT_LIST, Event.IMPORTANT_HEARTBEAT_LIST, Event.CERT_INFO, Event.HEARTBEAT]
@@ -1107,7 +1114,7 @@ class UptimeKumaApi(object):
             else:
                 theme = "light"
         if theme not in ["auto", "light", "dark"]:
-            raise ValueError
+            raise ValueError(f"Unknown theme: {theme}. Valid themes: auto, light, dark")
         if not domainNameList:
             domainNameList = []
         if not publicGroupList:
@@ -1568,12 +1575,12 @@ class UptimeKumaApi(object):
         """
         r = self._call('addMonitorTag', (tag_id, monitor_id, value))
         # the monitor list event does not send the updated tags
-        self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self.get_monitor(monitor_id)
+        # store the raw response: get_monitor() converts it, the cache is raw
+        if self._event_data[Event.MONITOR_LIST] is not None:
+            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
         return r
 
-    # editMonitorTag is unused in uptime-kuma
-    # def edit_monitor_tag(self, tag_id: int, monitor_id: int, value=""):
-    #     return self._call('editMonitorTag', (tag_id, monitor_id, value))
+    # editMonitorTag is unused in uptime-kuma, so there is no edit_monitor_tag
 
     def delete_monitor_tag(self, tag_id: int, monitor_id: int, value: str = "") -> dict:
         """
@@ -1611,7 +1618,9 @@ class UptimeKumaApi(object):
                 raise UptimeKumaException("monitor tag does not exist")
             r = self._call('deleteMonitorTag', (tag_id, monitor_id, value))
             # the monitor list event does not send the updated tags
-            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self.get_monitor(monitor_id)
+            # store the raw response: get_monitor() converts it, the cache is raw
+            if self._event_data[Event.MONITOR_LIST] is not None:
+                self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
             return r
 
     # notification
@@ -3235,7 +3244,7 @@ class UptimeKumaApi(object):
                 return docker_host
         raise UptimeKumaException("docker host does not exist")
 
-    @append_docstring(docker_host_docstring("test"))
+    @append_docstring(docker_host_docstring("test"), validated=False)
     def test_docker_host(self, **kwargs) -> dict:
         """
         Test a docker host.
@@ -3258,7 +3267,7 @@ class UptimeKumaApi(object):
         data = _build_docker_host_data(**kwargs)
         return self._call('testDockerHost', data)
 
-    @append_docstring(docker_host_docstring("add"))
+    @append_docstring(docker_host_docstring("add"), validated=False)
     def add_docker_host(self, **kwargs) -> dict:
         """
         Add a docker host.
@@ -3284,7 +3293,7 @@ class UptimeKumaApi(object):
         with self.wait_for_event(Event.DOCKER_HOST_LIST):
             return self._call('addDockerHost', (data, None))
 
-    @append_docstring(docker_host_docstring("edit"))
+    @append_docstring(docker_host_docstring("edit"), validated=False)
     def edit_docker_host(self, id_: int, **kwargs) -> dict:
         """
         Edit a docker host.
