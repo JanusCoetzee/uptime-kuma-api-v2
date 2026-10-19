@@ -2152,6 +2152,7 @@ class UptimeKumaApi(object):
         status_page = self.get_status_page(slug)
         public_group_list = status_page.pop("publicGroupList", [])
         status_page.pop("incident", None)
+        status_page.pop("incidents", None)
         status_page.pop("maintenanceList", None)
         if "publicGroupList" in kwargs:
             public_group_list = kwargs.pop("publicGroupList")

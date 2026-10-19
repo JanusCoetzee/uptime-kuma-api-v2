@@ -1,6 +1,7 @@
 import unittest
 
 from uptime_kuma_api import (
+    Event, UptimeKumaApi,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
 from uptime_kuma_api.api import (
@@ -178,6 +179,22 @@ class TestStatusPageResponse(unittest.TestCase):
     def test_none(self):
         d = _build_status_page_response({}, {})
         self.assertEqual((d["incident"], d["incidents"]), (None, []))
+
+
+class TestSaveStatusPage(unittest.TestCase):
+    def test_derived_keys_not_sent(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.STATUS_PAGE_LIST: {}}
+        page = {"id": 1, "incident": {}, "incidents": [{}], "maintenanceList": [],
+                "publicGroupList": [], "title": "t"}
+        api.get_status_page = lambda slug: dict(page)
+        sent = []
+        api._call = lambda event, data=None: (
+            sent.append((event, data)) or {"config": {"id": 1}})
+        api.save_status_page("s")
+        config = sent[0][1][1]
+        for key in ("incident", "incidents", "maintenanceList", "publicGroupList"):
+            self.assertNotIn(key, config)
 
 
 if __name__ == "__main__":
