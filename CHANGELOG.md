@@ -30,7 +30,9 @@ upstream project's changes) is not carried over. It remains available:
   example a closed connection), and `connect` raises the new
   `UptimeKumaConnectionError` (a subclass of `UptimeKumaException`) instead of
   catching everything with a bare `except:`, so `KeyboardInterrupt` is no longer
-  swallowed. The original error is kept as `__cause__` (#18).
+  swallowed. The original error is kept as `__cause__` (#18). **Behaviour
+  change:** code that caught `socketio.exceptions.TimeoutError` around library
+  calls must now catch `Timeout` (or `UptimeKumaException`).
 - The monitor cache now handles Kuma 2.x `updateMonitorIntoList` and
   `deleteMonitorFromList` events, so `get_monitors`, heartbeats and uptime work
   right after `add_monitor`/`delete_monitor`.
