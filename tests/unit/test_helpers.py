@@ -132,10 +132,33 @@ class TestChecks(unittest.TestCase):
             _check_arguments_monitor(
                 self.monitor(type=t, databaseConnectionString="x"))
 
-    @unittest.expectedFailure  # KeyError for types the library does not know (#40)
     def test_unknown_type_raises_clean_error(self):
-        with self.assertRaises((TypeError, ValueError)):
+        with self.assertRaisesRegex(ValueError, "unsupported monitor type: ntp"):
             _check_arguments_monitor(self.monitor(type="ntp"))
+
+    def test_statuscode_error_names_the_offending_value(self):
+        for good in ("200", "999", "100-199", "500-599"):
+            _check_arguments_monitor(self.monitor(accepted_statuscodes=[good]))
+        for bad in ("1000", "99", "foo", "200-300"):
+            with self.assertRaises(ValueError) as cm:
+                _check_arguments_monitor(self.monitor(accepted_statuscodes=[bad]))
+            self.assertIn(repr(bad), str(cm.exception))
+            self.assertLess(len(str(cm.exception)), 200)
+
+    def test_kafka_sasl_options_missing_or_none_means_no_mechanism(self):
+        kafka = dict(type=MonitorType.KAFKA_PRODUCER, kafkaProducerTopic="t",
+                     kafkaProducerMessage="m")
+        for opts in (None, {}, {"mechanism": None}, {"mechanism": "plain"}):
+            _check_arguments_monitor(self.monitor(kafkaProducerSaslOptions=opts, **kafka))
+        _check_arguments_monitor(self.monitor(**kafka))
+        with self.assertRaises(ValueError):
+            _check_arguments_monitor(
+                self.monitor(kafkaProducerSaslOptions={"mechanism": "x"}, **kafka))
+
+    def test_status_page_theme_error_lists_valid_themes(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        with self.assertRaisesRegex(ValueError, "Valid themes: auto, light, dark"):
+            api._build_status_page_data("s", id=1, title="t", theme="neon")
 
     def test_every_monitor_type_has_required_args_entry(self):
         for t in MonitorType:
