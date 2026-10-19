@@ -294,5 +294,17 @@ class TestLoginAutoLogin(unittest.TestCase):
         self.assertIn("username and password", str(cm.exception))
 
 
+class TestHeartbeatCap(unittest.TestCase):
+    def test_keeps_150_newest_last(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.HEARTBEAT_LIST: None,
+                           Event.IMPORTANT_HEARTBEAT_LIST: None}
+        for i in range(200):
+            api._event_heartbeat({"monitorID": 1, "important": False, "id": i})
+        beats = api._event_data[Event.HEARTBEAT_LIST][1]
+        self.assertEqual(len(beats), 150)
+        self.assertEqual((beats[0]["id"], beats[-1]["id"]), (50, 199))
+
+
 if __name__ == "__main__":
     unittest.main()

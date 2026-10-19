@@ -5,14 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 The history before this file was restarted (releases 1.0.x - 1.2.x and the
 upstream project's changes) is not carried over. It remains available:
-
 - in git: `git show 5145ee5:CHANGELOG.md`
 - upstream: <https://github.com/lucasheld/uptime-kuma-api/blob/master/CHANGELOG.md>
 
 ## [Unreleased]
 
 ### Changed
-
 - **Breaking:** minimum Python is now 3.12 (3.9 is EOL); CI tests 3.12-3.14.
 - **Behaviour change:** `set_settings` now only changes the arguments you
   pass (all defaults are `None`) and keeps every other server setting. It used
@@ -23,15 +21,14 @@ upstream project's changes) is not carried over. It remains available:
   kept as the first incident, or `None`.
 
 ### Fixed
-
 - The monitor cache now handles Kuma 2.x `updateMonitorIntoList` and
   `deleteMonitorFromList` events, so `get_monitors`, heartbeats and uptime work
   right after `add_monitor`/`delete_monitor`.
 - `get_status_page` now honours `ssl_verify` and the custom `headers`, escapes the slug in the URL, and raises `Timeout`/`UptimeKumaException` for connection, SSL and invalid-JSON errors from the public status page request.
 - `get_status_page` no longer drops incidents on Kuma 2.5.x, which renamed the
   `incident` key to `incidents`.
-
 - `login()` without credentials now raises a `Timeout` that says the server probably requires a username and password, instead of a bare "timed out waiting for event autoLogin".
+- The heartbeat cache keeps 150 heartbeats per monitor, not 149. The ordering of `get_heartbeats` (oldest first) and `get_important_heartbeats` (newest first) is now documented.
 
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
