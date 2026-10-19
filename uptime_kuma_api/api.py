@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import secrets
 import string
 import time
@@ -51,6 +52,10 @@ def int_to_bool(data, keys) -> None:
                 data[key] = True if data[key] == 1 else False
 
 
+logger = logging.getLogger(__name__)
+_warned_values = set()
+
+
 def parse_value(data, key, type_, default=None) -> None:
     if not data:
         return
@@ -63,8 +68,13 @@ def parse_value(data, key, type_, default=None) -> None:
                 try:
                     data[key] = type_(data[key])
                 except ValueError:
-                    # todo: add warning to logs
-                    pass
+                    # keep the raw value, but tell the user once per value
+                    if (key, data[key]) not in _warned_values:
+                        _warned_values.add((key, data[key]))
+                        logger.warning(
+                            "Unknown %s value %r (not a %s); keeping the raw "
+                            "value. The server may be newer than this library.",
+                            key, data[key], type_.__name__)
             elif default is not None:
                 data[key] = default
 

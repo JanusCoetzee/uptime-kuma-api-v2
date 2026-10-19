@@ -345,5 +345,16 @@ class TestAddMonitorTagCache(unittest.TestCase):
         self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
 
 
+class TestUnknownEnumLogging(unittest.TestCase):
+    def test_warns_once_and_keeps_raw_value(self):
+        d = {"type": "brand-new-type"}
+        with self.assertLogs("uptime_kuma_api.api", "WARNING") as cm:
+            parse_value(d, "type", MonitorType)
+        self.assertEqual(d["type"], "brand-new-type")
+        self.assertIn("brand-new-type", cm.output[0])
+        with self.assertNoLogs("uptime_kuma_api.api", "WARNING"):
+            parse_value(dict(d), "type", MonitorType)
+
+
 if __name__ == "__main__":
     unittest.main()

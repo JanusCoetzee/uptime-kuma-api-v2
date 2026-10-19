@@ -32,6 +32,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - `add_monitor_tag` and `delete_monitor_tag` no longer fail when the monitor cache is not loaded yet, and caches the raw server response like the other monitor events.
 
+- Unknown enum values from a newer server (for example a new monitor type) are logged once as a warning on the `uptime_kuma_api.api` logger. The returned value is still the raw one.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
