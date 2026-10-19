@@ -39,5 +39,6 @@ upstream project's changes) is not carried over. It remains available:
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with
   mutmut, and a CI workflow with SHA-pinned actions.
+- PR validation workflow (`pr-validation.yml`): CodeQL, pip-audit, gitleaks, dependency review, package build check, docs build with warnings as errors, actionlint and a check that every action is SHA-pinned; Dependabot for actions, pip and the test image.
 - Integration tests run against an Uptime Kuma built from source at a pinned
   commit (`docker/kuma-test`).

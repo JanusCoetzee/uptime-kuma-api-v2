@@ -39,7 +39,6 @@ add_module_names = False
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'alabaster'
-html_static_path = ['_static']
 
 html_theme_options = {
     "show_powered_by": False,
