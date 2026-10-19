@@ -24,8 +24,10 @@ class TestNotification(UptimeKumaTestCase):
 
         # add notification
         r = self.api.add_notification(**expected_notification)
-        self.assertEqual(r["msg"], "Saved")
+        self.assertEqual(r["msg"], "Saved.")
         notification_id = r["id"]
+        # applyExisting is a one-shot action; Kuma 2.x does not store it
+        expected_notification["applyExisting"] = False
 
         # get notification
         notification = self.api.get_notification(notification_id)
@@ -48,14 +50,14 @@ class TestNotification(UptimeKumaTestCase):
         del expected_notification["telegramChatID"]
         del expected_notification["telegramBotToken"]
         r = self.api.edit_notification(notification_id, **expected_notification)
-        self.assertEqual(r["msg"], "Saved")
+        self.assertEqual(r["msg"], "Saved.")
         notification = self.api.get_notification(notification_id)
         self.compare(notification, expected_notification)
         self.assertIsNone(notification.get("pushAPIKey"))
 
         # delete notification
         r = self.api.delete_notification(notification_id)
-        self.assertEqual(r["msg"], "Deleted")
+        self.assertEqual(r["msg"], "successDeleted")
         with self.assertRaises(UptimeKumaException):
             self.api.delete_notification(notification_id)
 

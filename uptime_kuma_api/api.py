@@ -520,6 +520,8 @@ class UptimeKumaApi(object):
         self.sio.on(Event.CONNECT, self._event_connect)
         self.sio.on(Event.DISCONNECT, self._event_disconnect)
         self.sio.on(Event.MONITOR_LIST, self._event_monitor_list)
+        self.sio.on(Event.UPDATE_MONITOR_INTO_LIST, self._event_update_monitor_into_list)
+        self.sio.on(Event.DELETE_MONITOR_FROM_LIST, self._event_delete_monitor_from_list)
         self.sio.on(Event.NOTIFICATION_LIST, self._event_notification_list)
         self.sio.on(Event.PROXY_LIST, self._event_proxy_list)
         self.sio.on(Event.STATUS_PAGE_LIST, self._event_status_page_list)
@@ -590,6 +592,15 @@ class UptimeKumaApi(object):
 
     def _event_monitor_list(self, data) -> None:
         self._event_data[Event.MONITOR_LIST] = data
+
+    def _event_update_monitor_into_list(self, data) -> None:
+        # Kuma 2.x sends deltas instead of a full monitorList after changes
+        if self._event_data[Event.MONITOR_LIST] is not None:
+            self._event_data[Event.MONITOR_LIST].update(data)
+
+    def _event_delete_monitor_from_list(self, monitor_id) -> None:
+        if self._event_data[Event.MONITOR_LIST] is not None:
+            self._event_data[Event.MONITOR_LIST].pop(str(monitor_id), None)
 
     def _event_notification_list(self, data) -> None:
         self._event_data[Event.NOTIFICATION_LIST] = data

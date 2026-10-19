@@ -52,7 +52,6 @@ jobs:
     name: integration (Kuma ${{ matrix.kuma }})
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    continue-on-error: true  # make required once #52 is fixed
     strategy:
       fail-fast: false
       matrix:
