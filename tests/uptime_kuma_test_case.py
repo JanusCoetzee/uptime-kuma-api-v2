@@ -1,7 +1,9 @@
 import unittest
 import warnings
 
-from uptime_kuma_api import UptimeKumaApi, MonitorType, DockerType
+from socketio.exceptions import TimeoutError
+
+from uptime_kuma_api import UptimeKumaApi, UptimeKumaException, MonitorType, DockerType
 
 token = None
 
@@ -37,16 +39,26 @@ class UptimeKumaTestCase(unittest.TestCase):
     def setUp(self):
         warnings.simplefilter("ignore", ResourceWarning)
 
-        self.api = UptimeKumaApi(self.url, timeout=1, wait_events=0.01)
+        self.api = UptimeKumaApi(self.url, timeout=10, wait_events=0.01)
 
         global token
         if not token:
-            if self.api.need_setup():
+            try:
+                need_setup = self.api.need_setup()
+            except TimeoutError:
+                # the first call on a freshly started server can be lost
+                need_setup = self.api.need_setup()
+            if need_setup:
                 self.api.setup(self.username, self.password)
             r = self.api.login(self.username, self.password)
             token = r["token"]
 
-        self.api.login_by_token(token)
+        try:
+            self.api.login_by_token(token)
+        except UptimeKumaException:
+            # an earlier test (change_password, auto_login) invalidated it
+            token = self.api.login(self.username, self.password)["token"]
+            self.api.login_by_token(token)
 
         # delete monitors
         monitors = self.api.get_monitors()
