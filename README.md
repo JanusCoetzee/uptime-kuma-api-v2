@@ -9,7 +9,7 @@ Acknowledgements
 This project is a fork of [uptime-kuma-api](https://github.com/lucasheld/uptime-kuma-api) by [Lucas Held](https://github.com/lucasheld) (MIT licensed), via the [exaland/uptime-kuma-api-v2](https://github.com/exaland/uptime-kuma-api-v2) fork that added Uptime Kuma 2.x support. Thank you to both authors. It is now maintained independently and is diverging significantly from upstream, so expect API changes. Both original copyright notices are kept in [LICENSE](LICENSE).
 
 
-Python version 3.7+ is required.
+Python version 3.12+ is required.
 
 Supported Uptime Kuma versions:
 
