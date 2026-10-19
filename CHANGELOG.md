@@ -47,6 +47,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - Monitor argument checks: an invalid accepted status code is reported by value instead of printing the whole allowed list, an unknown monitor type raises `ValueError: unsupported monitor type` instead of a `KeyError`, and a missing or `None` `kafkaProducerSaslOptions` is treated as mechanism `None` instead of raising.
 
+- The event cache is now guarded by a lock: the socketio background thread updates it while the caller thread reads it, so a read could see a half-applied update (for example 151 heartbeats before the oldest was dropped).
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import datetime
+import functools
 import json
 import logging
 import secrets
 import string
+import threading
 import time
 from contextlib import contextmanager
 from copy import deepcopy
@@ -434,6 +436,16 @@ def _check_arguments_tag(kwargs) -> None:
     _check_missing_arguments(required_args, kwargs)
 
 
+def _locked(method):
+    # the socketio background thread runs the _event_* handlers while the
+    # caller thread reads the cache, so every cache update holds self._lock
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapper
+
+
 class UptimeKumaApi(object):
     """This class is used to communicate with Uptime Kuma.
 
@@ -506,6 +518,7 @@ class UptimeKumaApi(object):
         self.wait_events = wait_events
         self.sio = socketio.Client(ssl_verify=ssl_verify)
         self._version = None
+        self._lock = threading.RLock()
 
         self._event_data: dict = {
             Event.MONITOR_LIST: None,
@@ -580,7 +593,8 @@ class UptimeKumaApi(object):
                 return []
             time.sleep(0.01)
         time.sleep(self.wait_events)  # wait for multiple messages
-        return deepcopy(self._event_data[event].copy())
+        with self._lock:
+            return deepcopy(self._event_data[event].copy())
 
     def _call(self, event, data=None) -> Any:
         r = self.sio.call(event, data, timeout=self.timeout)
@@ -598,33 +612,40 @@ class UptimeKumaApi(object):
     def _event_disconnect(self) -> None:
         pass
 
+    @_locked
     def _event_monitor_list(self, data) -> None:
         self._event_seq[Event.MONITOR_LIST] += 1
         self._event_data[Event.MONITOR_LIST] = data
 
+    @_locked
     def _event_update_monitor_into_list(self, data) -> None:
         self._event_seq[Event.MONITOR_LIST] += 1
         # Kuma 2.x sends deltas instead of a full monitorList after changes
         if self._event_data[Event.MONITOR_LIST] is not None:
             self._event_data[Event.MONITOR_LIST].update(data)
 
+    @_locked
     def _event_delete_monitor_from_list(self, monitor_id) -> None:
         self._event_seq[Event.MONITOR_LIST] += 1
         if self._event_data[Event.MONITOR_LIST] is not None:
             self._event_data[Event.MONITOR_LIST].pop(str(monitor_id), None)
 
+    @_locked
     def _event_notification_list(self, data) -> None:
         self._event_seq[Event.NOTIFICATION_LIST] += 1
         self._event_data[Event.NOTIFICATION_LIST] = data
 
+    @_locked
     def _event_proxy_list(self, data) -> None:
         self._event_seq[Event.PROXY_LIST] += 1
         self._event_data[Event.PROXY_LIST] = data
 
+    @_locked
     def _event_status_page_list(self, data) -> None:
         self._event_seq[Event.STATUS_PAGE_LIST] += 1
         self._event_data[Event.STATUS_PAGE_LIST] = data
 
+    @_locked
     def _event_heartbeat_list(self, monitor_id, data, overwrite) -> None:
         monitor_id = int(monitor_id)
 
@@ -635,6 +656,7 @@ class UptimeKumaApi(object):
         else:
             self._event_data[Event.HEARTBEAT_LIST][monitor_id].append(data)
 
+    @_locked
     def _event_important_heartbeat_list(self, monitor_id, data, overwrite) -> None:
         monitor_id = int(monitor_id)
 
@@ -645,6 +667,7 @@ class UptimeKumaApi(object):
         else:
             self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id].append(data)
 
+    @_locked
     def _event_avg_ping(self, monitor_id, data) -> None:
         monitor_id = int(monitor_id)
 
@@ -652,6 +675,7 @@ class UptimeKumaApi(object):
             self._event_data[Event.AVG_PING] = {}
         self._event_data[Event.AVG_PING][monitor_id] = data
 
+    @_locked
     def _event_uptime(self, monitor_id, type_, data) -> None:
         monitor_id = int(monitor_id)
 
@@ -661,6 +685,7 @@ class UptimeKumaApi(object):
             self._event_data[Event.UPTIME][monitor_id] = {}
         self._event_data[Event.UPTIME][monitor_id][type_] = data
 
+    @_locked
     def _event_heartbeat(self, data) -> None:
         if self._event_data[Event.HEARTBEAT_LIST] is None:
             self._event_data[Event.HEARTBEAT_LIST] = {}
@@ -679,6 +704,7 @@ class UptimeKumaApi(object):
                 self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id] = []
             self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id] = [data] + self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id]
 
+    @_locked
     def _event_info(self, data) -> None:
         if "version" not in data:
             # wait for the info event that is sent after login and contains the version
@@ -686,6 +712,7 @@ class UptimeKumaApi(object):
         self._version = None
         self._event_data[Event.INFO] = data
 
+    @_locked
     def _event_cert_info(self, monitor_id, data) -> None:
         monitor_id = int(monitor_id)
 
@@ -693,20 +720,24 @@ class UptimeKumaApi(object):
             self._event_data[Event.CERT_INFO] = {}
         self._event_data[Event.CERT_INFO][monitor_id] = json.loads(data)
 
+    @_locked
     def _event_docker_host_list(self, data) -> None:
         self._event_seq[Event.DOCKER_HOST_LIST] += 1
         self._event_data[Event.DOCKER_HOST_LIST] = data
 
+    @_locked
     def _event_auto_login(self) -> None:
         self._event_data[Event.AUTO_LOGIN] = True
 
     def _event_init_server_timezone(self) -> None:
         pass
 
+    @_locked
     def _event_maintenance_list(self, data) -> None:
         self._event_seq[Event.MAINTENANCE_LIST] += 1
         self._event_data[Event.MAINTENANCE_LIST] = data
 
+    @_locked
     def _event_api_key_list(self, data) -> None:
         self._event_seq[Event.API_KEY_LIST] += 1
         self._event_data[Event.API_KEY_LIST] = data
@@ -1567,6 +1598,16 @@ class UptimeKumaApi(object):
 
     # monitor tags
 
+    def _refresh_monitor_cache(self, monitor_id: int) -> None:
+        # the monitor list event does not send the updated tags
+        # store the raw response: get_monitor() converts it, the cache is raw
+        if self._event_data[Event.MONITOR_LIST] is None:
+            return
+        monitor = self._call('getMonitor', monitor_id)["monitor"]
+        with self._lock:
+            if self._event_data[Event.MONITOR_LIST] is not None:
+                self._event_data[Event.MONITOR_LIST][str(monitor_id)] = monitor
+
     def add_monitor_tag(self, tag_id: int, monitor_id: int, value: str = "") -> dict:
         """
         Add a tag to a monitor.
@@ -1590,10 +1631,7 @@ class UptimeKumaApi(object):
             }
         """
         r = self._call('addMonitorTag', (tag_id, monitor_id, value))
-        # the monitor list event does not send the updated tags
-        # store the raw response: get_monitor() converts it, the cache is raw
-        if self._event_data[Event.MONITOR_LIST] is not None:
-            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
+        self._refresh_monitor_cache(monitor_id)
         return r
 
     # editMonitorTag is unused in uptime-kuma, so there is no edit_monitor_tag
@@ -1633,10 +1671,7 @@ class UptimeKumaApi(object):
             if {"monitor_id": monitor_id, "tag_id": tag_id, "value": value} not in tags:
                 raise UptimeKumaException("monitor tag does not exist")
             r = self._call('deleteMonitorTag', (tag_id, monitor_id, value))
-            # the monitor list event does not send the updated tags
-            # store the raw response: get_monitor() converts it, the cache is raw
-            if self._event_data[Event.MONITOR_LIST] is not None:
-                self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
+            self._refresh_monitor_cache(monitor_id)
             return r
 
     # notification

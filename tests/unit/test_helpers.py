@@ -158,6 +158,7 @@ class TestChecks(unittest.TestCase):
 
     def test_status_page_theme_error_lists_valid_themes(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         with self.assertRaisesRegex(ValueError, "Valid themes: auto, light, dark"):
             api._build_status_page_data("s", id=1, title="t", theme="neon")
 
@@ -231,6 +232,7 @@ class TestStatusPageResponse(unittest.TestCase):
 class TestSaveStatusPage(unittest.TestCase):
     def test_derived_keys_not_sent(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api._event_data = {Event.STATUS_PAGE_LIST: {}}
         page = {"id": 1, "incident": {}, "incidents": [{}], "maintenanceList": [],
                 "publicGroupList": [], "title": "t"}
@@ -247,6 +249,7 @@ class TestSaveStatusPage(unittest.TestCase):
 class TestMonitorListDeltaEvents(unittest.TestCase):
     def api(self, monitors):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api._event_data = {Event.MONITOR_LIST: monitors}
         api._event_seq = dict.fromkeys(api._event_data, 0)
         return api
@@ -273,6 +276,7 @@ class TestMonitorListDeltaEvents(unittest.TestCase):
 class TestGetStatusPageHttp(unittest.TestCase):
     def api(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api.url = "https://kuma"
         api.timeout = 5
         api.ssl_verify = False
@@ -327,6 +331,7 @@ class TestMergeSettings(unittest.TestCase):
 class TestLoginAutoLogin(unittest.TestCase):
     def test_timeout_message_mentions_credentials(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api._event_data = {Event.AUTO_LOGIN: None}
         api._event_seq = dict.fromkeys(api._event_data, 0)
         api.timeout = 0.05
@@ -338,6 +343,7 @@ class TestLoginAutoLogin(unittest.TestCase):
 class TestHeartbeatCap(unittest.TestCase):
     def test_keeps_150_newest_last(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api._event_data = {Event.HEARTBEAT_LIST: None,
                            Event.IMPORTANT_HEARTBEAT_LIST: None}
         for i in range(200):
@@ -350,6 +356,7 @@ class TestHeartbeatCap(unittest.TestCase):
 class TestAddMonitorTagCache(unittest.TestCase):
     def api(self, cache):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api._event_data = {Event.MONITOR_LIST: cache}
         api._event_seq = dict.fromkeys(api._event_data, 0)
         raw = {"id": 1, "notificationIDList": {"3": True}}
@@ -407,6 +414,7 @@ if __name__ == "__main__":
 class TestVersionCache(unittest.TestCase):
     def _api(self, info):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api.timeout = 0.05
         api.wait_events = 5
         api._version = None
@@ -437,6 +445,7 @@ class TestVersionCache(unittest.TestCase):
 class TestWaitForNewEvent(unittest.TestCase):
     def _api(self, timeout=1):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api.timeout = timeout
         api._event_data = {Event.NOTIFICATION_LIST: []}
         api._event_seq = dict.fromkeys(api._event_data, 0)
@@ -490,6 +499,7 @@ class TestEditMonitorShapes(unittest.TestCase):
         )
         monitor.update(stored or {})
         api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
         api.wait_for_event = lambda *a, **k: contextlib.nullcontext()
         api.get_monitor = lambda id_: dict(monitor)
         with mock.patch.object(api, "_call", return_value={}) as call:
@@ -528,3 +538,73 @@ class TestEditMonitorShapes(unittest.TestCase):
         self.assertEqual(data["authMethod"], AuthMethod.HTTP_BASIC)
         data = self.edit(authMethod=AuthMethod.NTLM)
         self.assertEqual(data["authMethod"], AuthMethod.NTLM)
+
+
+class TestEventDataThreadSafety(unittest.TestCase):
+    def api(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._lock = threading.RLock()
+        api.timeout = 5
+        api.wait_events = 0
+        api._event_data = {Event.HEARTBEAT_LIST: {}, Event.MONITOR_LIST: {}}
+        api._event_seq = dict.fromkeys(api._event_data, 0)
+        return api
+
+    def blocked_while_locked(self, api, func):
+        # runs func in a thread while another thread holds the lock: it must
+        # not finish until the lock is released
+        done = threading.Event()
+        thread = threading.Thread(target=lambda: (func(), done.set()))
+        with api._lock:
+            thread.start()
+            self.assertFalse(done.wait(0.2), "ran without taking the lock")
+        self.assertTrue(done.wait(2))
+        thread.join()
+
+    def test_handlers_take_the_lock(self):
+        api = self.api()
+        self.blocked_while_locked(api, lambda: api._event_heartbeat(
+            {"monitorID": 1, "important": False, "id": 1}))
+        self.blocked_while_locked(api, lambda: api._event_monitor_list({}))
+        self.blocked_while_locked(
+            api, lambda: api._event_update_monitor_into_list({"1": {}}))
+        self.assertEqual(len(api._event_data[Event.HEARTBEAT_LIST][1]), 1)
+
+    def test_cache_copy_takes_the_lock(self):
+        api = self.api()
+        self.blocked_while_locked(
+            api, lambda: api._get_event_data(Event.HEARTBEAT_LIST))
+
+    def test_concurrent_heartbeats_and_reads_stay_consistent(self):
+        api = self.api()
+        errors = []
+        stop = threading.Event()
+
+        def write(offset):
+            try:
+                for i in range(1000):
+                    api._event_heartbeat(
+                        {"monitorID": 1, "important": False, "id": offset + i})
+            except Exception as e:
+                errors.append(e)
+
+        def read():
+            try:
+                while not stop.is_set():
+                    beats = api._get_event_data(Event.HEARTBEAT_LIST).get(1, [])
+                    assert len(beats) <= 150, len(beats)
+                    time.sleep(0.001)
+            except Exception as e:
+                errors.append(e)
+
+        writers = [threading.Thread(target=write, args=(n * 10000,)) for n in range(4)]
+        reader = threading.Thread(target=read)
+        reader.start()
+        for t in writers:
+            t.start()
+        for t in writers:
+            t.join()
+        stop.set()
+        reader.join()
+        self.assertEqual(errors, [])
+        self.assertEqual(len(api._event_data[Event.HEARTBEAT_LIST][1]), 150)
