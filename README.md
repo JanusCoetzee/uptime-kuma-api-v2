@@ -1,10 +1,12 @@
 # uptime-kuma-api-v2
-[![Upload Python Package](https://github.com/exaland/uptime-kuma-api-v2/actions/workflows/python-publish.yml/badge.svg)](https://github.com/exaland/uptime-kuma-api-v2/actions/workflows/python-publish.yml)
+[![Upload Python Package](https://github.com/JanusCoetzee/uptime-kuma-api-v2/actions/workflows/python-publish.yml/badge.svg)](https://github.com/JanusCoetzee/uptime-kuma-api-v2/actions/workflows/python-publish.yml)
 A wrapper for the Uptime Kuma Socket.IO API
 ---
 uptime-kuma-api-v2 is a Python wrapper for the [Uptime Kuma](https://github.com/louislam/uptime-kuma) Socket.IO API.
 
-Based on Original Version by https://github.com/lucasheld/uptime-kuma-api
+Acknowledgements
+---
+This project is a fork of [uptime-kuma-api](https://github.com/lucasheld/uptime-kuma-api) by [Lucas Held](https://github.com/lucasheld) (MIT licensed), via the [exaland/uptime-kuma-api-v2](https://github.com/exaland/uptime-kuma-api-v2) fork that added Uptime Kuma 2.x support. Thank you to both authors. It is now maintained independently and is diverging significantly from upstream, so expect API changes. Both original copyright notices are kept in [LICENSE](LICENSE).
 
 
 Python version 3.7+ is required.
