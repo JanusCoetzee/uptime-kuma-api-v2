@@ -13,7 +13,6 @@ upstream project's changes) is not carried over. It remains available:
 ### Added
 
 - Unit tests cover 98% of the package (was 60%) with an offline fake Socket.IO client; `.coveragerc` now fails below 90%.
-
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed

@@ -2,13 +2,26 @@
 
 ``make_api`` builds a real ``UptimeKumaApi`` whose ``sio`` is a ``FakeSio``.
 Requests are recorded in ``FakeSio.calls`` and answered from ``replies``;
-every request also counts as a pushed list update, like the real server does
-after a change, so ``wait_for_event(..., new=True)`` returns.
+change requests also count as a pushed list update of the right list, like
+the real server does (see ``PUSHES``), so ``wait_for_event(..., new=True)`` returns.
 """
 import copy
 from unittest import mock
 
 from uptime_kuma_api import Event, UptimeKumaApi
+
+
+# The list event the real server pushes after each change request.
+PUSHES = {
+    "add": Event.MONITOR_LIST,
+    "editMonitor": Event.MONITOR_LIST,
+    "addNotification": Event.NOTIFICATION_LIST,
+    "addProxy": Event.PROXY_LIST,
+    "addDockerHost": Event.DOCKER_HOST_LIST,
+    "addAPIKey": Event.API_KEY_LIST,
+    "enableAPIKey": Event.API_KEY_LIST,
+    "disableAPIKey": Event.API_KEY_LIST,
+}
 
 
 class FakeSio:
@@ -34,9 +47,8 @@ class FakeSio:
 
     def call(self, event, data=None, timeout=None):
         self.calls.append((event, data))
-        if self.api is not None:
-            for name in self.api._event_seq:
-                self.api._event_seq[name] += 1
+        if self.api is not None and event in PUSHES:
+            self.api._event_seq[PUSHES[event]] += 1
         reply = self.replies.get(event, {"ok": True})
         if isinstance(reply, Exception):
             raise reply

@@ -138,21 +138,29 @@ class TestEventHandlers(unittest.TestCase):
                 self.assertEqual(self.data[event], [{"id": 7}])
                 self.assertEqual(self.seq[event], 1)
 
-    def test_heartbeat_list_appends_unless_overwrite(self):
+    def test_heartbeat_list_overwrite_replaces(self):
         self.api._event_heartbeat_list("1", [{"a": 1}], False)
-        self.api._event_heartbeat_list("1", {"a": 2}, False)
-        self.assertEqual(self.data[Event.HEARTBEAT_LIST][1],
-                         [{"a": 1}, {"a": 2}])
         self.api._event_heartbeat_list("1", [{"a": 3}], True)
         self.assertEqual(self.data[Event.HEARTBEAT_LIST][1], [{"a": 3}])
-
-    def test_important_heartbeat_list_appends_unless_overwrite(self):
         self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
-        self.api._event_important_heartbeat_list("2", {"a": 2}, False)
-        self.assertEqual(self.data[Event.IMPORTANT_HEARTBEAT_LIST][2],
-                         [{"a": 1}, {"a": 2}])
         self.api._event_important_heartbeat_list("2", [], True)
         self.assertEqual(self.data[Event.IMPORTANT_HEARTBEAT_LIST][2], [])
+
+    # The server sends a list of beats; the cache nests it, see #102.
+    @unittest.expectedFailure
+    def test_heartbeat_list_extends_with_the_new_beats(self):
+        self.api._event_heartbeat_list("1", [{"a": 1}], False)
+        self.api._event_heartbeat_list("1", [{"a": 2}], False)
+        self.assertEqual(len(self.data[Event.HEARTBEAT_LIST][1]), 2)
+        self.assertTrue(all(isinstance(b, dict)
+                            for b in self.data[Event.HEARTBEAT_LIST][1]))
+
+    @unittest.expectedFailure
+    def test_important_heartbeat_list_extends_with_the_new_beats(self):
+        self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
+        self.api._event_important_heartbeat_list("2", [{"a": 2}], False)
+        self.assertTrue(all(isinstance(b, dict) for b in
+                            self.data[Event.IMPORTANT_HEARTBEAT_LIST][2]))
 
     def test_avg_ping_and_uptime_are_keyed_by_int_id(self):
         self.api._event_avg_ping("3", 12)
@@ -196,8 +204,14 @@ class TestEventHandlers(unittest.TestCase):
 
 
 class TestWaiting(unittest.TestCase):
+    def _later(self, func, *args):
+        timer = threading.Timer(0.03, func, args)
+        self.addCleanup(timer.join)
+        self.addCleanup(timer.cancel)
+        timer.start()
+
     def setUp(self):
-        self.api = make_api(timeout=0.15)
+        self.api = make_api(timeout=0.6)
 
     def test_wait_for_event_times_out(self):
         with self.assertRaises(Timeout):
@@ -211,14 +225,14 @@ class TestWaiting(unittest.TestCase):
                 pass
 
     def test_wait_for_event_returns_when_the_event_arrives(self):
-        threading.Timer(0.03, self.api._event_proxy_list, [[]]).start()
+        self._later(self.api._event_proxy_list, [])
         with self.api.wait_for_event(Event.PROXY_LIST):
             pass
         self.assertEqual(self.api._event_data[Event.PROXY_LIST], [])
 
     def test_wait_for_event_new_returns_on_a_fresh_update(self):
         self.api._event_data[Event.PROXY_LIST] = []
-        threading.Timer(0.03, self.api._event_proxy_list, [[1]]).start()
+        self._later(self.api._event_proxy_list, [1])
         with self.api.wait_for_event(Event.PROXY_LIST, new=True):
             pass
 

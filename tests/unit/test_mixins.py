@@ -48,8 +48,10 @@ class TestPassThroughCalls(Base):
             with self.subTest(method=name):
                 self.sio.calls.clear()
                 self.sio.replies[event] = {"ok": True, "x": 1}
-                getattr(self.api, name)(*args)
-                self.assertEqual([c[0] for c in self.sio.calls], [event])
+                result = getattr(self.api, name)(*args)
+                expected = args[0] if len(args) == 1 else None
+                self.assertEqual(self.sio.calls, [(event, expected)])
+                self.assertEqual(result, {"x": 1})
 
     def test_arguments_are_forwarded(self):
         self.api.setup("admin", "pw")
