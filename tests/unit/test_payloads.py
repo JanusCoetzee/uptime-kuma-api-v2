@@ -166,15 +166,15 @@ class TestMonitorValidation(unittest.TestCase):
 class TestMaintenancePayload(unittest.TestCase):
     def setUp(self):
         self.api = make_api()
-        self.today = datetime.date.today().strftime("%Y-%m-%d 00:00:00")
 
     def test_defaults(self):
         self.api.add_maintenance(title="t",
                                  strategy=MaintenanceStrategy.MANUAL)
+        today = datetime.date.today().strftime("%Y-%m-%d 00:00:00")
         self.assertEqual(self.api.sio.sent("addMaintenance"), [{
             "active": True,
             "cron": "30 3 * * *",
-            "dateRange": [self.today],
+            "dateRange": [today],
             "daysOfMonth": [],
             "description": "",
             "durationMinutes": 60,
