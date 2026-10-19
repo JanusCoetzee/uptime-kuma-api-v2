@@ -29,7 +29,7 @@ setup(
     author=info["__author__"],
     author_email="januscoetzee@gmail.com",
     license=info["__license__"],
-    packages=["uptime_kuma_api"],
+    packages=["uptime_kuma_api", "uptime_kuma_api._mixins"],
     python_requires=">=3.12, <4",
     install_requires=[
         "python-socketio[client]>=5.0.0",
