@@ -32,6 +32,8 @@ select = ["E", "W", "F", "B"]
 # mutmut 3 runs on pytest. Run it on schedule (see ci.yml), not on every PR.
 source_paths = ["uptime_kuma_api/"]
 pytest_add_cli_args_test_selection = ["tests/unit"]
+# Generated parameter text, not logic (see scripts/): mutants there only test wording.
+do_not_mutate = ["uptime_kuma_api/docstrings.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
