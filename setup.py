@@ -33,8 +33,10 @@ setup(
     python_requires=">=3.12, <4",
     install_requires=[
         "python-socketio[client]>=5.0.0",
-        "packaging"
+        "packaging",
+        "requests"
     ],
+    package_data={"uptime_kuma_api": ["py.typed"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
