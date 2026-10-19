@@ -1117,7 +1117,7 @@ class UptimeKumaApi(object):
             else:
                 theme = "light"
         if theme not in ["auto", "light", "dark"]:
-            raise ValueError
+            raise ValueError(f"Unknown theme: {theme}. Valid themes: auto, light, dark")
         if not domainNameList:
             domainNameList = []
         if not publicGroupList:
@@ -3249,7 +3249,7 @@ class UptimeKumaApi(object):
                 return docker_host
         raise UptimeKumaException("docker host does not exist")
 
-    @append_docstring(docker_host_docstring("test"))
+    @append_docstring(docker_host_docstring("test"), validated=False)
     def test_docker_host(self, **kwargs) -> dict:
         """
         Test a docker host.
@@ -3272,7 +3272,7 @@ class UptimeKumaApi(object):
         data = _build_docker_host_data(**kwargs)
         return self._call('testDockerHost', data)
 
-    @append_docstring(docker_host_docstring("add"))
+    @append_docstring(docker_host_docstring("add"), validated=False)
     def add_docker_host(self, **kwargs) -> dict:
         """
         Add a docker host.
@@ -3298,7 +3298,7 @@ class UptimeKumaApi(object):
         with self.wait_for_event(Event.DOCKER_HOST_LIST):
             return self._call('addDockerHost', (data, None))
 
-    @append_docstring(docker_host_docstring("edit"))
+    @append_docstring(docker_host_docstring("edit"), validated=False)
     def edit_docker_host(self, id_: int, **kwargs) -> dict:
         """
         Edit a docker host.

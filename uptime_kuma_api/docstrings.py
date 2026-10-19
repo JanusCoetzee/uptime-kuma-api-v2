@@ -1,4 +1,11 @@
-def append_docstring(value):
+RAISES = (
+    ":raises TypeError: If a required argument is missing or an argument "
+    "is unknown.\n"
+    ":raises ValueError: If an argument value is invalid."
+)
+
+
+def append_docstring(value, validated=True):
     def _doc(func):
         # inserts the value into the existing docstring before the :return: line
         split_value = ":return:"
@@ -8,7 +15,10 @@ def append_docstring(value):
         indent = len(line) - len(line.lstrip())
         line_start = " " * indent
         part2 = split_value + line_start.join(splitted[1:])
-        func.__doc__ = part1 + "\n" + line_start + value + "\n" + line_start + part2
+        text = value
+        if validated:
+            text += "\n" + line_start + RAISES.replace("\n", "\n" + line_start)
+        func.__doc__ = part1 + "\n" + line_start + text + "\n" + line_start + part2
         return func
 
     return _doc
