@@ -55,6 +55,11 @@ class TestParsing(unittest.TestCase):
         self.assertTrue(s.isalnum())
         self.assertNotEqual(s, gen_secret(32))
 
+DATABASE_TYPES = (
+    MonitorType.SQLSERVER, MonitorType.POSTGRES, MonitorType.MYSQL,
+    MonitorType.MONGODB, MonitorType.REDIS,
+)
+
 
 class TestConvertMonitorInput(unittest.TestCase):
     def kwargs(self, **kw):
@@ -77,11 +82,11 @@ class TestConvertMonitorInput(unittest.TestCase):
         _convert_monitor_input(k)
         self.assertEqual(k["pushToken"], "mine")
 
-    @unittest.expectedFailure  # placeholder connection strings are sent to the server (issue #11 area)
     def test_no_placeholder_connection_string(self):
-        k = self.kwargs(type=MonitorType.POSTGRES)
-        _convert_monitor_input(k)
-        self.assertFalse(k["databaseConnectionString"])
+        for t in DATABASE_TYPES:
+            k = self.kwargs(type=t)
+            _convert_monitor_input(k)
+            self.assertIsNone(k["databaseConnectionString"], t)
 
 
 class TestChecks(unittest.TestCase):
@@ -117,6 +122,13 @@ class TestChecks(unittest.TestCase):
             _check_arguments_monitor(self.monitor(interval=19))
         with self.assertRaises(ValueError):
             _check_arguments_monitor(self.monitor(type=MonitorType.PORT, hostname="h", port=70000))
+
+    def test_database_types_require_connection_string(self):
+        for t in DATABASE_TYPES:
+            with self.assertRaisesRegex(TypeError, "databaseConnectionString"):
+                _check_arguments_monitor(self.monitor(type=t))
+            _check_arguments_monitor(
+                self.monitor(type=t, databaseConnectionString="x"))
 
     @unittest.expectedFailure  # KeyError for types the library does not know (#40)
     def test_unknown_type_raises_clean_error(self):

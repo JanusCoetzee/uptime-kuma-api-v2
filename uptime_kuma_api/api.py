@@ -138,18 +138,6 @@ def _convert_monitor_input(kwargs) -> None:
             dict_notification_ids[notification_id] = True
     kwargs["notificationIDList"] = dict_notification_ids
 
-    if not kwargs["databaseConnectionString"]:
-        if kwargs["type"] == MonitorType.SQLSERVER:
-            kwargs["databaseConnectionString"] = "Server=<hostname>,<port>;Database=<your database>;User Id=<your user id>;Password=<your password>;Encrypt=<true/false>;TrustServerCertificate=<Yes/No>;Connection Timeout=<int>"
-        elif kwargs["type"] == MonitorType.POSTGRES:
-            kwargs["databaseConnectionString"] = "postgres://username:password@host:port/database"
-        elif kwargs["type"] == MonitorType.MYSQL:
-            kwargs["databaseConnectionString"] = "mysql://username:password@host:port/database"
-        elif kwargs["type"] == MonitorType.REDIS:
-            kwargs["databaseConnectionString"] = "redis://user:password@host:port"
-        elif kwargs["type"] == MonitorType.MONGODB:
-            kwargs["databaseConnectionString"] = "mongodb://username:password@host:port/database"
-
     if kwargs["type"] == MonitorType.PUSH and not kwargs.get("pushToken"):
         kwargs["pushToken"] = gen_secret(32)
 
@@ -313,12 +301,12 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.STEAM: ["hostname", "port"],
         MonitorType.GAMEDIG: ["game", "hostname", "port"],
         MonitorType.MQTT: ["hostname", "port", "mqttTopic"],
-        MonitorType.SQLSERVER: [],
-        MonitorType.POSTGRES: [],
-        MonitorType.MYSQL: [],
-        MonitorType.MONGODB: [],
+        MonitorType.SQLSERVER: ["databaseConnectionString"],
+        MonitorType.POSTGRES: ["databaseConnectionString"],
+        MonitorType.MYSQL: ["databaseConnectionString"],
+        MonitorType.MONGODB: ["databaseConnectionString"],
         MonitorType.RADIUS: ["radiusUsername", "radiusPassword", "radiusSecret", "radiusCalledStationId", "radiusCallingStationId"],
-        MonitorType.REDIS: [],
+        MonitorType.REDIS: ["databaseConnectionString"],
         MonitorType.GROUP: [],
         MonitorType.JSON_QUERY: ["url", "jsonPath", "expectedValue"],
         MonitorType.REAL_BROWSER: ["url"],

@@ -41,6 +41,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - `UptimeKumaApi.version` is cached and no longer sleeps `wait_events` on every access, so `add_monitor`, `add_status_page` and `set_settings` are about a second faster.
 
+- **Behaviour change:** database monitors (SQL Server, PostgreSQL, MySQL, MongoDB, Redis) no longer get a placeholder connection string such as `postgres://username:password@host:port/database` saved as real config. `databaseConnectionString` is now required for them and a `TypeError` is raised before any request when it is missing.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
