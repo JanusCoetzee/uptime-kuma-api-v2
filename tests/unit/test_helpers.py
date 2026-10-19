@@ -1,7 +1,10 @@
 import unittest
+from unittest import mock
+
+import requests
 
 from uptime_kuma_api import (
-    Event, UptimeKumaApi,
+    Event, Timeout, UptimeKumaApi, UptimeKumaException,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
 from uptime_kuma_api.api import (
@@ -225,6 +228,44 @@ class TestMonitorListDeltaEvents(unittest.TestCase):
         api._event_update_monitor_into_list({"1": {}})
         api._event_delete_monitor_from_list(1)
         self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+
+class TestGetStatusPageHttp(unittest.TestCase):
+    def api(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api.url = "https://kuma"
+        api.timeout = 5
+        api.ssl_verify = False
+        api.headers = {"X-Auth": "t"}
+        api._call = lambda event, slug: {"config": {}}
+        return api
+
+    @mock.patch("uptime_kuma_api.api.requests.get")
+    def test_passes_verify_headers_and_escaped_slug(self, get):
+        get.return_value.json.return_value = {}
+        self.api().get_status_page("a/../b?x")
+        get.assert_called_once_with(
+            "https://kuma/api/status-page/a%2F..%2Fb%3Fx",
+            timeout=5, verify=False, headers={"X-Auth": "t"})
+
+    @mock.patch("uptime_kuma_api.api.requests.get")
+    def test_error_mapping(self, get):
+        cases = [
+            (requests.exceptions.Timeout("t"), Timeout),
+            (requests.exceptions.ConnectionError("c"), UptimeKumaException),
+            (requests.exceptions.SSLError("s"), UptimeKumaException),
+        ]
+        for exc, expected in cases:
+            get.side_effect = exc
+            with self.assertRaises(expected) as cm:
+                self.api().get_status_page("s")
+            self.assertIs(cm.exception.__cause__, exc)
+
+    @mock.patch("uptime_kuma_api.api.requests.get")
+    def test_invalid_json(self, get):
+        get.return_value.json.side_effect = ValueError("not json")
+        with self.assertRaises(UptimeKumaException):
+            self.api().get_status_page("s")
 
 
 class TestMergeSettings(unittest.TestCase):
