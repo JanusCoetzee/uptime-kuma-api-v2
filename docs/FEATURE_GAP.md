@@ -110,7 +110,7 @@ Library `MonitorType` (22): dns, docker, gamedig, group, grpc-keyword, http, jso
 | `sip-options` | host/port |
 | `globalping` | `subtype`, `protocol`, `location`, `ipFamily`, ping options |
 
-The enum also needs: `MonitorType` in `monitor_type.py` (generated), `required_args_by_type` and `_build_monitor_data` in `api.py`, and the shared parameter docstring in `docstrings.py`. Until these are added, `_check_arguments_monitor` raises `ValueError: unsupported monitor type` for any new type.
+The enum also needs: `MonitorType` in `monitor_type.py` (generated), `required_args_by_type` (`_monitor_args.py`) and `_build_monitor_data` (`_mixins/monitors.py`), and the shared parameter docstring in `docstrings.py`. Until these are added, `_check_arguments_monitor` raises `ValueError: unsupported monitor type` for any new type.
 
 **Monitor fields in the server model that the library does not send** (89 keys in `toJSON`, those not in `_build_monitor_data`):
 `domainExpiryNotification`, `expectedTlsAlert`, `ipFamily`, `jsonPathOperator`, `mqttCheckType`, `ping_count`, `ping_numeric`, `ping_per_request_timeout`, `responseMaxLength`, `retryOnlyOnStatusCodeFailure`, `saveErrorResponse`, `saveResponse`, `screenshot_delay`, `remote_browser`, plus all the per-type fields above. Read-only fields the server returns (`id`, `active`, `tags`, `maintenance`, `childrenIDs`, `validCert`, `certExpiryDaysRemaining`, `dns_last_result`, `weight`, `forceInactive`, `cacheBust`) are not gaps.

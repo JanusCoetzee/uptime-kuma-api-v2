@@ -15,6 +15,10 @@ upstream project's changes) is not carried over. It remains available:
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed
+- `api.py` is split into per-domain mixins in `uptime_kuma_api/_mixins/`
+  (monitors, notifications, status pages, ...) plus `_helpers.py` and
+  `_monitor_args.py`. No public change: `UptimeKumaApi` has the same 89 public
+  names and behaviour, and `setup.py` now ships the `_mixins` subpackage.
 - **Breaking:** minimum Python is now 3.12 (3.9 is EOL); CI tests 3.12-3.14.
 - **Behaviour change:** `set_settings` now only changes the arguments you
   pass (all defaults are `None`) and keeps every other server setting. It used

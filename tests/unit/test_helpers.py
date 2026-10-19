@@ -12,24 +12,28 @@ from uptime_kuma_api import (
     UptimeKumaException,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
-from uptime_kuma_api.api import (
-    _build_notification_data,
+from uptime_kuma_api._helpers import (
     _check_argument_conditions,
-    _check_arguments_maintenance,
-    _check_arguments_monitor,
-    _check_arguments_notification,
-    _check_arguments_proxy,
-    _check_arguments_tag,
-    _build_status_page_response,
     _check_missing_arguments,
-    _merge_settings,
     _warned_values,
-    _convert_monitor_input,
-    gen_secret,
     int_to_bool,
     parse_monitor_status,
     parse_value,
 )
+from uptime_kuma_api._mixins.maintenance import _check_arguments_maintenance
+from uptime_kuma_api._monitor_args import (
+    _check_arguments_monitor,
+    _convert_monitor_input,
+    gen_secret,
+)
+from uptime_kuma_api._mixins.notifications import (
+    _build_notification_data,
+    _check_arguments_notification,
+)
+from uptime_kuma_api._mixins.proxies import _check_arguments_proxy
+from uptime_kuma_api._mixins.settings import _merge_settings
+from uptime_kuma_api._mixins.status_pages import _build_status_page_response
+from uptime_kuma_api._mixins.tags import _check_arguments_tag
 
 
 class TestParsing(unittest.TestCase):
@@ -286,7 +290,7 @@ class TestGetStatusPageHttp(unittest.TestCase):
         api._call = lambda event, slug: {"config": {}}
         return api
 
-    @mock.patch("uptime_kuma_api.api.requests.get")
+    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
     def test_passes_verify_headers_and_escaped_slug(self, get):
         get.return_value.json.return_value = {}
         self.api().get_status_page("a/../b?x")
@@ -294,7 +298,7 @@ class TestGetStatusPageHttp(unittest.TestCase):
             "https://kuma/api/status-page/a%2F..%2Fb%3Fx",
             timeout=5, verify=False, headers={"X-Auth": "t"})
 
-    @mock.patch("uptime_kuma_api.api.requests.get")
+    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
     def test_error_mapping(self, get):
         cases = [
             (requests.exceptions.Timeout("t"), Timeout),
@@ -307,7 +311,7 @@ class TestGetStatusPageHttp(unittest.TestCase):
                 self.api().get_status_page("s")
             self.assertIs(cm.exception.__cause__, exc)
 
-    @mock.patch("uptime_kuma_api.api.requests.get")
+    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
     def test_invalid_json(self, get):
         get.return_value.json.side_effect = ValueError("not json")
         with self.assertRaises(UptimeKumaException):

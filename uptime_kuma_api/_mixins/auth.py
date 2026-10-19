@@ -1,0 +1,221 @@
+from __future__ import annotations
+
+from .. import (
+    Event,
+    Timeout
+)
+
+
+class AuthMixin:
+    def twofa_status(self) -> dict:
+        """
+        Get current 2FA status.
+
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.twofa_status()
+            {
+                'status': False
+            }
+        """
+        return self._call('twoFAStatus')
+
+    def prepare_2fa(self, password: str) -> dict:
+        """
+        Prepare 2FA configuration.
+
+        :param str password: Current password.
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> password = "secret123"
+            >>> r = api.prepare_2fa(password)
+            >>> r
+            {
+                'uri': 'otpauth://totp/Uptime%20Kuma:admin?secret=NBGVQNSNNRXWQ3LJJN4DIWSWIIYW45CZJRXXORSNOY3USSKXO5RG4MDPI5ZUK5CWJFIFOVCBGZVG24TSJ5LDE2BTMRLXOZBSJF3TISA'
+            }
+            >>> uri = r["uri"]
+            >>>
+            >>> from urllib import parse
+            >>> def parse_secret(uri):
+            ...     query = parse.urlsplit(uri).query
+            ...     params = dict(parse.parse_qsl(query))
+            ...     return params["secret"]
+            >>> secret = parse_secret(uri)
+            >>> secret
+            NBGVQNSNNRXWQ3LJJN4DIWSWIIYW45CZJRXXORSNOY3USSKXO5RG4MDPI5ZUK5CWJFIFOVCBGZVG24TSJ5LDE2BTMRLXOZBSJF3TISA
+        """
+        return self._call('prepare2FA', password)
+
+    def verify_token(self, token: str, password: str) -> dict:
+        """
+        Verify the provided 2FA token.
+
+        :param str token: 2FA token.
+        :param str password: Current password.
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> import pyotp
+            >>> def generate_token(secret):
+            ...     totp = pyotp.TOTP(secret)
+            ...     return totp.now()
+            >>> token = generate_token(secret)
+            >>> token
+            526564
+            >>> api.verify_token(token, password)
+            {
+                'valid': True
+            }
+        """
+        return self._call('verifyToken', (token, password))
+
+    def save_2fa(self, password: str) -> dict:
+        """
+        Save the current 2FA configuration.
+
+        :param str password: Current password.
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.save_2fa(password)
+            {
+                'msg': '2FA Enabled.'
+            }
+        """
+        return self._call('save2FA', password)
+
+    def disable_2fa(self, password: str) -> dict:
+        """
+        Disable 2FA for this user.
+
+        :param str password: Current password.
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.disable_2fa(password)
+            {
+                'msg': '2FA Disabled.'
+            }
+        """
+        return self._call('disable2FA', password)
+
+    def login(self, username: str = None, password: str = None, token: str = "") -> dict:
+        """
+        Login.
+
+        If username and password is not provided, auto login is performed if disableAuth is enabled.
+
+        :param str, optional username: Username. Must be None if disableAuth is enabled., defaults to None
+        :param str, optional password: Password. Must be None if disableAuth is enabled., defaults to None
+        :param str, optional token: 2FA Token. Required if 2FA is enabled., defaults to ""
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> username = "admin"
+            >>> password = "secret123"
+            >>> api.login(username, password)
+            {
+                'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNjcxMTk3MjkzfQ.lpho_LuKMnoltXOdA7-jZ98gXOU-UbEIuxMwMRm4Nz0'
+            }
+        """
+        # autologin
+        if username is None and password is None:
+            try:
+                with self.wait_for_event(Event.AUTO_LOGIN):
+                    return {}
+            except Timeout as e:
+                raise Timeout(
+                    "No autoLogin event received: the server probably "
+                    "requires a username and password (disableAuth is off)"
+                ) from e
+
+        return self._call('login', {
+            "username": username,
+            "password": password,
+            "token": token
+        })
+
+    def login_by_token(self, token: str) -> dict:
+        """
+        Login by token.
+
+        :param str token: Login token generated by :meth:`~login`
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.login_by_token(token)
+            {}
+        """
+        return self._call('loginByToken', token)
+
+    def logout(self) -> None:
+        """
+        Logout.
+
+        :return: The server response.
+        :rtype: None
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.logout()
+            None
+        """
+        return self._call('logout')
+
+    def need_setup(self) -> bool:
+        """
+        Check if the server has already been set up.
+
+        :return: The server response.
+        :rtype: bool
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.need_setup()
+            True
+        """
+        return self._call('needSetup')
+
+    def setup(self, username: str, password: str) -> dict:
+        """
+        Set up the server.
+
+        :param str username: Username
+        :param str password: Password
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.setup(username, password)
+            {
+                'msg': 'Added Successfully.'
+            }
+        """
+        return self._call("setup", (username, password))
