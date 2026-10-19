@@ -8,4 +8,4 @@ omit =
 [report]
 show_missing = True
 # Ratchet: only ever raise this. Target is 90, see the coverage story (#57).
-fail_under = 44
+fail_under = 45

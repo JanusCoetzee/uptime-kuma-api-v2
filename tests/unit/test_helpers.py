@@ -1,10 +1,14 @@
 import unittest
 
-from uptime_kuma_api import MaintenanceStrategy, MonitorStatus, MonitorType
+from uptime_kuma_api import (
+    MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
+)
 from uptime_kuma_api.api import (
+    _build_notification_data,
     _check_argument_conditions,
     _check_arguments_maintenance,
     _check_arguments_monitor,
+    _check_arguments_notification,
     _check_arguments_proxy,
     _check_arguments_tag,
     _check_missing_arguments,
@@ -135,6 +139,27 @@ class TestChecks(unittest.TestCase):
         _check_arguments_tag(dict(name="n", color="#fff"))
         with self.assertRaises(TypeError):
             _check_arguments_tag(dict(name="n"))
+
+
+    def test_notification(self):
+        ok = dict(type=NotificationType.WEBHOOK, name="n",
+                  webhookContentType="json", webhookURL="http://x")
+        _check_arguments_notification(ok)
+        with self.assertRaises(TypeError):
+            _check_arguments_notification(dict(type=NotificationType.WEBHOOK, name="n"))
+        with self.assertRaises(TypeError):
+            _check_arguments_notification(dict(type=NotificationType.WEBHOOK))
+
+
+class TestBuildNotificationData(unittest.TestCase):
+    def test_defaults_and_kwargs(self):
+        d = _build_notification_data("n", NotificationType.WEBHOOK, webhookURL="u")
+        self.assertEqual(d, dict(name="n", type=NotificationType.WEBHOOK, isDefault=False,
+                                 applyExisting=False, webhookURL="u"))
+
+    def test_unknown_argument(self):
+        with self.assertRaises(TypeError):
+            _build_notification_data("n", NotificationType.WEBHOOK, nope=1)
 
 
 if __name__ == "__main__":
