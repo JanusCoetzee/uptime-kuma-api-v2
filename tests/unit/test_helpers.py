@@ -575,6 +575,18 @@ class TestEventDataThreadSafety(unittest.TestCase):
         self.blocked_while_locked(
             api, lambda: api._get_event_data(Event.HEARTBEAT_LIST))
 
+    def test_status_page_cache_writes_take_the_lock(self):
+        api = self.api()
+        api._event_data[Event.STATUS_PAGE_LIST] = {"1": {"id": 1, "slug": "a"}}
+        api._event_seq[Event.STATUS_PAGE_LIST] = 0
+        api._call = lambda event, data=None: {"config": {"id": 2, "slug": "b"}}
+        api.get_status_page = lambda slug: {"id": 2, "slug": slug}
+        self.blocked_while_locked(api, lambda: api.save_status_page("b"))
+        self.assertIn("2", api._event_data[Event.STATUS_PAGE_LIST])
+        api.get_status_pages = lambda: [{"slug": "a"}]
+        self.blocked_while_locked(api, lambda: api.delete_status_page("a"))
+        self.assertNotIn("1", api._event_data[Event.STATUS_PAGE_LIST])
+
     def test_concurrent_heartbeats_and_reads_stay_consistent(self):
         api = self.api()
         errors = []

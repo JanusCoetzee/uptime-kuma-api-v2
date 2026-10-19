@@ -2160,11 +2160,12 @@ class UptimeKumaApi(object):
             r = self._call('deleteStatusPage', slug)
 
             # uptime kuma does not send the status page list event when a status page is deleted
-            for status_page in self._event_data[Event.STATUS_PAGE_LIST].values():
-                if status_page["slug"] == slug:
-                    status_page_id = status_page["id"]
-                    del self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)]
-                    break
+            with self._lock:
+                for status_page in self._event_data[Event.STATUS_PAGE_LIST].values():
+                    if status_page["slug"] == slug:
+                        status_page_id = status_page["id"]
+                        del self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)]
+                        break
 
             return r
 
@@ -2251,9 +2252,10 @@ class UptimeKumaApi(object):
         # uptime kuma does not send the status page list event when a status page is saved
         status_page = self._call('getStatusPage', slug)["config"]
         status_page_id = status_page["id"]
-        if self._event_data[Event.STATUS_PAGE_LIST] is None:
-            self._event_data[Event.STATUS_PAGE_LIST] = {}
-        self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)] = status_page
+        with self._lock:
+            if self._event_data[Event.STATUS_PAGE_LIST] is None:
+                self._event_data[Event.STATUS_PAGE_LIST] = {}
+            self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)] = status_page
 
         return r
 
