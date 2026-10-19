@@ -1,6 +1,7 @@
 import unittest
 
 from uptime_kuma_api import (
+    Event, UptimeKumaApi,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
 from uptime_kuma_api.api import (
@@ -11,6 +12,7 @@ from uptime_kuma_api.api import (
     _check_arguments_notification,
     _check_arguments_proxy,
     _check_arguments_tag,
+    _build_status_page_response,
     _check_missing_arguments,
     _convert_monitor_input,
     gen_secret,
@@ -140,7 +142,6 @@ class TestChecks(unittest.TestCase):
         with self.assertRaises(TypeError):
             _check_arguments_tag(dict(name="n"))
 
-
     def test_notification(self):
         ok = dict(type=NotificationType.WEBHOOK, name="n",
                   webhookContentType="json", webhookURL="http://x")
@@ -160,6 +161,40 @@ class TestBuildNotificationData(unittest.TestCase):
     def test_unknown_argument(self):
         with self.assertRaises(TypeError):
             _build_notification_data("n", NotificationType.WEBHOOK, nope=1)
+
+
+class TestStatusPageResponse(unittest.TestCase):
+    inc = {"id": 1, "style": "danger", "title": "t"}
+
+    def test_2_5_incidents_list(self):
+        d = _build_status_page_response({}, {"incidents": [dict(self.inc)]})
+        self.assertEqual(len(d["incidents"]), 1)
+        self.assertEqual(d["incident"]["id"], 1)
+        self.assertEqual(d["incident"]["style"].value, "danger")
+
+    def test_legacy_incident(self):
+        d = _build_status_page_response({}, {"incident": dict(self.inc)})
+        self.assertEqual(d["incidents"][0]["id"], 1)
+
+    def test_none(self):
+        d = _build_status_page_response({}, {})
+        self.assertEqual((d["incident"], d["incidents"]), (None, []))
+
+
+class TestSaveStatusPage(unittest.TestCase):
+    def test_derived_keys_not_sent(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.STATUS_PAGE_LIST: {}}
+        page = {"id": 1, "incident": {}, "incidents": [{}], "maintenanceList": [],
+                "publicGroupList": [], "title": "t"}
+        api.get_status_page = lambda slug: dict(page)
+        sent = []
+        api._call = lambda event, data=None: (
+            sent.append((event, data)) or {"config": {"id": 1}})
+        api.save_status_page("s")
+        config = sent[0][1][1]
+        for key in ("incident", "incidents", "maintenanceList", "publicGroupList"):
+            self.assertNotIn(key, config)
 
 
 if __name__ == "__main__":
