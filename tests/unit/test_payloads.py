@@ -24,7 +24,43 @@ class TestMonitorPayload:
 
     def test_http_defaults(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://x")
-        assert self.api.sio.sent("add") == [{ "accepted_statuscodes": ["200-299"], "authMethod": AuthMethod.NONE, "body": None, "conditions": None, "databaseConnectionString": None, "description": None, "dns_resolve_server": "1.1.1.1", "dns_resolve_type": "A", "expiryNotification": False, "headers": None, "hostname": None, "httpBodyEncoding": "json", "ignoreTls": False, "interval": 60, "maxredirects": 10, "maxretries": 1, "method": "GET", "mqttPassword": "", "mqttSuccessMessage": "", "mqttTopic": "", "mqttUsername": "", "name": "n", "notificationIDList": {}, "packetSize": 56, "parent": None, "port": None, "proxyId": None, "resendInterval": 0, "retryInterval": 60, "timeout": 48, "type": MonitorType.HTTP, "upsideDown": False, "url": "http://x", }]
+        assert self.api.sio.sent("add") == [
+            {
+                "accepted_statuscodes": ["200-299"],
+                "authMethod": AuthMethod.NONE,
+                "body": None,
+                "conditions": None,
+                "databaseConnectionString": None,
+                "description": None,
+                "dns_resolve_server": "1.1.1.1",
+                "dns_resolve_type": "A",
+                "expiryNotification": False,
+                "headers": None,
+                "hostname": None,
+                "httpBodyEncoding": "json",
+                "ignoreTls": False,
+                "interval": 60,
+                "maxredirects": 10,
+                "maxretries": 1,
+                "method": "GET",
+                "mqttPassword": "",
+                "mqttSuccessMessage": "",
+                "mqttTopic": "",
+                "mqttUsername": "",
+                "name": "n",
+                "notificationIDList": {},
+                "packetSize": 56,
+                "parent": None,
+                "port": None,
+                "proxyId": None,
+                "resendInterval": 0,
+                "retryInterval": 60,
+                "timeout": 48,
+                "type": MonitorType.HTTP,
+                "upsideDown": False,
+                "url": "http://x",
+            }
+        ]
 
     def test_old_servers_do_not_get_new_fields(self):
         self.api._event_data[Event.INFO] = {"version": "1.21.0"}
@@ -137,7 +173,22 @@ class TestMaintenancePayload:
         self.api.add_maintenance(title="t",
                                  strategy=MaintenanceStrategy.MANUAL)
         today = datetime.date.today().strftime("%Y-%m-%d 00:00:00")
-        assert self.api.sio.sent("addMaintenance") == [{ "active": True, "cron": "30 3 * * *", "dateRange": [today], "daysOfMonth": [], "description": "", "durationMinutes": 60, "intervalDay": 1, "strategy": MaintenanceStrategy.MANUAL, "timeRange": [{"hours": 2, "minutes": 0}, {"hours": 3, "minutes": 0}], "timezoneOption": None, "title": "t", "weekdays": [], }]
+        assert self.api.sio.sent("addMaintenance") == [
+            {
+                "active": True,
+                "cron": "30 3 * * *",
+                "dateRange": [today],
+                "daysOfMonth": [],
+                "description": "",
+                "durationMinutes": 60,
+                "intervalDay": 1,
+                "strategy": MaintenanceStrategy.MANUAL,
+                "timeRange": [{"hours": 2, "minutes": 0}, {"hours": 3, "minutes": 0}],
+                "timezoneOption": None,
+                "title": "t",
+                "weekdays": [],
+            }
+        ]
 
     def test_overrides(self):
         self.api.add_maintenance(
@@ -149,7 +200,16 @@ class TestMaintenancePayload:
         (data,) = self.api.sio.sent("addMaintenance")
         assert data["dateRange"] == ["a", "b"]
         assert data["timeRange"][1] == {"hours": 3, "minutes": 4}
-        assert (data["active"], data["description"], data["intervalDay"], data["weekdays"], data["daysOfMonth"], data["cron"], data["durationMinutes"], data["timezoneOption"]) == (False, "d", 3, [1], [2], "* * * * *", 5, "UTC")
+        assert (
+            data["active"],
+            data["description"],
+            data["intervalDay"],
+            data["weekdays"],
+            data["daysOfMonth"],
+            data["cron"],
+            data["durationMinutes"],
+            data["timezoneOption"],
+        ) == (False, "d", 3, [1], [2], "* * * * *", 5, "UTC")
 
     def test_strategy_arguments_are_validated(self):
         with pytest.raises(ValueError):
@@ -170,20 +230,62 @@ class TestOtherPayloads:
 
     def test_proxy_defaults(self):
         self.api.add_proxy(protocol=ProxyProtocol.HTTP, host="h", port=80)
-        assert self.api.sio.sent("addProxy") == [({ "active": True, "applyExisting": False, "auth": False, "default": False, "host": "h", "password": None, "port": 80, "protocol": ProxyProtocol.HTTP, "username": None}, None)]
+        assert self.api.sio.sent("addProxy") == [
+            (
+                {
+                    "active": True,
+                    "applyExisting": False,
+                    "auth": False,
+                    "default": False,
+                    "host": "h",
+                    "password": None,
+                    "port": 80,
+                    "protocol": ProxyProtocol.HTTP,
+                    "username": None,
+                },
+                None,
+            )
+        ]
 
     def test_proxy_with_auth(self):
         self.api.add_proxy(protocol=ProxyProtocol.SOCKS5, host="h", port=1,
                            auth=True, username="u", password="p",
                            active=False, default=True, applyExisting=True)
         ((data, _),) = self.api.sio.sent("addProxy")
-        assert (data["auth"], data["username"], data["password"], data["active"], data["default"], data["applyExisting"]) == (True, "u", "p", False, True, True)
+        assert (
+            data["auth"],
+            data["username"],
+            data["password"],
+            data["active"],
+            data["default"],
+            data["applyExisting"],
+        ) == (True, "u", "p", False, True, True)
         with pytest.raises(TypeError):
             self.api.add_proxy(protocol=ProxyProtocol.HTTP, host="h",
                                port=1, auth=True, username="u")
 
     def test_status_page_data_defaults_and_overrides(self):
-        assert self.api._build_status_page_data("s", id=1, title="t") == ("s", { "customCSS": "", "description": None, "domainNameList": [], "footerText": None, "googleAnalyticsId": None, "icon": "/icon.svg", "id": 1, "published": True, "showCertificateExpiry": False, "showPoweredBy": True, "showTags": False, "slug": "s", "theme": "auto", "title": "t"}, "/icon.svg", [])
+        assert self.api._build_status_page_data("s", id=1, title="t") == (
+            "s",
+            {
+                "customCSS": "",
+                "description": None,
+                "domainNameList": [],
+                "footerText": None,
+                "googleAnalyticsId": None,
+                "icon": "/icon.svg",
+                "id": 1,
+                "published": True,
+                "showCertificateExpiry": False,
+                "showPoweredBy": True,
+                "showTags": False,
+                "slug": "s",
+                "theme": "auto",
+                "title": "t",
+            },
+            "/icon.svg",
+            [],
+        )
         slug, config, icon, groups = self.api._build_status_page_data(
             "s", id=2, title="t", description="d", theme="dark",
             published=False, showTags=True, domainNameList=["a"],
@@ -191,7 +293,19 @@ class TestOtherPayloads:
             showPoweredBy=False, showCertificateExpiry=True, icon="/i",
             publicGroupList=[{"name": "g"}])
         assert (icon, groups) == ("/i", [{"name": "g"}])
-        assert (config["description"], config["theme"], config["published"], config["showTags"], config["domainNameList"], config["googleAnalyticsId"], config["customCSS"], config["footerText"], config["showPoweredBy"], config["showCertificateExpiry"], config["id"]) == ("d", "dark", False, True, ["a"], "g", "c", "f", False, True, 2)
+        assert (
+            config["description"],
+            config["theme"],
+            config["published"],
+            config["showTags"],
+            config["domainNameList"],
+            config["googleAnalyticsId"],
+            config["customCSS"],
+            config["footerText"],
+            config["showPoweredBy"],
+            config["showCertificateExpiry"],
+            config["id"],
+        ) == ("d", "dark", False, True, ["a"], "g", "c", "f", False, True, 2)
 
     def test_set_settings_sends_only_given_values(self):
         sio = self.api.sio
@@ -199,7 +313,13 @@ class TestOtherPayloads:
             "checkUpdate": True, "serverTimezone": "UTC", "nscd": True}}
         self.api.set_settings(checkBeta=False)
         ((data, password),) = sio.sent("setSettings")
-        assert data == {"checkUpdate": True, "checkBeta": False, "serverTimezone": "UTC", "nscd": True, "entryPage": "dashboard"}
+        assert data == {
+            "checkUpdate": True,
+            "checkBeta": False,
+            "serverTimezone": "UTC",
+            "nscd": True,
+            "entryPage": "dashboard",
+        }
         assert password is None
 
     def test_set_settings_all_arguments(self):
@@ -230,7 +350,13 @@ class TestConstructorDefaults:
     def test_documented_defaults(self):
         import inspect
         params = inspect.signature(UptimeKumaApi.__init__).parameters
-        assert ({k: v.default for k, v in params.items() if k != "self" and v.default is not inspect.Parameter.empty}) == {"timeout": 10, "headers": None, "ssl_verify": True, "wait_events": 0.2}
+        assert (
+            {
+                k: v.default
+                for k, v in params.items()
+                if k != "self" and v.default is not inspect.Parameter.empty
+            }
+        ) == {"timeout": 10, "headers": None, "ssl_verify": True, "wait_events": 0.2}
 
     @pytest.mark.parametrize("event", [
         Event.MONITOR_LIST, Event.NOTIFICATION_LIST, Event.PROXY_LIST,
@@ -277,5 +403,10 @@ class TestConstructorDefaults:
     def test_constructor_stores_its_arguments(self):
         api = make_api(timeout=3, wait_events=0.5, ssl_verify=False,
                        headers={"a": "b"})
-        assert (api.timeout, api.wait_events, api.ssl_verify, api.headers) == (3, 0.5, False, {"a": "b"})
+        assert (api.timeout, api.wait_events, api.ssl_verify, api.headers) == (
+            3,
+            0.5,
+            False,
+            {"a": "b"},
+        )
 

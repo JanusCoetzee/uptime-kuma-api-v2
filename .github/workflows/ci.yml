@@ -69,6 +69,7 @@ jobs:
           docker run -d --rm -p 3001:3001 --name kuma-test kuma-test
           for _ in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
       - run: pip install -r requirements.txt -r dev-requirements.txt requests
+      # unittest finds only the live-server tests here; tests/unit is pytest and runs in the unit job
       - run: python -m unittest discover -s tests
 
   mutation:

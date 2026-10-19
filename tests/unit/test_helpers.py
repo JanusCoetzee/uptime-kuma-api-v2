@@ -210,7 +210,13 @@ class TestChecks:
 class TestBuildNotificationData:
     def test_defaults_and_kwargs(self):
         d = _build_notification_data("n", NotificationType.WEBHOOK, webhookURL="u")
-        assert d == dict(name="n", type=NotificationType.WEBHOOK, isDefault=False, applyExisting=False, webhookURL="u")
+        assert d == dict(
+            name="n",
+            type=NotificationType.WEBHOOK,
+            isDefault=False,
+            applyExisting=False,
+            webhookURL="u",
+        )
 
     def test_unknown_argument(self):
         with pytest.raises(TypeError):
@@ -342,7 +348,7 @@ class TestLoginAutoLogin:
         api.timeout = 0.05
         with pytest.raises(Timeout) as cm:
             api.login()
-        assert ("username and password") in str(cm.value)
+        assert "username and password" in str(cm.value)
 
 
 class TestHeartbeatCap:
@@ -413,7 +419,6 @@ class TestUnknownEnumLogging:
         caplog.clear()
         parse_value(dict(d), "type", MonitorType)
         assert not caplog.records
-
 
 
 class TestVersionCache:

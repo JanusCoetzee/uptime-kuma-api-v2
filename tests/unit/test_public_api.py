@@ -1,4 +1,3 @@
-
 from uptime_kuma_api import UptimeKumaApi
 
 # Snapshot of the public names of UptimeKumaApi taken before it was split into
