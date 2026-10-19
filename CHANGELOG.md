@@ -29,14 +29,12 @@ upstream project's changes) is not carried over. It remains available:
   `incident` key to `incidents`.
 - `login()` without credentials now raises a `Timeout` that says the server probably requires a username and password, instead of a bare "timed out waiting for event autoLogin".
 - The heartbeat cache keeps 150 heartbeats per monitor, not 149. The ordering of `get_heartbeats` (oldest first) and `get_important_heartbeats` (newest first) is now documented.
-
 - `add_monitor_tag` and `delete_monitor_tag` no longer fail when the monitor cache is not loaded yet, and caches the raw server response like the other monitor events.
-
 - Unknown enum values from a newer server (for example a new monitor type) are logged once as a warning on the `uptime_kuma_api.api` logger. The returned value is still the raw one.
-
 - The `add_*`/`edit_*` docstrings now list `:raises TypeError:` (missing or unknown arguments) and `:raises ValueError:` (invalid values). The status page theme error names the valid themes.
-
 - Removed a no-op `except: raise` and a commented-out method; `wait_for_event` is annotated `Iterator[None]`; `run_tests.sh` uses a bash shebang and quotes its variables.
+- README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
+- User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
