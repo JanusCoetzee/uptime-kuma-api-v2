@@ -10,3 +10,6 @@ docs/_build
 mutants/
 .coverage
 htmlcov/
+env/
+build/
+.venv/
