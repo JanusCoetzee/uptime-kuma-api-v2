@@ -2,7 +2,7 @@
 
 [tool.ruff]
 line-length = 79  # PEP 8
-target-version = "py312"
+target-version = "py39"
 extend-exclude = ["env", "build"]
 
 [tool.ruff.lint]
@@ -24,6 +24,3 @@ select = ["E", "W", "F", "B"]
 # mutmut 3 runs on pytest. Run it on schedule (see ci.yml), not on every PR.
 source_paths = ["uptime_kuma_api/"]
 pytest_add_cli_args_test_selection = ["tests/unit"]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]

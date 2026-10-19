@@ -36,17 +36,60 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.12", "3.13", "3.14"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt requests coverage==7.16.2
+      - run: pip install -r requirements.txt requests pytest==9.1.1 pytest-cov==7.1.0
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
-      # tests/unit lands in the next PR; the integration and mutation jobs follow it
-      - run: |
-          [ -d tests/unit ] || { echo "no unit tests yet"; exit 0; }
-          coverage run -m unittest discover -s tests/unit -t .
-          coverage report
+      - run: pytest tests/unit --cov --cov-report=term-missing
+
+  integration:
+    name: integration (Kuma ${{ matrix.kuma }})
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    continue-on-error: true  # make required once #52 is fixed
+    strategy:
+      fail-fast: false
+      matrix:
+        kuma: ["2.5.6"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Build Kuma from source (pinned commit, see docker/kuma-test)
+        run: |
+          set -a; . docker/kuma-test/versions.env; set +a
+          test "$KUMA_VERSION" = "${{ matrix.kuma }}"
+          docker build -t kuma-test --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
+          docker run -d --rm -p 3001:3001 --name kuma-test kuma-test
+          for i in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
+      - run: pip install -r requirements.txt -r dev-requirements.txt requests
+      - run: python -m unittest discover -s tests
+
+  mutation:
+    name: mutation testing (mutmut)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    continue-on-error: true  # report only, never blocks
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt requests pytest==9.1.1 pytest-cov==7.1.0 mutmut==3.8.0
+      - run: mutmut run
+      - if: always()
+        run: mutmut results | tee mutation-results.txt
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: mutation-results
+          path: mutation-results.txt
