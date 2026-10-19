@@ -5,3 +5,8 @@ __pycache__
 *.egg-info
 dist
 docs/_build
+
+# mutation testing
+mutants/
+.coverage
+htmlcov/

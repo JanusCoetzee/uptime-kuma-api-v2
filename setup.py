@@ -12,7 +12,8 @@ if sys.argv[-1] == "publish":
 
 info = {}
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, "uptime_kuma_api", "__version__.py"), "r", "utf-8") as f:
+version_file = os.path.join(here, "uptime_kuma_api", "__version__.py")
+with open(version_file, "r", "utf-8") as f:
     exec(f.read(), info)
 
 with open("README.md", "r", "utf-8") as f:

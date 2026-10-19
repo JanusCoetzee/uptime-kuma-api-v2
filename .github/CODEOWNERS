@@ -1,0 +1,8 @@
+# Every change needs review from the owner. Pair with branch protection
+# ("Require review from Code Owners") for this to be enforced.
+*                    @JanusCoetzee
+/.github/            @JanusCoetzee
+/docker/             @JanusCoetzee
+/setup.py            @JanusCoetzee
+/pyproject.toml      @JanusCoetzee
+/LICENSE             @JanusCoetzee

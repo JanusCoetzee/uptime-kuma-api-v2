@@ -3,7 +3,7 @@ from enum import Enum
 
 class MonitorType(str, Enum):
     """Enumerate monitor types."""
-    
+
     GROUP = "group"
     """Group"""
 

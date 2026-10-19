@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    - cron: "17 3 * * 1"  # weekly, drives the mutation job
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint (pre-commit, PEP 8)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: pip install pre-commit==4.7.0
+      # no-commit-to-branch only makes sense on a developer machine
+      - run: SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure
+
+  unit:
+    name: unit (py${{ matrix.python }})
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -r requirements.txt requests coverage==7.16.2
+      # fail_under (the coverage ratchet, target 90) lives in .coveragerc
+      # tests/unit lands in the next PR; the integration and mutation jobs follow it
+      - run: |
+          [ -d tests/unit ] || { echo "no unit tests yet"; exit 0; }
+          coverage run -m unittest discover -s tests/unit -t .
+          coverage report
