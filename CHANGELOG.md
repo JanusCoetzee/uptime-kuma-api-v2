@@ -31,6 +31,8 @@ upstream project's changes) is not carried over. It remains available:
 - `get_status_page` no longer drops incidents on Kuma 2.5.x, which renamed the
   `incident` key to `incidents`.
 
+- `login()` without credentials now raises a `Timeout` that says the server probably requires a username and password, instead of a bare "timed out waiting for event autoLogin".
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
