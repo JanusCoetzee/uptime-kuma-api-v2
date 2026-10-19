@@ -30,6 +30,8 @@ upstream project's changes) is not carried over. It remains available:
 - `login()` without credentials now raises a `Timeout` that says the server probably requires a username and password, instead of a bare "timed out waiting for event autoLogin".
 - The heartbeat cache keeps 150 heartbeats per monitor, not 149. The ordering of `get_heartbeats` (oldest first) and `get_important_heartbeats` (newest first) is now documented.
 
+- `add_monitor_tag` no longer fails when the monitor cache is not loaded yet, and caches the raw server response like the other monitor events.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).

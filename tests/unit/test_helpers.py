@@ -306,5 +306,26 @@ class TestHeartbeatCap(unittest.TestCase):
         self.assertEqual((beats[0]["id"], beats[-1]["id"]), (50, 199))
 
 
+class TestAddMonitorTagCache(unittest.TestCase):
+    def api(self, cache):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.MONITOR_LIST: cache}
+        raw = {"id": 1, "notificationIDList": {"3": True}}
+        api._call = lambda event, data=None: (
+            {"monitor": raw} if event == "getMonitor" else {"msg": "ok"})
+        return api, raw
+
+    def test_none_cache_does_not_raise(self):
+        api, _ = self.api(None)
+        api.add_monitor_tag(1, 1)
+        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+    def test_cache_gets_raw_monitor(self):
+        api, raw = self.api({})
+        api.add_monitor_tag(1, 1)
+        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
+        self.assertEqual(raw["notificationIDList"], {"3": True})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1568,7 +1568,9 @@ class UptimeKumaApi(object):
         """
         r = self._call('addMonitorTag', (tag_id, monitor_id, value))
         # the monitor list event does not send the updated tags
-        self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self.get_monitor(monitor_id)
+        # store the raw response: get_monitor() converts it, the cache is raw
+        if self._event_data[Event.MONITOR_LIST] is not None:
+            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
         return r
 
     # editMonitorTag is unused in uptime-kuma
@@ -1611,7 +1613,9 @@ class UptimeKumaApi(object):
                 raise UptimeKumaException("monitor tag does not exist")
             r = self._call('deleteMonitorTag', (tag_id, monitor_id, value))
             # the monitor list event does not send the updated tags
-            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self.get_monitor(monitor_id)
+            # store the raw response: get_monitor() converts it, the cache is raw
+        if self._event_data[Event.MONITOR_LIST] is not None:
+            self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
             return r
 
     # notification
