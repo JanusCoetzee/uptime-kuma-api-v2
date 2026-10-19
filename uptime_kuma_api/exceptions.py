@@ -8,3 +8,9 @@ class Timeout(UptimeKumaException):
     """
     A timeout has occurred while communicating with Uptime Kuma.
     """
+
+
+class UptimeKumaConnectionError(UptimeKumaException):
+    """
+    The connection to Uptime Kuma could not be established.
+    """

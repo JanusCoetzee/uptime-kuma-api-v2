@@ -29,6 +29,7 @@ from . import (
     NotificationType,
     ProxyProtocol,
     Timeout,
+    UptimeKumaConnectionError,
     UptimeKumaException,
     notification_provider_conditions,
     notification_provider_options
@@ -597,7 +598,12 @@ class UptimeKumaApi(object):
             return deepcopy(self._event_data[event].copy())
 
     def _call(self, event, data=None) -> Any:
-        r = self.sio.call(event, data, timeout=self.timeout)
+        try:
+            r = self.sio.call(event, data, timeout=self.timeout)
+        except socketio.exceptions.TimeoutError as e:
+            raise Timeout(f"Timed out while calling {event}") from e
+        except socketio.exceptions.SocketIOError as e:
+            raise UptimeKumaException(f"Socket.IO error while calling {event}: {e}") from e
         if isinstance(r, dict) and "ok" in r:
             if not r["ok"]:
                 raise UptimeKumaException(r.get("msg"))
@@ -750,12 +756,12 @@ class UptimeKumaApi(object):
 
         Called automatically when the UptimeKumaApi instance is created.
 
-        :raises UptimeKumaException: When connection to server failed.
+        :raises UptimeKumaConnectionError: When connection to server failed.
         """
         try:
             self.sio.connect(f'{self.url}/socket.io/', wait_timeout=self.timeout, headers=self.headers)
-        except:
-            raise UptimeKumaException("unable to connect")
+        except Exception as e:
+            raise UptimeKumaConnectionError("unable to connect") from e
 
     def disconnect(self) -> None:
         """
