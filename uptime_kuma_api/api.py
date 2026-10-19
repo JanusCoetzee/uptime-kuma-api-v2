@@ -8,6 +8,7 @@ import string
 import time
 from contextlib import contextmanager
 from copy import deepcopy
+from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
@@ -559,19 +560,15 @@ class UptimeKumaApi(object):
         self.disconnect()
 
     @contextmanager
-    def wait_for_event(self, event: Event) -> None:
+    def wait_for_event(self, event: Event) -> Iterator[None]:
         # waits for the first event of the given type to arrive
 
-        try:
-            yield
-        except:
-            raise
-        else:
-            timestamp = time.time()
-            while self._event_data[event] is None:
-                if time.time() - timestamp > self.timeout:
-                    raise Timeout(f"Timed out while waiting for event {event}")
-                time.sleep(0.01)
+        yield
+        timestamp = time.time()
+        while self._event_data[event] is None:
+            if time.time() - timestamp > self.timeout:
+                raise Timeout(f"Timed out while waiting for event {event}")
+            time.sleep(0.01)
 
     def _get_event_data(self, event) -> Any:
         monitor_events = [Event.AVG_PING, Event.UPTIME, Event.HEARTBEAT_LIST, Event.IMPORTANT_HEARTBEAT_LIST, Event.CERT_INFO, Event.HEARTBEAT]
@@ -1583,9 +1580,7 @@ class UptimeKumaApi(object):
             self._event_data[Event.MONITOR_LIST][str(monitor_id)] = self._call('getMonitor', monitor_id)["monitor"]
         return r
 
-    # editMonitorTag is unused in uptime-kuma
-    # def edit_monitor_tag(self, tag_id: int, monitor_id: int, value=""):
-    #     return self._call('editMonitorTag', (tag_id, monitor_id, value))
+    # editMonitorTag is unused in uptime-kuma, so there is no edit_monitor_tag
 
     def delete_monitor_tag(self, tag_id: int, monitor_id: int, value: str = "") -> dict:
         """
