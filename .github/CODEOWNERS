@@ -1,6 +1,6 @@
-# Every change needs review from the owner. Pair with branch protection
+# Every change needs review from a code owner. The paths below stay owner-only. Pair with branch protection
 # ("Require review from Code Owners") for this to be enforced.
-*                    @JanusCoetzee
+*                    @JanusCoetzee @Sniplab-create
 /.github/            @JanusCoetzee
 /docker/             @JanusCoetzee
 /setup.py            @JanusCoetzee
