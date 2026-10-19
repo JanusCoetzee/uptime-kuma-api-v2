@@ -57,7 +57,7 @@ def monitor_docstring(mode) -> str:
         :param int, optional port: Port, ``type`` :attr:`~.MonitorType.DNS` defaults to ``53`` and ``type`` :attr:`~.MonitorType.RADIUS` defaults to ``1812``
         :param str, optional dns_resolve_server: Resolver Server, defaults to "1.1.1.1"
         :param str, optional dns_resolve_type: Resource Record Type, defaults to "A". Available values are:
-            
+
             - "A"
             - "AAAA"
             - "CAA"
@@ -91,9 +91,9 @@ def monitor_docstring(mode) -> str:
         :param bool, optional kafkaProducerSsl: Enable Kafka SSL, defaults to False
         :param bool, optional kafkaProducerAllowAutoTopicCreation: Enable Kafka Producer Auto Topic Creation, defaults to False
         :param dict, optional kafkaProducerSaslOptions: Kafka SASL Options
-        
+
             - **mechanism** (*str*, *optional*): Mechanism, defaults to "None". Available values are:
-            
+
                 - "None"
                 - "plain"
                 - "scram-sha-256"
@@ -110,11 +110,11 @@ def monitor_docstring(mode) -> str:
 
 def notification_docstring(mode) -> str:
     return f"""
-        :param str{", optional" if mode == "edit" else ""} name: Friendly Name        
-        :param NotificationType{", optional" if mode == "edit" else ""} type: Notification Type        
+        :param str{", optional" if mode == "edit" else ""} name: Friendly Name
+        :param NotificationType{", optional" if mode == "edit" else ""} type: Notification Type
         :param bool, optional isDefault: Default enabled. This notification will be enabled by default for new monitors. You can still disable the notification separately for each monitor., defaults to False
         :param bool, optional applyExisting: Apply on all existing monitors, defaults to False
-        
+
         :param str, optional alertaApiEndpoint: Notification option for ``type`` :attr:`~.NotificationType.ALERTA`.
         :param str, optional alertaApiKey: Notification option for ``type`` :attr:`~.NotificationType.ALERTA`.
         :param str, optional alertaEnvironment: Notification option for ``type`` :attr:`~.NotificationType.ALERTA`.
@@ -200,7 +200,7 @@ def notification_docstring(mode) -> str:
         :param str, optional recieverId: Notification option for ``type`` :attr:`~.NotificationType.ONEBOT`.
         :param int opsgeniePriority: Notification option for ``type`` :attr:`~.NotificationType.OPSGENIE`. Priority. Available values are numbers between ``1`` and ``5``.
         :param str, optional opsgenieRegion: Notification option for ``type`` :attr:`~.NotificationType.OPSGENIE`. Region. Available values are:
-            
+
             - ``us``: US (Default)
             - ``eu``: EU
         :param str, optional opsgenieApiKey: Notification option for ``type`` :attr:`~.NotificationType.OPSGENIE`. API Key.
@@ -208,17 +208,17 @@ def notification_docstring(mode) -> str:
         :param str pagerdutyIntegrationUrl: Notification option for ``type`` :attr:`~.NotificationType.PAGERDUTY`.
         :param str pagerdutyPriority: Notification option for ``type`` :attr:`~.NotificationType.PAGERDUTY`.
         :param str, optional pagerdutyIntegrationKey: Notification option for ``type`` :attr:`~.NotificationType.PAGERDUTY`.
-        :param str pagertreeAutoResolve: Notification option for ``type`` :attr:`~.NotificationType.PAGERTREE`. 
-        
+        :param str pagertreeAutoResolve: Notification option for ``type`` :attr:`~.NotificationType.PAGERTREE`.
+
             Available values are:
-            
+
             - ``0``: Do Nothing
             - ``resolve``: Auto Resolve
         :param str pagertreeIntegrationUrl: Notification option for ``type`` :attr:`~.NotificationType.PAGERTREE`.
-        :param str pagertreeUrgency: Notification option for ``type`` :attr:`~.NotificationType.PAGERTREE`. 
-        
+        :param str pagertreeUrgency: Notification option for ``type`` :attr:`~.NotificationType.PAGERTREE`.
+
             Available values are:
-            
+
             - ``silent``: Silent
             - ``low``: Low
             - ``medium``: Medium
@@ -228,10 +228,10 @@ def notification_docstring(mode) -> str:
         :param str, optional promosmsLogin: Notification option for ``type`` :attr:`~.NotificationType.PROMOSMS`.
         :param str, optional promosmsPassword: Notification option for ``type`` :attr:`~.NotificationType.PROMOSMS`.
         :param str, optional promosmsPhoneNumber: Notification option for ``type`` :attr:`~.NotificationType.PROMOSMS`. Phone number (for Polish recipient You can skip area codes).
-        :param str promosmsSMSType: Notification option for ``type`` :attr:`~.NotificationType.PROMOSMS`. 
-            
+        :param str promosmsSMSType: Notification option for ``type`` :attr:`~.NotificationType.PROMOSMS`.
+
             Available values are:
-            
+
             - ``0``: SMS FLASH - Message will automatically show on recipient device. Limited only to Polish recipients.
             - ``1``: SMS ECO - cheap but slow and often overloaded. Limited only to Polish recipients.
             - ``3``: SMS FULL - Premium tier of SMS, You can use your Sender Name (You need to register name first). Reliable for alerts.
@@ -274,9 +274,9 @@ def notification_docstring(mode) -> str:
         :param bool smseagleEncoding: Notification option for ``type`` :attr:`~.NotificationType.SMSEAGLE`. True to send messages in unicode.
         :param int smseaglePriority: Notification option for ``type`` :attr:`~.NotificationType.SMSEAGLE`. Message priority (0-9, default = 0).
         :param str smseagleRecipientType: Notification option for ``type`` :attr:`~.NotificationType.SMSEAGLE`. Recipient type.
-            
+
             Available values are:
-            
+
             - ``smseagle-to``: Phone number(s)
             - ``smseagle-group``: Phonebook group name(s)
             - ``smseagle-contact``: Phonebook contact name(s)
@@ -304,16 +304,16 @@ def notification_docstring(mode) -> str:
         :param str smtpBCC: Notification option for ``type`` :attr:`~.NotificationType.SMTP`.
         :param str smtpTo: Notification option for ``type`` :attr:`~.NotificationType.SMTP`.
         :param str splunkAutoResolve: Notification option for ``type`` :attr:`~.NotificationType.SPLUNK`. Auto resolve or acknowledged.
-        
+
             Available values are:
-            
+
             - ``0``: do nothing
             - ``ACKNOWLEDGEMENT``: auto acknowledged
             - ``RECOVERY``: auto resolve
         :param str splunkSeverity: Notification option for ``type`` :attr:`~.NotificationType.SPLUNK`. Severity.
-        
+
             Available values are:
-            
+
             - ``INFO``
             - ``WARNING``
             - ``CRITICAL``

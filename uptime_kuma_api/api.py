@@ -2766,7 +2766,7 @@ class UptimeKumaApi(object):
             # reverse proxy
             trustProxy: bool = False
     ) -> dict:
-        """
+        r"""
         Set settings.
 
         :param str, optional password: Password, defaults to None

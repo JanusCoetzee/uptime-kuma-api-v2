@@ -8,4 +8,3 @@ class MonitorType(str, Enum):
     {{ type_["value"].upper().replace("-", "_") }} = "{{ type_["value"] }}"
     """{{ type_["title"] }}"""
 {% endfor -%}
-

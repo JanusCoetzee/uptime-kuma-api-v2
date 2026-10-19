@@ -10,14 +10,14 @@ data = {
     "pagertreeAutoResolve": """
 
     Available values are:
-    
+
     - ``0``: Do Nothing
     - ``resolve``: Auto Resolve""",
 
     "pagertreeUrgency": """
 
     Available values are:
-    
+
     - ``silent``: Silent
     - ``low``: Low
     - ``medium``: Medium
@@ -29,9 +29,9 @@ data = {
     "promosmsPhoneNumber": "Phone number (for Polish recipient You can skip area codes).",
 
     "promosmsSMSType": """
-    
+
     Available values are:
-    
+
     - ``0``: SMS FLASH - Message will automatically show on recipient device. Limited only to Polish recipients.
     - ``1``: SMS ECO - cheap but slow and often overloaded. Limited only to Polish recipients.
     - ``3``: SMS FULL - Premium tier of SMS, You can use your Sender Name (You need to register name first). Reliable for alerts.
@@ -42,9 +42,9 @@ data = {
     "smseaglePriority": "Message priority (0-9, default = 0).",
 
     "smseagleRecipientType": """Recipient type.
-    
+
     Available values are:
-    
+
     - ``smseagle-to``: Phone number(s)
     - ``smseagle-group``: Phonebook group name(s)
     - ``smseagle-contact``: Phonebook contact name(s)""",
@@ -58,7 +58,7 @@ data = {
     "splunkAutoResolve": """Auto resolve or acknowledged.
 
     Available values are:
-    
+
     - ``0``: do nothing
     - ``ACKNOWLEDGEMENT``: auto acknowledged
     - ``RECOVERY``: auto resolve""",
@@ -66,7 +66,7 @@ data = {
     "splunkSeverity": """Severity.
 
     Available values are:
-    
+
     - ``INFO``
     - ``WARNING``
     - ``CRITICAL``""",
@@ -76,7 +76,7 @@ data = {
     "opsgeniePriority": "Priority. Available values are numbers between ``1`` and ``5``.",
 
     "opsgenieRegion": """Region. Available values are:
-    
+
     - ``us``: US (Default)
     - ``eu``: EU""",
 

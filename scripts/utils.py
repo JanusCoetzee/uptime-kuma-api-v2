@@ -2,9 +2,9 @@ import re
 import jinja2
 
 
-def deduplicate_list(l):
+def deduplicate_list(items):
     out = []
-    for i in l:
+    for i in items:
         if i not in out:
             out.append(i)
     return out
