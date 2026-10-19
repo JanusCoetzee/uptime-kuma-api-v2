@@ -265,8 +265,10 @@ class UptimeKumaApi(
         if monitor_id not in self._event_data[Event.HEARTBEAT_LIST] or overwrite:
             self._event_data[Event.HEARTBEAT_LIST][monitor_id] = data
         else:
-            # like Kuma's frontend: the new beats come first, then the cached ones
-            self._event_data[Event.HEARTBEAT_LIST][monitor_id] = data + self._event_data[Event.HEARTBEAT_LIST][monitor_id]
+            # like Kuma's frontend: the received batch goes before the cached
+            # beats; keep the 150 newest (the list is oldest first)
+            cache = self._event_data[Event.HEARTBEAT_LIST]
+            cache[monitor_id] = (data + cache[monitor_id])[-150:]
 
     @_locked
     def _event_important_heartbeat_list(self, monitor_id, data, overwrite) -> None:
@@ -277,8 +279,10 @@ class UptimeKumaApi(
         if monitor_id not in self._event_data[Event.IMPORTANT_HEARTBEAT_LIST] or overwrite:
             self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id] = data
         else:
-            # like Kuma's frontend: the new beats come first, then the cached ones
-            self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id] = data + self._event_data[Event.IMPORTANT_HEARTBEAT_LIST][monitor_id]
+            # like Kuma's frontend: the received batch goes before the cached
+            # beats (the list is newest first)
+            cache = self._event_data[Event.IMPORTANT_HEARTBEAT_LIST]
+            cache[monitor_id] = data + cache[monitor_id]
 
     @_locked
     def _event_avg_ping(self, monitor_id, data) -> None:

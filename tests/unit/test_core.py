@@ -155,6 +155,15 @@ class TestEventHandlers(unittest.TestCase):
         self.assertTrue(all(isinstance(b, dict)
                             for b in self.data[Event.HEARTBEAT_LIST][1]))
 
+    def test_heartbeat_list_merge_keeps_the_150_newest(self):
+        self.api._event_heartbeat_list("1", [{"n": i} for i in range(100)],
+                                       False)
+        self.api._event_heartbeat_list("1", [{"n": i} for i in range(100)],
+                                       False)
+        beats = self.data[Event.HEARTBEAT_LIST][1]
+        self.assertEqual(len(beats), 150)
+        self.assertEqual(beats[-1], {"n": 99})
+
     def test_important_heartbeat_list_extends_with_the_new_beats(self):
         self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
         self.api._event_important_heartbeat_list("2", [{"a": 2}], False)
