@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-import random
+import secrets
 import string
 import time
 from contextlib import contextmanager
@@ -108,7 +108,7 @@ def parse_proxy_protocol(data) -> None:
 
 def gen_secret(length: int) -> str:
     chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(length))
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 
 def _convert_monitor_return(monitor) -> None:
@@ -139,7 +139,7 @@ def _convert_monitor_input(kwargs) -> None:
             kwargs["databaseConnectionString"] = "mongodb://username:password@host:port/database"
 
     if kwargs["type"] == MonitorType.PUSH and not kwargs.get("pushToken"):
-        kwargs["pushToken"] = gen_secret(10)
+        kwargs["pushToken"] = gen_secret(32)
 
 
 def _build_notification_data(

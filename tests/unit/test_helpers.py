@@ -47,6 +47,7 @@ class TestParsing(unittest.TestCase):
         s = gen_secret(32)
         self.assertEqual(len(s), 32)
         self.assertTrue(s.isalnum())
+        self.assertNotEqual(s, gen_secret(32))
 
 
 class TestConvertMonitorInput(unittest.TestCase):
@@ -65,7 +66,10 @@ class TestConvertMonitorInput(unittest.TestCase):
     def test_push_token_generated(self):
         k = self.kwargs(type=MonitorType.PUSH)
         _convert_monitor_input(k)
-        self.assertTrue(k["pushToken"])
+        self.assertEqual(len(k["pushToken"]), 32)
+        k = self.kwargs(type=MonitorType.PUSH, pushToken="mine")
+        _convert_monitor_input(k)
+        self.assertEqual(k["pushToken"], "mine")
 
     @unittest.expectedFailure  # placeholder connection strings are sent to the server (issue #11 area)
     def test_no_placeholder_connection_string(self):
