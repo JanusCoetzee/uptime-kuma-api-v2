@@ -101,12 +101,12 @@ Errors from the library use two kinds of exceptions:
             print("missing argument:", e)
         try:
             api.get_monitor(999999)
-        except UptimeKumaException as e:
-            print("server error:", e)
         except Timeout:
             print("no answer from the server")
+        except UptimeKumaException as e:
+            print("server error:", e)
 
-``Timeout`` is also an ``UptimeKumaException``, so catch it first if you want
+``Timeout`` is also an ``UptimeKumaException``, so list it first if you want
 to treat it separately.
 
 Timing: ``timeout`` and ``wait_events``

@@ -10,6 +10,10 @@ upstream project's changes) is not carried over. It remains available:
 
 ## [Unreleased]
 
+### Added
+
+- User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
+
 ### Changed
 - **Breaking:** minimum Python is now 3.12 (3.9 is EOL); CI tests 3.12-3.14.
 - **Behaviour change:** `set_settings` now only changes the arguments you
@@ -34,7 +38,6 @@ upstream project's changes) is not carried over. It remains available:
 - The `add_*`/`edit_*` docstrings now list `:raises TypeError:` (missing or unknown arguments) and `:raises ValueError:` (invalid values). The status page theme error names the valid themes.
 - Removed a no-op `except: raise` and a commented-out method; `wait_for_event` is annotated `Iterator[None]`; `run_tests.sh` uses a bash shebang and quotes its variables.
 - README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
-- User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
