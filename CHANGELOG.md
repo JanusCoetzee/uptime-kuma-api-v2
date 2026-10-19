@@ -43,6 +43,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - **Behaviour change:** database monitors (SQL Server, PostgreSQL, MySQL, MongoDB, Redis) no longer get a placeholder connection string such as `postgres://username:password@host:port/database` saved as real config. `databaseConnectionString` is now required for them and a `TypeError` is raised before any request when it is missing.
 
+- `add_*`/`edit_*` calls for monitors, notifications, proxies, docker hosts and API keys (and enabling/disabling API keys) now wait for the list update the server pushes afterwards, instead of relying on the `wait_events` sleep. A slow server no longer returns a stale list, and a missing update raises `Timeout`.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).

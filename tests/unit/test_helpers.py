@@ -1,4 +1,6 @@
 import contextlib
+import threading
+import time
 import unittest
 from unittest import mock
 
@@ -223,6 +225,7 @@ class TestMonitorListDeltaEvents(unittest.TestCase):
     def api(self, monitors):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._event_data = {Event.MONITOR_LIST: monitors}
+        api._event_seq = dict.fromkeys(api._event_data, 0)
         return api
 
     def test_update_adds_and_replaces(self):
@@ -302,6 +305,7 @@ class TestLoginAutoLogin(unittest.TestCase):
     def test_timeout_message_mentions_credentials(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._event_data = {Event.AUTO_LOGIN: None}
+        api._event_seq = dict.fromkeys(api._event_data, 0)
         api.timeout = 0.05
         with self.assertRaises(Timeout) as cm:
             api.login()
@@ -324,6 +328,7 @@ class TestAddMonitorTagCache(unittest.TestCase):
     def api(self, cache):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._event_data = {Event.MONITOR_LIST: cache}
+        api._event_seq = dict.fromkeys(api._event_data, 0)
         raw = {"id": 1, "notificationIDList": {"3": True}}
         api._call = lambda event, data=None: (
             {"monitor": raw} if event == "getMonitor" else {"msg": "ok"})
@@ -404,3 +409,45 @@ class TestVersionCache(unittest.TestCase):
     def test_times_out_without_info(self):
         with self.assertRaises(Timeout):
             _ = self._api(None).version
+
+
+class TestWaitForNewEvent(unittest.TestCase):
+    def _api(self, timeout=1):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api.timeout = timeout
+        api._event_data = {Event.NOTIFICATION_LIST: []}
+        api._event_seq = dict.fromkeys(api._event_data, 0)
+        return api
+
+    def test_blocks_until_new_event_arrives(self):
+        api = self._api()
+        timer = threading.Timer(
+            0.2, api._event_notification_list, args=([{"id": 1}],))
+        timer.start()
+        start = time.time()
+        with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
+            pass
+        self.assertGreaterEqual(time.time() - start, 0.15)
+        self.assertEqual(api._event_data[Event.NOTIFICATION_LIST], [{"id": 1}])
+
+    def test_event_during_body_counts(self):
+        api = self._api()
+        with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
+            api._event_notification_list([])
+
+    def test_times_out_without_new_event(self):
+        api = self._api(timeout=0.05)
+        with self.assertRaises(Timeout):
+            with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
+                pass
+
+    def test_body_error_propagates_without_waiting(self):
+        api = self._api(timeout=0.05)
+        with self.assertRaises(UptimeKumaException):
+            with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
+                raise UptimeKumaException("nope")
+
+    def test_old_event_does_not_count_by_default(self):
+        api = self._api(timeout=0.05)
+        with api.wait_for_event(Event.NOTIFICATION_LIST):
+            pass  # data already present, no new event needed

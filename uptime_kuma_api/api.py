@@ -519,6 +519,9 @@ class UptimeKumaApi(object):
             Event.API_KEY_LIST: None
         }
 
+        # counts the list updates received per event, see wait_for_event
+        self._event_seq = {event: 0 for event in self._event_data}
+
         self.sio.on(Event.CONNECT, self._event_connect)
         self.sio.on(Event.DISCONNECT, self._event_disconnect)
         self.sio.on(Event.MONITOR_LIST, self._event_monitor_list)
@@ -549,12 +552,14 @@ class UptimeKumaApi(object):
         self.disconnect()
 
     @contextmanager
-    def wait_for_event(self, event: Event) -> Iterator[None]:
-        # waits for the first event of the given type to arrive
-
+    def wait_for_event(self, event: Event, new: bool = False) -> Iterator[None]:
+        # waits for the first event of the given type to arrive, or with
+        # new=True for a new event to arrive after the body ran (for calls
+        # after which the server pushes an updated list)
+        seq = self._event_seq[event]
         yield
         timestamp = time.time()
-        while self._event_data[event] is None:
+        while (self._event_seq[event] == seq if new else self._event_data[event] is None):
             if time.time() - timestamp > self.timeout:
                 raise Timeout(f"Timed out while waiting for event {event}")
             time.sleep(0.01)
@@ -589,24 +594,30 @@ class UptimeKumaApi(object):
         pass
 
     def _event_monitor_list(self, data) -> None:
+        self._event_seq[Event.MONITOR_LIST] += 1
         self._event_data[Event.MONITOR_LIST] = data
 
     def _event_update_monitor_into_list(self, data) -> None:
+        self._event_seq[Event.MONITOR_LIST] += 1
         # Kuma 2.x sends deltas instead of a full monitorList after changes
         if self._event_data[Event.MONITOR_LIST] is not None:
             self._event_data[Event.MONITOR_LIST].update(data)
 
     def _event_delete_monitor_from_list(self, monitor_id) -> None:
+        self._event_seq[Event.MONITOR_LIST] += 1
         if self._event_data[Event.MONITOR_LIST] is not None:
             self._event_data[Event.MONITOR_LIST].pop(str(monitor_id), None)
 
     def _event_notification_list(self, data) -> None:
+        self._event_seq[Event.NOTIFICATION_LIST] += 1
         self._event_data[Event.NOTIFICATION_LIST] = data
 
     def _event_proxy_list(self, data) -> None:
+        self._event_seq[Event.PROXY_LIST] += 1
         self._event_data[Event.PROXY_LIST] = data
 
     def _event_status_page_list(self, data) -> None:
+        self._event_seq[Event.STATUS_PAGE_LIST] += 1
         self._event_data[Event.STATUS_PAGE_LIST] = data
 
     def _event_heartbeat_list(self, monitor_id, data, overwrite) -> None:
@@ -678,6 +689,7 @@ class UptimeKumaApi(object):
         self._event_data[Event.CERT_INFO][monitor_id] = json.loads(data)
 
     def _event_docker_host_list(self, data) -> None:
+        self._event_seq[Event.DOCKER_HOST_LIST] += 1
         self._event_data[Event.DOCKER_HOST_LIST] = data
 
     def _event_auto_login(self) -> None:
@@ -687,9 +699,11 @@ class UptimeKumaApi(object):
         pass
 
     def _event_maintenance_list(self, data) -> None:
+        self._event_seq[Event.MAINTENANCE_LIST] += 1
         self._event_data[Event.MAINTENANCE_LIST] = data
 
     def _event_api_key_list(self, data) -> None:
+        self._event_seq[Event.API_KEY_LIST] += 1
         self._event_data[Event.API_KEY_LIST] = data
 
     # connection
@@ -1516,7 +1530,7 @@ class UptimeKumaApi(object):
         data = self._build_monitor_data(**kwargs)
         _convert_monitor_input(data)
         _check_arguments_monitor(data)
-        with self.wait_for_event(Event.MONITOR_LIST):
+        with self.wait_for_event(Event.MONITOR_LIST, new=True):
             return self._call('add', data)
 
     @append_docstring(monitor_docstring("edit"))
@@ -1543,7 +1557,7 @@ class UptimeKumaApi(object):
         data.update(kwargs)
         _convert_monitor_input(data)
         _check_arguments_monitor(data)
-        with self.wait_for_event(Event.MONITOR_LIST):
+        with self.wait_for_event(Event.MONITOR_LIST, new=True):
             return self._call('editMonitor', data)
 
     # monitor tags
@@ -1739,7 +1753,7 @@ class UptimeKumaApi(object):
         data = _build_notification_data(**kwargs)
 
         _check_arguments_notification(data)
-        with self.wait_for_event(Event.NOTIFICATION_LIST):
+        with self.wait_for_event(Event.NOTIFICATION_LIST, new=True):
             return self._call('addNotification', (data, None))
 
     @append_docstring(notification_docstring("edit"))
@@ -1779,7 +1793,7 @@ class UptimeKumaApi(object):
 
         notification.update(kwargs)
         _check_arguments_notification(notification)
-        with self.wait_for_event(Event.NOTIFICATION_LIST):
+        with self.wait_for_event(Event.NOTIFICATION_LIST, new=True):
             return self._call('addNotification', (notification, id_))
 
     def delete_notification(self, id_: int) -> dict:
@@ -1913,7 +1927,7 @@ class UptimeKumaApi(object):
         data = _build_proxy_data(**kwargs)
 
         _check_arguments_proxy(data)
-        with self.wait_for_event(Event.PROXY_LIST):
+        with self.wait_for_event(Event.PROXY_LIST, new=True):
             return self._call('addProxy', (data, None))
 
     @append_docstring(proxy_docstring("edit"))
@@ -1941,7 +1955,7 @@ class UptimeKumaApi(object):
         proxy = self.get_proxy(id_)
         proxy.update(kwargs)
         _check_arguments_proxy(proxy)
-        with self.wait_for_event(Event.PROXY_LIST):
+        with self.wait_for_event(Event.PROXY_LIST, new=True):
             return self._call('addProxy', (proxy, id_))
 
     def delete_proxy(self, id_: int) -> dict:
@@ -3287,7 +3301,7 @@ class UptimeKumaApi(object):
         """
         data = _build_docker_host_data(**kwargs)
         _convert_docker_host_input(data)
-        with self.wait_for_event(Event.DOCKER_HOST_LIST):
+        with self.wait_for_event(Event.DOCKER_HOST_LIST, new=True):
             return self._call('addDockerHost', (data, None))
 
     @append_docstring(docker_host_docstring("edit"), validated=False)
@@ -3313,7 +3327,7 @@ class UptimeKumaApi(object):
         data = self.get_docker_host(id_)
         data.update(kwargs)
         _convert_docker_host_input(data)
-        with self.wait_for_event(Event.DOCKER_HOST_LIST):
+        with self.wait_for_event(Event.DOCKER_HOST_LIST, new=True):
             return self._call('addDockerHost', (data, id_))
 
     def delete_docker_host(self, id_: int) -> dict:
@@ -3950,7 +3964,7 @@ class UptimeKumaApi(object):
             "expires": expires,
             "active": 1 if active else 0
         }
-        with self.wait_for_event(Event.API_KEY_LIST):
+        with self.wait_for_event(Event.API_KEY_LIST, new=True):
             return self._call('addAPIKey', data)
 
     def enable_api_key(self, id_: int) -> dict:
@@ -3969,7 +3983,7 @@ class UptimeKumaApi(object):
               "msg": "Enabled Successfully"
             }
         """
-        with self.wait_for_event(Event.API_KEY_LIST):
+        with self.wait_for_event(Event.API_KEY_LIST, new=True):
             return self._call('enableAPIKey', id_)
 
     def disable_api_key(self, id_: int) -> dict:
@@ -3988,7 +4002,7 @@ class UptimeKumaApi(object):
               "msg": "Disabled Successfully."
             }
         """
-        with self.wait_for_event(Event.API_KEY_LIST):
+        with self.wait_for_event(Event.API_KEY_LIST, new=True):
             return self._call('disableAPIKey', id_)
 
     def delete_api_key(self, id_: int) -> dict:
