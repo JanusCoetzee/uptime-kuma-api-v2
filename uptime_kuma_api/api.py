@@ -8,6 +8,7 @@ import time
 from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any
+from urllib.parse import quote
 
 import requests
 import socketio
@@ -497,6 +498,7 @@ class UptimeKumaApi(object):
         self.url = url.rstrip("/")
         self.timeout = timeout
         self.headers = headers
+        self.ssl_verify = ssl_verify
         self.wait_events = wait_events
         self.sio = socketio.Client(ssl_verify=ssl_verify)
 
@@ -2046,9 +2048,16 @@ class UptimeKumaApi(object):
         """
         r1 = self._call('getStatusPage', slug)
         try:
-            r2 = requests.get(f"{self.url}/api/status-page/{slug}", timeout=self.timeout).json()
+            r2 = requests.get(
+                f"{self.url}/api/status-page/{quote(slug, safe='')}",
+                timeout=self.timeout,
+                verify=self.ssl_verify,
+                headers=self.headers,
+            ).json()
         except requests.exceptions.Timeout as e:
-            raise Timeout(e)
+            raise Timeout(e) from e
+        except (requests.exceptions.RequestException, ValueError) as e:
+            raise UptimeKumaException(e) from e
 
         return _build_status_page_response(r1["config"], r2)
 
