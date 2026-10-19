@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-import random
+import secrets
 import string
 import time
 from contextlib import contextmanager
@@ -108,7 +108,7 @@ def parse_proxy_protocol(data) -> None:
 
 def gen_secret(length: int) -> str:
     chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return ''.join(random.choice(chars) for _ in range(length))
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 
 def _convert_monitor_return(monitor) -> None:
@@ -139,7 +139,7 @@ def _convert_monitor_input(kwargs) -> None:
             kwargs["databaseConnectionString"] = "mongodb://username:password@host:port/database"
 
     if kwargs["type"] == MonitorType.PUSH and not kwargs.get("pushToken"):
-        kwargs["pushToken"] = gen_secret(10)
+        kwargs["pushToken"] = gen_secret(32)
 
 
 def _build_notification_data(
@@ -232,6 +232,13 @@ def _build_status_page_response(config, r2) -> dict:
     for i in data["publicGroupList"]:
         for j in i["monitorList"]:
             int_to_bool(j, ["sendUrl"])
+    return data
+
+
+def _merge_settings(current, overrides) -> dict:
+    data = {**current, **{k: v for k, v in overrides.items() if v is not None}}
+    # the server assigns data.entryPage unconditionally; unset settings are absent from getSettings
+    data.setdefault("entryPage", "dashboard")
     return data
 
 
@@ -2747,49 +2754,50 @@ class UptimeKumaApi(object):
             password: str = None,  # only required if disableAuth is true
 
             # about
-            checkUpdate: bool = True,
-            checkBeta: bool = False,
+            checkUpdate: bool = None,
+            checkBeta: bool = None,
 
             # monitor history
-            keepDataPeriodDays: int = 180,
+            keepDataPeriodDays: int = None,
 
             # general
-            serverTimezone: str = "",
-            entryPage: str = "dashboard",
-            searchEngineIndex: bool = False,
-            primaryBaseURL: str = "",
-            steamAPIKey: str = "",
-            nscd: bool = False,
-            dnsCache: bool = False,
-            chromeExecutable: str = "",
+            serverTimezone: str = None,
+            entryPage: str = None,
+            searchEngineIndex: bool = None,
+            primaryBaseURL: str = None,
+            steamAPIKey: str = None,
+            nscd: bool = None,
+            dnsCache: bool = None,
+            chromeExecutable: str = None,
 
             # notifications
             tlsExpiryNotifyDays: list = None,
 
             # security
-            disableAuth: bool = False,
+            disableAuth: bool = None,
 
             # reverse proxy
-            trustProxy: bool = False
+            trustProxy: bool = None
     ) -> dict:
         r"""
-        Set settings.
+        Set settings. Only the arguments that are not ``None`` are changed; all other
+        settings keep their current server value.
 
-        :param str, optional password: Password, defaults to None
-        :param bool, optional checkUpdate: Show update if available, defaults to True
-        :param bool, optional checkBeta: Also check beta release, defaults to False
-        :param int, optional keepDataPeriodDays: Keep monitor history data for X days. Set to 0 for infinite retention., defaults to 180
-        :param str, optional serverTimezone: Server Timezone, defaults to ""
-        :param str, optional entryPage: Entry Page, defaults to "dashboard"
-        :param bool, optional searchEngineIndex: Search Engine Visibility, defaults to False
-        :param str, optional primaryBaseURL: Primary Base URL, defaults to ""
-        :param str, optional steamAPIKey: Steam API Key. For monitoring a Steam Game Server you need a Steam Web-API key., defaults to ""
-        :param bool, optional nscd: Enable NSCD (Name Service Cache Daemon) for caching all DNS requests, defaults to False
-        :param bool, optional dnsCache: True to enable DNS Cache. It may be not working in some IPv6 environments, disable it if you encounter any issues., defaults to False
-        :param str, optional chromeExecutable: Chrome/Chromium Executable, defaults to ""
-        :param list, optional tlsExpiryNotifyDays: TLS Certificate Expiry. HTTPS Monitors trigger notification when TLS certificate expires in., defaults to None
-        :param bool, optional disableAuth: Disable Authentication, defaults to False
-        :param bool, optional trustProxy: Trust Proxy. Trust 'X-Forwarded-\*' headers. If you want to get the correct client IP and your Uptime Kuma is behind such as Nginx or Apache, you should enable this., defaults to False
+        :param str, optional password: Password, only required if disableAuth is enabled, defaults to None
+        :param bool, optional checkUpdate: Show update if available, defaults to None (keep the current server value)
+        :param bool, optional checkBeta: Also check beta release, defaults to None (keep the current server value)
+        :param int, optional keepDataPeriodDays: Keep monitor history data for X days. Set to 0 for infinite retention., defaults to None (keep the current server value)
+        :param str, optional serverTimezone: Server Timezone, defaults to None (keep the current server value)
+        :param str, optional entryPage: Entry Page, defaults to None (keep the current server value)
+        :param bool, optional searchEngineIndex: Search Engine Visibility, defaults to None (keep the current server value)
+        :param str, optional primaryBaseURL: Primary Base URL, defaults to None (keep the current server value)
+        :param str, optional steamAPIKey: Steam API Key. For monitoring a Steam Game Server you need a Steam Web-API key., defaults to None (keep the current server value)
+        :param bool, optional nscd: Enable NSCD (Name Service Cache Daemon) for caching all DNS requests, defaults to None (keep the current server value)
+        :param bool, optional dnsCache: True to enable DNS Cache. It may be not working in some IPv6 environments, disable it if you encounter any issues., defaults to None (keep the current server value)
+        :param str, optional chromeExecutable: Chrome/Chromium Executable, defaults to None (keep the current server value)
+        :param list, optional tlsExpiryNotifyDays: TLS Certificate Expiry. HTTPS Monitors trigger notification when TLS certificate expires in., defaults to None (keep the current server value)
+        :param bool, optional disableAuth: Disable Authentication, defaults to None (keep the current server value)
+        :param bool, optional trustProxy: Trust Proxy. Trust 'X-Forwarded-\*' headers. If you want to get the correct client IP and your Uptime Kuma is behind such as Nginx or Apache, you should enable this., defaults to None (keep the current server value)
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -2819,10 +2827,7 @@ class UptimeKumaApi(object):
             }
         """
 
-        if not tlsExpiryNotifyDays:
-            tlsExpiryNotifyDays = [7, 14, 21]
-
-        data = {
+        overrides = {
             "checkUpdate": checkUpdate,
             "checkBeta": checkBeta,
             "keepDataPeriodDays": keepDataPeriodDays,
@@ -2834,18 +2839,13 @@ class UptimeKumaApi(object):
             "dnsCache": dnsCache,
             "tlsExpiryNotifyDays": tlsExpiryNotifyDays,
             "disableAuth": disableAuth,
-            "trustProxy": trustProxy
+            "trustProxy": trustProxy,
         }
-
         if parse_version(self.version) >= parse_version("1.23"):
-            data.update({
-                "chromeExecutable": chromeExecutable,
-            })
+            overrides["chromeExecutable"] = chromeExecutable
         if parse_version(self.version) >= parse_version("1.23.1"):
-            data.update({
-                "nscd": nscd,
-            })
-
+            overrides["nscd"] = nscd
+        data = _merge_settings(self.get_settings(), overrides)
         return self._call('setSettings', (data, password))
 
     def change_password(self, old_password: str, new_password: str) -> dict:
