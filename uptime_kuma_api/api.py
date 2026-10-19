@@ -502,7 +502,7 @@ class UptimeKumaApi(object):
                               There is no way to determine when the last message of a certain type has arrived.
                               Therefore, a timeout is required. If no further message has arrived within this time,
                               it is assumed that it was the last message. Defaults is ``0.2``.
-    :raises UptimeKumaException: When connection to server failed.
+    :raises UptimeKumaConnectionError: When connection to server failed.
     """
     def __init__(
             self,
