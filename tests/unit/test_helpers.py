@@ -14,6 +14,7 @@ from uptime_kuma_api.api import (
     _check_arguments_tag,
     _build_status_page_response,
     _check_missing_arguments,
+    _merge_settings,
     _convert_monitor_input,
     gen_secret,
     int_to_bool,
@@ -47,6 +48,7 @@ class TestParsing(unittest.TestCase):
         s = gen_secret(32)
         self.assertEqual(len(s), 32)
         self.assertTrue(s.isalnum())
+        self.assertNotEqual(s, gen_secret(32))
 
 
 class TestConvertMonitorInput(unittest.TestCase):
@@ -65,7 +67,10 @@ class TestConvertMonitorInput(unittest.TestCase):
     def test_push_token_generated(self):
         k = self.kwargs(type=MonitorType.PUSH)
         _convert_monitor_input(k)
-        self.assertTrue(k["pushToken"])
+        self.assertEqual(len(k["pushToken"]), 32)
+        k = self.kwargs(type=MonitorType.PUSH, pushToken="mine")
+        _convert_monitor_input(k)
+        self.assertEqual(k["pushToken"], "mine")
 
     @unittest.expectedFailure  # placeholder connection strings are sent to the server (issue #11 area)
     def test_no_placeholder_connection_string(self):
@@ -195,6 +200,22 @@ class TestSaveStatusPage(unittest.TestCase):
         config = sent[0][1][1]
         for key in ("incident", "incidents", "maintenanceList", "publicGroupList"):
             self.assertNotIn(key, config)
+
+
+class TestMergeSettings(unittest.TestCase):
+    def test_only_non_none_override(self):
+        cur = {"keepDataPeriodDays": 30, "trustProxy": True}
+        d = _merge_settings(cur, {"checkUpdate": False, "keepDataPeriodDays": None, "trustProxy": None})
+        self.assertEqual(d["keepDataPeriodDays"], 30)
+        self.assertIs(d["trustProxy"], True)
+        self.assertIs(d["checkUpdate"], False)
+
+    def test_falsy_values_override(self):
+        d = _merge_settings({"keepDataPeriodDays": 30, "steamAPIKey": "x"}, {"keepDataPeriodDays": 0, "steamAPIKey": ""})
+        self.assertEqual((d["keepDataPeriodDays"], d["steamAPIKey"]), (0, ""))
+
+    def test_entry_page_fallback(self):
+        self.assertEqual(_merge_settings({}, {})["entryPage"], "dashboard")
 
 
 if __name__ == "__main__":
