@@ -45,6 +45,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - `add_*`/`edit_*` calls for monitors, notifications, proxies, docker hosts and API keys (and enabling/disabling API keys) now wait for the list update the server pushes afterwards, instead of relying on the `wait_events` sleep. A slow server no longer returns a stale list, and a missing update raises `Timeout`.
 
+- Monitor argument checks: an invalid accepted status code is reported by value instead of printing the whole allowed list, an unknown monitor type raises `ValueError: unsupported monitor type` instead of a `KeyError`, and a missing or `None` `kafkaProducerSaslOptions` is treated as mechanism `None` instead of raising.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
