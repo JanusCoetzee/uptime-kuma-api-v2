@@ -1,0 +1,40 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: input
+    id: kuma
+    attributes:
+      label: Uptime Kuma version
+      description: Shown in the Kuma UI footer, or the `version` of `api.info()`.
+      placeholder: "2.5.6"
+    validations: {required: true}
+  - type: input
+    id: lib
+    attributes:
+      label: Library version
+      description: "`pip show uptime-kuma-api-v2`"
+    validations: {required: true}
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+    validations: {required: true}
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations: {required: true}
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Code that reproduces it. Remove URLs, usernames, passwords and tokens.
+      render: python
+    validations: {required: true}
+  - type: textarea
+    id: logs
+    attributes:
+      label: Traceback or server response
+      description: Remove secrets before pasting.
+      render: text

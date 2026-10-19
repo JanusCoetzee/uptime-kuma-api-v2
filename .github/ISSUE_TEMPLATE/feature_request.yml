@@ -1,0 +1,28 @@
+name: Feature request
+description: Support for a Kuma feature, or an API improvement
+labels: [story]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What do you want to do that you cannot do now?
+    validations: {required: true}
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Show the call you would like to write.
+      render: python
+  - type: input
+    id: kuma
+    attributes:
+      label: Uptime Kuma version that has this feature
+      placeholder: "2.5.6"
+  - type: textarea
+    id: agent
+    attributes:
+      label: Acceptance criteria
+      description: |
+        Written so another developer or agent can pick it up cold: what to change,
+        which tests prove it, what is out of scope.
