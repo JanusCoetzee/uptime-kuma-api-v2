@@ -9,6 +9,8 @@ on:
     paths:
       - docker/kuma-test/**
       - .github/workflows/kuma-image.yml
+  schedule:
+    - cron: "41 4 * * 1"  # weekly, so the audit sees new advisories
   workflow_dispatch:
 
 permissions:
@@ -17,12 +19,15 @@ permissions:
 jobs:
   publish:
     name: publish (Kuma image)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build and push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +58,8 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       - name: Audit the pinned Kuma commit
         run: |
           set -eu
