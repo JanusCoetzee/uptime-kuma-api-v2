@@ -23,6 +23,10 @@ upstream project's changes) is not carried over. It remains available:
   kept as the first incident, or `None`.
 
 ### Fixed
+
+- The monitor cache now handles Kuma 2.x `updateMonitorIntoList` and
+  `deleteMonitorFromList` events, so `get_monitors`, heartbeats and uptime work
+  right after `add_monitor`/`delete_monitor`.
 - `get_status_page` no longer drops incidents on Kuma 2.5.x, which renamed the
   `incident` key to `incidents`.
 
