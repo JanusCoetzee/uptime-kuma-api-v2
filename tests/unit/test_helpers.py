@@ -7,7 +7,7 @@ from unittest import mock
 import requests
 
 from uptime_kuma_api import (
-    Event, Timeout, UptimeKumaApi, UptimeKumaException,
+    AuthMethod, Event, Timeout, UptimeKumaApi, UptimeKumaException,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
 from uptime_kuma_api.api import (
@@ -451,3 +451,57 @@ class TestWaitForNewEvent(unittest.TestCase):
         api = self._api(timeout=0.05)
         with api.wait_for_event(Event.NOTIFICATION_LIST):
             pass  # data already present, no new event needed
+
+
+class TestEditMonitorShapes(unittest.TestCase):
+    """edit_monitor feeds get_monitor() output through the add_monitor path."""
+
+    def edit(self, stored=None, **kwargs):
+        monitor = dict(
+            type=MonitorType.HTTP, name="m", interval=60, retryInterval=60,
+            maxretries=0, url="http://x", maxredirects=10,
+            accepted_statuscodes=["200-299"], dns_resolve_type="A",
+            notificationIDList=[1, 2], databaseConnectionString=None,
+            authMethod=AuthMethod.NONE, pushToken=None,
+            kafkaProducerSaslOptions={"mechanism": "None"},
+        )
+        monitor.update(stored or {})
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api.wait_for_event = lambda *a, **k: contextlib.nullcontext()
+        api.get_monitor = lambda id_: dict(monitor)
+        with mock.patch.object(api, "_call", return_value={}) as call:
+            api.edit_monitor(1, **kwargs)
+        event, data = call.call_args.args
+        self.assertEqual(event, "editMonitor")
+        return data
+
+    def test_edit_only_name_keeps_the_rest(self):
+        data = self.edit(name="new")
+        self.assertEqual(data["name"], "new")
+        self.assertEqual(data["url"], "http://x")
+        self.assertEqual(data["accepted_statuscodes"], ["200-299"])
+        self.assertEqual(data["notificationIDList"], {1: True, 2: True})
+
+    def test_notification_id_list_as_list(self):
+        data = self.edit(notificationIDList=[3])
+        self.assertEqual(data["notificationIDList"], {3: True})
+
+    def test_notification_id_list_as_dict(self):
+        data = self.edit(notificationIDList={3: True})
+        self.assertEqual(data["notificationIDList"], {3: True})
+
+    def test_empty_accepted_statuscodes_gets_default(self):
+        for empty in ([], None):
+            data = self.edit(accepted_statuscodes=empty)
+            self.assertEqual(data["accepted_statuscodes"], ["200-299"])
+
+    def test_push_token_is_preserved(self):
+        data = self.edit(stored=dict(type=MonitorType.PUSH, pushToken="tok"),
+                         name="new")
+        self.assertEqual(data["pushToken"], "tok")
+
+    def test_auth_method_is_preserved(self):
+        data = self.edit(stored=dict(authMethod=AuthMethod.HTTP_BASIC), name="n")
+        self.assertEqual(data["authMethod"], AuthMethod.HTTP_BASIC)
+        data = self.edit(authMethod=AuthMethod.NTLM)
+        self.assertEqual(data["authMethod"], AuthMethod.NTLM)
