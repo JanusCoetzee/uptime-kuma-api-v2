@@ -40,7 +40,20 @@ def _locked(method):
     return wrapper
 
 
-class UptimeKumaApi(MonitorsMixin, TagsMixin, NotificationsMixin, ProxiesMixin, StatusPagesMixin, HeartbeatsMixin, SettingsMixin, AuthMixin, DockerHostsMixin, MaintenanceMixin, ApiKeysMixin, object):
+class UptimeKumaApi(
+    MonitorsMixin,
+    TagsMixin,
+    NotificationsMixin,
+    ProxiesMixin,
+    StatusPagesMixin,
+    HeartbeatsMixin,
+    SettingsMixin,
+    AuthMixin,
+    DockerHostsMixin,
+    MaintenanceMixin,
+    ApiKeysMixin,
+    object,
+):
     """This class is used to communicate with Uptime Kuma.
 
     Example:

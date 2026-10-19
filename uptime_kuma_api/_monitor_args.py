@@ -7,7 +7,11 @@ from . import (
     AuthMethod,
     MonitorType
 )
-from ._helpers import (_check_argument_conditions, _check_missing_arguments, parse_value)
+from ._helpers import (
+    _check_argument_conditions,
+    _check_missing_arguments,
+    parse_value,
+)
 
 
 def parse_monitor_type(data) -> None:
