@@ -9,7 +9,7 @@ from ..docstrings import (
     append_docstring,
     proxy_docstring
 )
-from ._helpers import (
+from .._helpers import (
     _check_argument_conditions,
     _check_missing_arguments,
     int_to_bool,

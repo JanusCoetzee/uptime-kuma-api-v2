@@ -11,7 +11,7 @@ from ..docstrings import (
     append_docstring,
     maintenance_docstring
 )
-from ._helpers import (
+from .._helpers import (
     _check_argument_conditions,
     _check_missing_arguments,
     parse_value,
