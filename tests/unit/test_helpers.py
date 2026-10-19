@@ -5,9 +5,11 @@ import unittest
 from unittest import mock
 
 import requests
+import socketio
 
 from uptime_kuma_api import (
-    AuthMethod, Event, Timeout, UptimeKumaApi, UptimeKumaException,
+    AuthMethod, Event, Timeout, UptimeKumaApi, UptimeKumaConnectionError,
+    UptimeKumaException,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
 from uptime_kuma_api.api import (
@@ -440,6 +442,49 @@ class TestVersionCache(unittest.TestCase):
     def test_times_out_without_info(self):
         with self.assertRaises(Timeout):
             _ = self._api(None).version
+
+
+class TestSocketErrorMapping(unittest.TestCase):
+    def api(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api.sio = mock.Mock()
+        api.timeout = 1
+        api.url = "http://x"
+        api.headers = None
+        return api
+
+    def test_call_maps_socketio_timeout(self):
+        api = self.api()
+        cause = socketio.exceptions.TimeoutError()
+        api.sio.call.side_effect = cause
+        with self.assertRaises(Timeout) as cm:
+            api._call("getMonitor", 1)
+        self.assertIs(cm.exception.__cause__, cause)
+
+    def test_call_maps_other_socketio_errors(self):
+        for error in (socketio.exceptions.BadNamespaceError(),
+                      socketio.exceptions.ConnectionError()):
+            api = self.api()
+            api.sio.call.side_effect = error
+            with self.assertRaises(UptimeKumaException) as cm:
+                api._call("getMonitor", 1)
+            self.assertNotIsInstance(cm.exception, Timeout)
+            self.assertIs(cm.exception.__cause__, error)
+
+    def test_connect_raises_connection_error_with_cause(self):
+        api = self.api()
+        cause = socketio.exceptions.ConnectionError("refused")
+        api.sio.connect.side_effect = cause
+        with self.assertRaises(UptimeKumaConnectionError) as cm:
+            api.connect()
+        self.assertIs(cm.exception.__cause__, cause)
+        self.assertIsInstance(cm.exception, UptimeKumaException)
+
+    def test_connect_does_not_swallow_keyboard_interrupt(self):
+        api = self.api()
+        api.sio.connect.side_effect = KeyboardInterrupt
+        with self.assertRaises(KeyboardInterrupt):
+            api.connect()
 
 
 class TestWaitForNewEvent(unittest.TestCase):

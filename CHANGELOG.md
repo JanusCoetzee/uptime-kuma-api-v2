@@ -25,6 +25,14 @@ upstream project's changes) is not carried over. It remains available:
   kept as the first incident, or `None`.
 
 ### Fixed
+- Socket.IO errors no longer escape the library. `_call` raises `Timeout` for a
+  Socket.IO timeout and `UptimeKumaException` for other Socket.IO errors (for
+  example a closed connection), and `connect` raises the new
+  `UptimeKumaConnectionError` (a subclass of `UptimeKumaException`) instead of
+  catching everything with a bare `except:`, so `KeyboardInterrupt` is no longer
+  swallowed. The original error is kept as `__cause__` (#18). **Behaviour
+  change:** code that caught `socketio.exceptions.TimeoutError` around library
+  calls must now catch `Timeout` (or `UptimeKumaException`).
 - The monitor cache now handles Kuma 2.x `updateMonitorIntoList` and
   `deleteMonitorFromList` events, so `get_monitors`, heartbeats and uptime work
   right after `add_monitor`/`delete_monitor`.

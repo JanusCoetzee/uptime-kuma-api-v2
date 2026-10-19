@@ -44,3 +44,5 @@ Exceptions
 .. autoexception:: UptimeKumaException
 
 .. autoexception:: Timeout
+
+.. autoexception:: UptimeKumaConnectionError

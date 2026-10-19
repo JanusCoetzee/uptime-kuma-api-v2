@@ -1,9 +1,7 @@
 import unittest
 import warnings
 
-from socketio.exceptions import TimeoutError
-
-from uptime_kuma_api import UptimeKumaApi, UptimeKumaException, MonitorType, DockerType
+from uptime_kuma_api import UptimeKumaApi, UptimeKumaException, MonitorType, DockerType, Timeout
 
 token = None
 
@@ -45,7 +43,7 @@ class UptimeKumaTestCase(unittest.TestCase):
         if not token:
             try:
                 need_setup = self.api.need_setup()
-            except TimeoutError:
+            except Timeout:
                 # the first call on a freshly started server can be lost
                 need_setup = self.api.need_setup()
             if need_setup:

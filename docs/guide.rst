@@ -84,7 +84,9 @@ Errors from the library use two kinds of exceptions:
 * :class:`~uptime_kuma_api.UptimeKumaException`: the server refused a request
   or the connection failed. :class:`~uptime_kuma_api.Timeout` is a subclass,
   raised when an expected event or response does not arrive within ``timeout``
-  seconds.
+  seconds. :class:`~uptime_kuma_api.UptimeKumaConnectionError` is a subclass,
+  raised when the connection cannot be established. Low-level Socket.IO errors
+  are wrapped in these, with the original error as ``__cause__``.
 * Built-in ``TypeError`` and ``ValueError``: raised before anything is sent
   when arguments are wrong. A missing or unknown argument is a ``TypeError``,
   an invalid value is a ``ValueError``.
