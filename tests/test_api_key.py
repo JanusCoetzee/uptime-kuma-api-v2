@@ -17,7 +17,7 @@ class TestApiKey(UptimeKumaTestCase):
 
         # add api key
         r = self.api.add_api_key(**expected)
-        self.assertEqual(r["msg"], "Added Successfully.")
+        self.assertEqual(r["msg"], "successAdded")
         api_key_id = r["keyID"]
 
         # get api key
@@ -32,21 +32,21 @@ class TestApiKey(UptimeKumaTestCase):
 
         # disable api key
         r = self.api.disable_api_key(api_key_id)
-        self.assertEqual(r["msg"], "Disabled Successfully.")
+        self.assertEqual(r["msg"], "successDisabled")
         api_key = self.api.get_api_key(api_key_id)
         expected["active"] = False
         self.compare(api_key, expected)
 
         # enable api key
         r = self.api.enable_api_key(api_key_id)
-        self.assertEqual(r["msg"], "Enabled Successfully")
+        self.assertEqual(r["msg"], "successEnabled")
         api_key = self.api.get_api_key(api_key_id)
         expected["active"] = True
         self.compare(api_key, expected)
 
         # delete api key
         r = self.api.delete_api_key(api_key_id)
-        self.assertEqual(r["msg"], "Deleted Successfully.")
+        self.assertEqual(r["msg"], "successDeleted")
         with self.assertRaises(UptimeKumaException):
             self.api.get_api_key(api_key_id)
 

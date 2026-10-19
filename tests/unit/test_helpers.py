@@ -202,6 +202,31 @@ class TestSaveStatusPage(unittest.TestCase):
             self.assertNotIn(key, config)
 
 
+class TestMonitorListDeltaEvents(unittest.TestCase):
+    def api(self, monitors):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.MONITOR_LIST: monitors}
+        return api
+
+    def test_update_adds_and_replaces(self):
+        api = self.api({"1": {"name": "a"}})
+        api._event_update_monitor_into_list({"1": {"name": "b"}, "2": {"name": "c"}})
+        self.assertEqual(api._event_data[Event.MONITOR_LIST],
+                         {"1": {"name": "b"}, "2": {"name": "c"}})
+
+    def test_delete_removes_and_ignores_unknown(self):
+        api = self.api({"1": {}, "2": {}})
+        api._event_delete_monitor_from_list(1)
+        api._event_delete_monitor_from_list(99)
+        self.assertEqual(list(api._event_data[Event.MONITOR_LIST]), ["2"])
+
+    def test_noop_before_initial_list(self):
+        api = self.api(None)
+        api._event_update_monitor_into_list({"1": {}})
+        api._event_delete_monitor_from_list(1)
+        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+
 class TestMergeSettings(unittest.TestCase):
     def test_only_non_none_override(self):
         cur = {"keepDataPeriodDays": 30, "trustProxy": True}

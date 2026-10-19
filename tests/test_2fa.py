@@ -36,7 +36,7 @@ class Test2FA(UptimeKumaTestCase):
 
         # save 2fa
         r = self.api.save_2fa(self.password)
-        self.assertEqual(r["msg"], "2FA Enabled.")
+        self.assertEqual(r["msg"], "2faEnabled")
 
         # check 2fa is enabled
         r = self.api.twofa_status()
@@ -49,7 +49,7 @@ class Test2FA(UptimeKumaTestCase):
 
         # disable 2fa
         r = self.api.disable_2fa(self.password)
-        self.assertEqual(r["msg"], "2FA Disabled.")
+        self.assertEqual(r["msg"], "2faDisabled")
 
 
 if __name__ == '__main__':
