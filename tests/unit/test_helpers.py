@@ -284,5 +284,15 @@ class TestMergeSettings(unittest.TestCase):
         self.assertEqual(_merge_settings({}, {})["entryPage"], "dashboard")
 
 
+class TestLoginAutoLogin(unittest.TestCase):
+    def test_timeout_message_mentions_credentials(self):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api._event_data = {Event.AUTO_LOGIN: None}
+        api.timeout = 0.05
+        with self.assertRaises(Timeout) as cm:
+            api.login()
+        self.assertIn("username and password", str(cm.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

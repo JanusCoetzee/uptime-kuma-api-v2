@@ -3060,8 +3060,14 @@ class UptimeKumaApi(object):
         """
         # autologin
         if username is None and password is None:
-            with self.wait_for_event(Event.AUTO_LOGIN):
-                return {}
+            try:
+                with self.wait_for_event(Event.AUTO_LOGIN):
+                    return {}
+            except Timeout as e:
+                raise Timeout(
+                    "No autoLogin event received: the server probably "
+                    "requires a username and password (disableAuth is off)"
+                ) from e
 
         return self._call('login', {
             "username": username,
