@@ -27,7 +27,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/JanusCoetzee/uptime-kuma-api-v2",
     author=info["__author__"],
-    author_email="janus@indlovu.com.au",
+    author_email="januscoetzee@gmail.com",
     license=info["__license__"],
     packages=["uptime_kuma_api"],
     python_requires=">=3.7, <4",
