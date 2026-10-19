@@ -12,6 +12,8 @@ upstream project's changes) is not carried over. It remains available:
 ## [Unreleased]
 
 ### Changed
+
+- **Breaking:** minimum Python is now 3.12 (3.9 is EOL); CI tests 3.12-3.14.
 - **Behaviour change:** `set_settings` now only changes the arguments you
   pass (all defaults are `None`) and keeps every other server setting. It used
   to reset unspecified settings to library defaults, for example
