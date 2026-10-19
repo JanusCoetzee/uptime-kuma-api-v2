@@ -433,7 +433,7 @@ def _check_arguments_tag(kwargs) -> None:
 class UptimeKumaApi(object):
     """This class is used to communicate with Uptime Kuma.
 
-    Example::
+    Example:
 
     Import UptimeKumaApi from the library and specify the Uptime Kuma server url (e.g. 'http://127.0.0.1:3001'), username and password to initialize the connection.
 

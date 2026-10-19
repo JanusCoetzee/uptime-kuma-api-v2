@@ -68,7 +68,7 @@ jobs:
           test "$KUMA_VERSION" = "${{ matrix.kuma }}"
           docker build -t kuma-test --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
           docker run -d --rm -p 3001:3001 --name kuma-test kuma-test
-          for i in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
+          for _ in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
       - run: pip install -r requirements.txt -r dev-requirements.txt requests
       - run: python -m unittest discover -s tests
 
