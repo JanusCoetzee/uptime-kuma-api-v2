@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 from unittest import mock
 
@@ -325,6 +326,23 @@ class TestAddMonitorTagCache(unittest.TestCase):
         api.add_monitor_tag(1, 1)
         self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
         self.assertEqual(raw["notificationIDList"], {"3": True})
+
+    def delete_api(self, cache):
+        api, raw = self.api(cache)
+        api.wait_for_event = lambda event: contextlib.nullcontext()
+        api.get_monitors = lambda: [{"tags": [
+            {"monitor_id": 1, "tag_id": 1, "value": ""}]}]
+        return api, raw
+
+    def test_delete_returns_response_with_none_cache(self):
+        api, _ = self.delete_api(None)
+        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
+        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+
+    def test_delete_caches_raw_monitor(self):
+        api, raw = self.delete_api({})
+        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
+        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
 
 
 if __name__ == "__main__":
