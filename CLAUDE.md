@@ -11,7 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Install dev deps: `pip install -r requirements.txt -r dev-requirements.txt`
 - Unit tests (no server needed, offline): `python -m unittest discover -s tests/unit -t .`. They need `python-socketio`, `packaging` and `requests` installed (importing the package pulls them in). Known bugs are pinned with `@unittest.expectedFailure`.
 - The tests in `tests/` (outside `unit/`) are **integration tests** that need a live Uptime Kuma at `http://127.0.0.1:3001` (admin / secret123, auto-setup by [tests/uptime_kuma_test_case.py](tests/uptime_kuma_test_case.py)). Each `setUp` deletes all monitors and notifications.
-  - Start one: `docker run -d --rm -p 3001:3001 --name uptimekuma louislam/uptime-kuma:<version>`
+  - Start one (built from source at a pinned commit; we do not use upstream images): `set -a; . docker/kuma-test/versions.env; set +a; docker build -t kuma-test:$KUMA_VERSION --build-arg KUMA_REF=$KUMA_REF docker/kuma-test && docker run -d --rm -p 3001:3001 --name kuma-test kuma-test:$KUMA_VERSION` (~1 min build). Only ever point the tests at this throwaway container; they delete all monitors and notifications.
+  - Kuma rate-limits logins: after a full run, restart the container before the next one.
   - All tests: `python -m unittest discover -s tests`
   - Single test: `python -m unittest tests.test_monitor.TestMonitor.<test_name>`
   - [run_tests.sh](run_tests.sh) loops this over several Docker image versions (its version list is still the old 1.x one; it uses bash arrays despite the `sh` shebang).
