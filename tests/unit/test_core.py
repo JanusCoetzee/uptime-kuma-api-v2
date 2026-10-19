@@ -146,21 +146,29 @@ class TestEventHandlers(unittest.TestCase):
         self.api._event_important_heartbeat_list("2", [], True)
         self.assertEqual(self.data[Event.IMPORTANT_HEARTBEAT_LIST][2], [])
 
-    # The server sends a list of beats; the cache nests it, see #102.
-    @unittest.expectedFailure
+    # The server sends a list of beats; they are merged, not nested (#102).
     def test_heartbeat_list_extends_with_the_new_beats(self):
         self.api._event_heartbeat_list("1", [{"a": 1}], False)
         self.api._event_heartbeat_list("1", [{"a": 2}], False)
-        self.assertEqual(len(self.data[Event.HEARTBEAT_LIST][1]), 2)
+        self.assertEqual(self.data[Event.HEARTBEAT_LIST][1],
+                         [{"a": 2}, {"a": 1}])
         self.assertTrue(all(isinstance(b, dict)
                             for b in self.data[Event.HEARTBEAT_LIST][1]))
 
-    @unittest.expectedFailure
+    def test_heartbeat_list_merge_keeps_the_150_newest(self):
+        self.api._event_heartbeat_list("1", [{"n": i} for i in range(100)],
+                                       False)
+        self.api._event_heartbeat_list("1", [{"n": i} for i in range(100)],
+                                       False)
+        beats = self.data[Event.HEARTBEAT_LIST][1]
+        self.assertEqual(len(beats), 150)
+        self.assertEqual(beats[-1], {"n": 99})
+
     def test_important_heartbeat_list_extends_with_the_new_beats(self):
         self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
         self.api._event_important_heartbeat_list("2", [{"a": 2}], False)
-        self.assertTrue(all(isinstance(b, dict) for b in
-                            self.data[Event.IMPORTANT_HEARTBEAT_LIST][2]))
+        self.assertEqual(self.data[Event.IMPORTANT_HEARTBEAT_LIST][2],
+                         [{"a": 2}, {"a": 1}])
 
     def test_avg_ping_and_uptime_are_keyed_by_int_id(self):
         self.api._event_avg_ping("3", 12)

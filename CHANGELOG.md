@@ -62,6 +62,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - The event cache is now guarded by a lock: the socketio background thread updates it while the caller thread reads it, so a read could see a half-applied update (for example 151 heartbeats before the oldest was dropped).
 
+- Heartbeat list events from the server (`heartbeatList`, `importantHeartbeatList`) are merged into the cache instead of nested as a list inside the list, which broke `get_monitor_status` once a monitor already had cached heartbeats (#102). The new beats are placed before the cached ones, as in Kuma's frontend.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
