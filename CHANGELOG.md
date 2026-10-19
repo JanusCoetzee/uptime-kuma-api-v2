@@ -70,6 +70,7 @@ upstream project's changes) is not carried over. It remains available:
   (they used `random` and 10 characters).
 
 ### Development
+- Unit tests are pytest-style (plain `assert`, fixtures, `parametrize`, `caplog`) and CI runs `pytest tests/unit --cov` (#93). Same coverage (99.21%); the old `subTest` loops are now separate parametrized cases (240 tests, was 194 plus subtests).
 - README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with
