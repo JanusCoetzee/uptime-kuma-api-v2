@@ -1,0 +1,6 @@
+# Docstring examples (fake API keys, TOTP URI, JWT) that already exist in
+# master's api.py. #35 moved them into _mixins/, so gitleaks sees them as new.
+90bccb6112a905f69647591fab94ef67785d259b:uptime_kuma_api/_mixins/api_keys.py:generic-api-key:98
+90bccb6112a905f69647591fab94ef67785d259b:uptime_kuma_api/_mixins/api_keys.py:generic-api-key:109
+90bccb6112a905f69647591fab94ef67785d259b:uptime_kuma_api/_mixins/auth.py:jwt:138
+90bccb6112a905f69647591fab94ef67785d259b:uptime_kuma_api/_mixins/auth.py:generic-api-key:42
