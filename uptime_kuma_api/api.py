@@ -656,7 +656,7 @@ class UptimeKumaApi(object):
         if monitor_id not in self._event_data[Event.HEARTBEAT_LIST]:
             self._event_data[Event.HEARTBEAT_LIST][monitor_id] = []
         self._event_data[Event.HEARTBEAT_LIST][monitor_id].append(data)
-        if len(self._event_data[Event.HEARTBEAT_LIST][monitor_id]) >= 150:
+        if len(self._event_data[Event.HEARTBEAT_LIST][monitor_id]) > 150:
             self._event_data[Event.HEARTBEAT_LIST][monitor_id].pop(0)
 
         # add heartbeat to important heartbeat list
@@ -2266,6 +2266,9 @@ class UptimeKumaApi(object):
         """
         Get heartbeats.
 
+        Each list holds at most the 150 newest heartbeats, ordered oldest
+        first (the newest heartbeat is the last element).
+
         :return: The heartbeats for each monitor id.
         :rtype: dict
 
@@ -2308,6 +2311,8 @@ class UptimeKumaApi(object):
     def get_important_heartbeats(self) -> dict:
         """
         Get important heartbeats.
+
+        Unlike :meth:`get_heartbeats`, each list is ordered newest first.
 
         :return: The important heartbeats for each monitor id.
         :rtype: dict
@@ -4006,6 +4011,9 @@ class UptimeKumaApi(object):
     def get_monitor_status(self, monitor_id: int) -> MonitorStatus:
         """
         Get the monitor status.
+
+        The status is taken from the last (newest) element of the monitor's
+        heartbeat list, see :meth:`get_heartbeats`.
 
         :param int monitor_id: Id of the monitor.
         :return: The monitor status.
