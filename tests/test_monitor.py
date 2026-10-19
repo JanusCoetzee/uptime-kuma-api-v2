@@ -92,6 +92,52 @@ class TestMonitor(UptimeKumaTestCase):
         self.compare(monitor, expected_monitor)
         return monitor
 
+    def test_edit_monitor_partial_kwargs(self):
+        notification_id_1 = self.add_notification()
+        notification_id_2 = self.add_notification()
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.HTTP, name="monitor 1", url="http://127.0.0.1",
+            accepted_statuscodes=["200-299", "300-399"],
+            notificationIDList=[notification_id_1],
+        )["monitorID"]
+
+        # only the name: everything else is kept
+        self.api.edit_monitor(monitor_id, name="monitor 2")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["name"], "monitor 2")
+        self.assertEqual(monitor["url"], "http://127.0.0.1")
+        self.assertEqual(monitor["accepted_statuscodes"], ["200-299", "300-399"])
+        self.assertEqual(monitor["notificationIDList"], [notification_id_1])
+
+        # notifications as a list
+        self.api.edit_monitor(monitor_id, notificationIDList=[notification_id_2])
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["notificationIDList"], [notification_id_2])
+
+        # an empty list falls back to the default status codes
+        self.api.edit_monitor(monitor_id, accepted_statuscodes=[])
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["accepted_statuscodes"], ["200-299"])
+
+    def test_edit_monitor_keeps_push_token(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.PUSH, name="monitor 1")["monitorID"]
+        token = self.api.get_monitor(monitor_id)["pushToken"]
+        self.assertTrue(token)
+        self.api.edit_monitor(monitor_id, name="monitor 2")
+        self.assertEqual(self.api.get_monitor(monitor_id)["pushToken"], token)
+
+    def test_edit_monitor_keeps_auth_method(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.HTTP, name="monitor 1", url="http://127.0.0.1",
+            authMethod=AuthMethod.HTTP_BASIC,
+            basic_auth_user="user", basic_auth_pass="pass",
+        )["monitorID"]
+        self.api.edit_monitor(monitor_id, name="monitor 2")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["authMethod"], AuthMethod.HTTP_BASIC)
+        self.assertEqual(monitor["basic_auth_user"], "user")
+
     def test_monitor_type_http(self):
         proxy_id = self.add_proxy()
 
