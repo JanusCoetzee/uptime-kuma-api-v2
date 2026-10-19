@@ -65,6 +65,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - Heartbeat list events from the server (`heartbeatList`, `importantHeartbeatList`) are merged into the cache instead of nested as a list inside the list, which broke `get_monitor_status` once a monitor already had cached heartbeats (#102). The new beats are placed before the cached ones, as in Kuma's frontend.
 
+- A repeated login no longer duplicates heartbeats in the cache: a re-sent batch replaces the cached copies of the same beats, matched by `time` (live beats have no `id`) (#107).
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
