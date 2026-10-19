@@ -100,7 +100,9 @@ PUBLIC_METHODS = [
 
 class TestPublicApi(unittest.TestCase):
     def test_public_names_are_unchanged(self):
-        names = sorted(n for n in dir(UptimeKumaApi) if not n.startswith("_"))
+        # mutmut adds trampoline attributes (x...__mutmut_N); they are not API
+        names = sorted(n for n in dir(UptimeKumaApi)
+                       if not n.startswith(("_", "x\u01c1")) and "__mutmut" not in n)
         self.assertEqual(names, PUBLIC_METHODS)
 
     def test_methods_are_defined_on_the_class_hierarchy(self):

@@ -13,6 +13,7 @@ upstream project's changes) is not carried over. It remains available:
 ### Added
 
 - Unit tests cover 98% of the package (was 60%) with an offline fake Socket.IO client; `.coveragerc` now fails below 90%.
+- Mutation score 86.2% (was 68.0%) from exact-payload tests for monitor, maintenance, proxy, status page and settings requests; the weekly CI job now fails below 85% (`scripts/mutation_score.py`).
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed
