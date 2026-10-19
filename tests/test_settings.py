@@ -23,11 +23,11 @@ class TestSettings(UptimeKumaTestCase):
 
         # set settings
         r = self.api.set_settings(self.password, **expected_settings)
-        self.assertEqual(r["msg"], "Saved")
+        self.assertEqual(r["msg"], "Saved.")
 
         # set settings without password
         r = self.api.set_settings(**expected_settings)
-        self.assertEqual(r["msg"], "Saved")
+        self.assertEqual(r["msg"], "Saved.")
 
         # get settings
         settings = self.api.get_settings()
@@ -38,7 +38,7 @@ class TestSettings(UptimeKumaTestCase):
 
         # change password
         r = self.api.change_password(self.password, new_password)
-        self.assertEqual(r["msg"], "Password has been updated successfully.")
+        self.assertEqual(r["msg"], "successAuthChangePassword")
 
         # check login
         r = self.api.login(self.username, new_password)
@@ -46,8 +46,9 @@ class TestSettings(UptimeKumaTestCase):
 
         # restore password
         r = self.api.change_password(new_password, self.password)
-        self.assertEqual(r["msg"], "Password has been updated successfully.")
+        self.assertEqual(r["msg"], "successAuthChangePassword")
 
+    @unittest.skip("uploadBackup was removed in Uptime Kuma 2.x")
     def test_upload_backup(self):
         data = {
             "version": "1.17.1",
