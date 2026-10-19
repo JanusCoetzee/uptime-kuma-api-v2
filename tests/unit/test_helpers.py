@@ -362,3 +362,33 @@ class TestUnknownEnumLogging(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestVersionCache(unittest.TestCase):
+    def _api(self, info):
+        api = UptimeKumaApi.__new__(UptimeKumaApi)
+        api.timeout = 0.05
+        api.wait_events = 5
+        api._version = None
+        api._event_data = {Event.INFO: info}
+        return api
+
+    def test_version_is_cached_and_does_not_sleep(self):
+        api = self._api({"version": "2.5.6"})
+        with mock.patch.object(api, "_get_event_data") as get, \
+                mock.patch("time.sleep") as sleep:
+            self.assertEqual(api.version, "2.5.6")
+            api._event_data[Event.INFO] = {"version": "9.9.9"}
+            self.assertEqual(api.version, "2.5.6")
+        get.assert_not_called()
+        sleep.assert_not_called()
+
+    def test_new_info_event_resets_cache(self):
+        api = self._api({"version": "2.5.6"})
+        self.assertEqual(api.version, "2.5.6")
+        api._event_info({"version": "2.6.0"})
+        self.assertEqual(api.version, "2.6.0")
+
+    def test_times_out_without_info(self):
+        with self.assertRaises(Timeout):
+            _ = self._api(None).version

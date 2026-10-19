@@ -512,6 +512,7 @@ class UptimeKumaApi(object):
         self.ssl_verify = ssl_verify
         self.wait_events = wait_events
         self.sio = socketio.Client(ssl_verify=ssl_verify)
+        self._version = None
 
         self._event_data: dict = {
             Event.MONITOR_LIST: None,
@@ -678,6 +679,7 @@ class UptimeKumaApi(object):
         if "version" not in data:
             # wait for the info event that is sent after login and contains the version
             return
+        self._version = None
         self._event_data[Event.INFO] = data
 
     def _event_cert_info(self, monitor_id, data) -> None:
@@ -729,8 +731,15 @@ class UptimeKumaApi(object):
 
     @property
     def version(self) -> str:
-        info = self.info()
-        return info.get("version")
+        # read the cached INFO directly: info() sleeps wait_events on every call
+        if self._version is None:
+            timestamp = time.time()
+            while self._event_data[Event.INFO] is None:
+                if time.time() - timestamp > self.timeout:
+                    raise Timeout(f"Timed out while waiting for event {Event.INFO}")
+                time.sleep(0.01)
+            self._version = self._event_data[Event.INFO].get("version")
+        return self._version
 
     def _build_monitor_data(
             self,
