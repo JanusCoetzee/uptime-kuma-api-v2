@@ -370,7 +370,9 @@ def _check_arguments_monitor(kwargs) -> None:
 
     if type_ == MonitorType.KAFKA_PRODUCER:
         # a missing or None option means the server default mechanism
-        kafkaProducerSaslOptions_mechanism = (kwargs.get("kafkaProducerSaslOptions") or {}).get("mechanism") or "None"
+        kafkaProducerSaslOptions_mechanism = (kwargs.get("kafkaProducerSaslOptions") or {}).get("mechanism")
+        if kafkaProducerSaslOptions_mechanism is None:
+            kafkaProducerSaslOptions_mechanism = "None"
         if kafkaProducerSaslOptions_mechanism not in [
             "None",
             "plain",

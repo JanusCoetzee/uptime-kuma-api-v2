@@ -151,9 +151,10 @@ class TestChecks(unittest.TestCase):
         for opts in (None, {}, {"mechanism": None}, {"mechanism": "plain"}):
             _check_arguments_monitor(self.monitor(kafkaProducerSaslOptions=opts, **kafka))
         _check_arguments_monitor(self.monitor(**kafka))
-        with self.assertRaises(ValueError):
-            _check_arguments_monitor(
-                self.monitor(kafkaProducerSaslOptions={"mechanism": "x"}, **kafka))
+        for bad in ("x", ""):
+            with self.assertRaises(ValueError):
+                _check_arguments_monitor(
+                    self.monitor(kafkaProducerSaslOptions={"mechanism": bad}, **kafka))
 
     def test_status_page_theme_error_lists_valid_themes(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
