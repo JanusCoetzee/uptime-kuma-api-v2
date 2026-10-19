@@ -19,6 +19,7 @@ from uptime_kuma_api.api import (
     _build_status_page_response,
     _check_missing_arguments,
     _merge_settings,
+    _warned_values,
     _convert_monitor_input,
     gen_secret,
     int_to_bool,
@@ -346,6 +347,9 @@ class TestAddMonitorTagCache(unittest.TestCase):
 
 
 class TestUnknownEnumLogging(unittest.TestCase):
+    def setUp(self):
+        _warned_values.clear()
+
     def test_warns_once_and_keeps_raw_value(self):
         d = {"type": "brand-new-type"}
         with self.assertLogs("uptime_kuma_api.api", "WARNING") as cm:
