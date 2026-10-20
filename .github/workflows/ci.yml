@@ -45,7 +45,14 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
-      - run: pytest tests/unit --cov
+      - run: pytest tests/unit --cov --cov-report=xml
+      - name: Upload coverage report
+        if: matrix.python == '3.14'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 14
 
   integration:
     name: integration (Kuma ${{ matrix.kuma }})

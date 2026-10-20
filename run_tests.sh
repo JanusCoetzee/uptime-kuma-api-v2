@@ -1,29 +1,36 @@
 #!/usr/bin/env bash
+# Runs the integration tests against the from-source Kuma test image
+# (docker/kuma-test, pinned in versions.env), the same one CI uses.
+# The tests delete all monitors and notifications: only the throwaway
+# container started here is ever used.
+set -euo pipefail
+cd "$(dirname "$0")"
 
-version="$1"
-if [ -n "$version" ]
-then
-  versions=("$version")
-else
-  versions=(1.23.2 1.23.0 1.22.1 1.22.0 1.21.3)
+set -a
+. docker/kuma-test/versions.env
+set +a
+
+version="${1:-$KUMA_VERSION}"
+if [ "$version" != "$KUMA_VERSION" ]; then
+  echo "Only $KUMA_VERSION is defined in docker/kuma-test/versions.env, got $version" >&2
+  exit 1
 fi
 
-for version in "${versions[@]}"
+# Content-keyed tag, as in .github/workflows/kuma-image.yml.
+tag="kuma-test:${KUMA_VERSION}-$(git rev-parse --short=12 HEAD:docker/kuma-test)"
+if ! docker image inspect "$tag" > /dev/null 2>&1; then
+  echo "Building $tag from Uptime Kuma $KUMA_REF..."
+  docker build -t "$tag" --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
+fi
+
+echo "Starting uptime kuma $version..."
+docker run -d --rm -p 3001:3001 --name kuma-test "$tag" > /dev/null
+trap 'echo "Stopping uptime kuma..."; docker stop kuma-test > /dev/null' EXIT
+
+while [[ "$(curl -s -L -o /dev/null -w '%{http_code}' 127.0.0.1:3001)" != "200" ]]
 do
-  echo "Starting uptime kuma $version..."
-  docker run -d -it --rm -p 3001:3001 --name uptimekuma "louislam/uptime-kuma:$version" > /dev/null
-
-  while [[ "$(curl -s -L -o /dev/null -w '%{http_code}' 127.0.0.1:3001)" != "200" ]]
-  do
-    sleep 0.5
-  done
-
-  echo "Running tests..."
-  python -m unittest discover -s tests
-
-  echo "Stopping uptime kuma..."
-  docker stop uptimekuma > /dev/null
-  sleep 1
-
-  echo ''
+  sleep 0.5
 done
+
+echo "Running tests..."
+python -m unittest discover -s tests
