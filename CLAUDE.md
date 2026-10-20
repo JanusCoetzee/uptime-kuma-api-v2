@@ -9,12 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - Install dev deps: `pip install -r requirements.txt -r dev-requirements.txt`
-- Unit tests (no server needed, offline): `python -m unittest discover -s tests/unit -t .`. They need `python-socketio`, `packaging` and `requests` installed (importing the package pulls them in). Known bugs are pinned with `@unittest.expectedFailure`.
+- Unit tests (no server needed, offline): `pytest tests/unit`. They need `python-socketio`, `packaging` and `requests` installed (importing the package pulls them in). Known bugs are pinned with `@pytest.mark.xfail(strict=True, reason=...)`. Write them pytest-style (plain `assert`, fixtures, `parametrize`, `pytest.raises`, `caplog`); the integration tests outside `unit/` stay `unittest`.
   - Coverage (`fail_under = 90` in `.coveragerc`, only ever raise it; see #57): `pytest tests/unit --cov`. The unit tests use the offline fake client in `tests/unit/fake_kuma.py` (`make_api()`), which records requests and answers from canned replies.
   - Lint (PEP 8 via ruff `E,W,F,B`, config in `pyproject.toml`; per-file ignores there are debt, never add to them): `pre-commit run --all-files`. Install the hooks once with `pre-commit install`. `master` is blocked from direct commits by a hook.
   - Mutation testing (slow, runs weekly in CI): `mutmut run`, then `mutmut results`; `python scripts/mutation_score.py` fails below the threshold (85%, a ratchet like coverage; 86.2% at #70). `docstrings.py` is excluded as generated text.
 - The tests in `tests/` (outside `unit/`) are **integration tests** that need a live Uptime Kuma at `http://127.0.0.1:3001` (admin / secret123, auto-setup by [tests/uptime_kuma_test_case.py](tests/uptime_kuma_test_case.py)). Each `setUp` deletes all monitors and notifications.
   - Start one (built from source at a pinned commit; we do not use upstream images): `set -a; . docker/kuma-test/versions.env; set +a; docker build -t kuma-test:$KUMA_VERSION --build-arg KUMA_REF=$KUMA_REF docker/kuma-test && docker run -d --rm -p 3001:3001 --name kuma-test kuma-test:$KUMA_VERSION` (~1 min build). Only ever point the tests at this throwaway container; they delete all monitors and notifications.
+  - CI does not rebuild it every run: `.github/workflows/kuma-image.yml` publishes it to `ghcr.io/<owner>/uptime-kuma-test:<version>-<tree>` (tree = `git rev-parse --short=12 HEAD:docker/kuma-test`) on pushes to master that touch `docker/kuma-test`, and the integration job pulls that tag, falling back to the build above when it is missing.
   - Kuma rate-limits logins: after a full run, restart the container before the next one.
   - All tests: `python -m unittest discover -s tests`
   - Single test: `python -m unittest tests.test_monitor.TestMonitor.<test_name>`

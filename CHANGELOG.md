@@ -65,16 +65,20 @@ upstream project's changes) is not carried over. It remains available:
 
 - Heartbeat list events from the server (`heartbeatList`, `importantHeartbeatList`) are merged into the cache instead of nested as a list inside the list, which broke `get_monitor_status` once a monitor already had cached heartbeats (#102). The new beats are placed before the cached ones, as in Kuma's frontend.
 
+- A repeated login no longer duplicates heartbeats in the cache: a re-sent batch replaces the cached copies of the same beats, matched by `time` (live beats have no `id`) (#107).
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
 
 ### Development
 - Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_api/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
+- Unit tests are pytest-style (plain `assert`, fixtures, `parametrize`, `caplog`) and CI runs `pytest tests/unit --cov` (#93). Same coverage (99.21%); the old `subTest` loops are now separate parametrized cases (240 tests, was 194 plus subtests).
 - README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with
   mutmut, and a CI workflow with SHA-pinned actions.
+- The from-source Kuma test image is published to ghcr.io (`kuma-image.yml`, tagged by version and a hash of `docker/kuma-test`) and the integration job pulls it instead of rebuilding, with a build-from-source fallback; a non-blocking `npm audit` runs on the pinned Kuma checkout (#51).
 - PR validation workflow (`pr-validation.yml`): CodeQL, pip-audit, gitleaks, dependency review, package build check, docs build with warnings as errors, actionlint and a check that every action is SHA-pinned; Dependabot for actions, pip and the test image.
 - Integration tests run against an Uptime Kuma built from source at a pinned
   commit (`docker/kuma-test`).

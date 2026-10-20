@@ -1,5 +1,3 @@
-import unittest
-
 from uptime_kuma_api import UptimeKumaApi
 
 # Snapshot of the public names of UptimeKumaApi taken before it was split into
@@ -98,14 +96,14 @@ PUBLIC_METHODS = [
 ]
 
 
-class TestPublicApi(unittest.TestCase):
+class TestPublicApi:
     def test_public_names_are_unchanged(self):
         # mutmut adds trampoline attributes (x...__mutmut_N); they are not API
         names = sorted(n for n in dir(UptimeKumaApi)
                        if not n.startswith(("_", "x\u01c1")) and "__mutmut" not in n)
-        self.assertEqual(names, PUBLIC_METHODS)
+        assert names == PUBLIC_METHODS
 
     def test_methods_are_defined_on_the_class_hierarchy(self):
         # every public name resolves to a callable or property on the class
         for name in PUBLIC_METHODS:
-            self.assertTrue(hasattr(UptimeKumaApi, name), name)
+            assert hasattr(UptimeKumaApi, name)

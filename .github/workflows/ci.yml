@@ -43,15 +43,17 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt requests coverage==7.16.2
+      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
-      - run: coverage run -m unittest discover -s tests/unit -t .
-      - run: coverage report
+      - run: pytest tests/unit --cov
 
   integration:
     name: integration (Kuma ${{ matrix.kuma }})
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -62,14 +64,27 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - name: Build Kuma from source (pinned commit, see docker/kuma-test)
+      - name: Start Kuma (published image, else built from the pinned commit)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -a; . docker/kuma-test/versions.env; set +a
           test "$KUMA_VERSION" = "${{ matrix.kuma }}"
-          docker build -t kuma-test --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
+          image="ghcr.io/$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')/uptime-kuma-test"
+          # Same content key as kuma-image.yml: a changed Dockerfile never pulls a stale image.
+          key="${KUMA_VERSION}-$(git rev-parse --short=12 HEAD:docker/kuma-test)"
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin || true
+          if docker pull "${image}:${key}"; then
+            echo "Using ${image}:${key}"
+            docker tag "${image}:${key}" kuma-test
+          else
+            echo "No published image for ${key}; building from source"
+            docker build -t kuma-test --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
+          fi
           docker run -d --rm -p 3001:3001 --name kuma-test kuma-test
           for _ in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
       - run: pip install -r requirements.txt -r dev-requirements.txt requests
+      # unittest finds only the live-server tests here; tests/unit is pytest and runs in the unit job
       - run: python -m unittest discover -s tests
 
   mutation:
