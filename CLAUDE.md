@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Kuma rate-limits logins: after a full run, restart the container before the next one.
   - All tests: `python -m unittest discover -s tests`
   - Single test: `python -m unittest tests.test_monitor.TestMonitor.<test_name>`
-  - [run_tests.sh](run_tests.sh) loops this over several Docker image versions (its version list is still the old 1.x one; it uses bash arrays despite the `sh` shebang).
+  - [run_tests.sh](run_tests.sh) builds the image if needed (tag keyed on the Dockerfile tree, like CI), starts it, waits for HTTP 200, runs the suite and stops the container.
 - Docs: `make -C docs html`
 
 ## Architecture
