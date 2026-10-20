@@ -4,9 +4,10 @@ from .. import (
     Event
 )
 from .._helpers import (int_to_bool, parse_monitor_status)
+from ._base import MixinBase
 
 
-class HeartbeatsMixin:
+class HeartbeatsMixin(MixinBase):
     def get_heartbeats(self) -> dict:
         """
         Get heartbeats.

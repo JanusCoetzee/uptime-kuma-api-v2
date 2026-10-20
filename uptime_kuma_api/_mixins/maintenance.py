@@ -16,6 +16,7 @@ from .._helpers import (
     _check_missing_arguments,
     parse_value,
 )
+from ._base import MixinBase
 
 
 # maintenance
@@ -41,21 +42,21 @@ def _check_arguments_maintenance(kwargs) -> None:
     _check_argument_conditions(conditions, kwargs)
 
 
-class MaintenanceMixin:
+class MaintenanceMixin(MixinBase):
     def _build_maintenance_data(
             self,
             title: str,
             strategy: MaintenanceStrategy,
             active: bool = True,
             description: str = "",
-            dateRange: list = None,
+            dateRange: list | None = None,
             intervalDay: int = 1,
-            weekdays: list = None,
-            daysOfMonth: list = None,
-            timeRange: list = None,
+            weekdays: list | None = None,
+            daysOfMonth: list | None = None,
+            timeRange: list | None = None,
             cron: str = "30 3 * * *",
             durationMinutes: int = 60,
-            timezoneOption: str = None
+            timezoneOption: str | None = None
     ) -> dict:
         if not dateRange:
             dateRange = [

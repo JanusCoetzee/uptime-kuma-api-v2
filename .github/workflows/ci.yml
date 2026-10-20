@@ -29,6 +29,20 @@ jobs:
       # no-commit-to-branch only makes sense on a developer machine
       - run: SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure
 
+  types:
+    name: types (mypy)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      # mypy follows imports, so it needs the runtime dependencies
+      - run: pip install -r requirements.txt mypy==2.4.0
+      - run: mypy
+
   unit:
     name: unit (py${{ matrix.python }})
     if: github.event_name != 'schedule'

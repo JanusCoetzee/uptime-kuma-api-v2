@@ -10,6 +10,7 @@ from ..docstrings import (
     docker_host_docstring
 )
 from .._helpers import parse_value
+from ._base import MixinBase
 
 
 # docker host
@@ -28,7 +29,7 @@ def _convert_docker_host_input(kwargs) -> None:
 def _build_docker_host_data(
     name: str,
     dockerType: DockerType,
-    dockerDaemon: str = None
+    dockerDaemon: str | None = None
 ) -> dict:
     data = {
         "name": name,
@@ -38,7 +39,7 @@ def _build_docker_host_data(
     return data
 
 
-class DockerHostsMixin:
+class DockerHostsMixin(MixinBase):
     def get_docker_hosts(self) -> list[dict]:
         """
         Get all docker hosts.

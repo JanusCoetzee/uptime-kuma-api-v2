@@ -15,6 +15,7 @@ from .._helpers import (
     int_to_bool,
     parse_value,
 )
+from ._base import MixinBase
 
 
 # proxy
@@ -27,8 +28,8 @@ def _build_proxy_data(
     host: str,
     port: str,
     auth: bool = False,
-    username: str = None,
-    password: str = None,
+    username: str | None = None,
+    password: str | None = None,
     active: bool = True,
     default: bool = False,
     applyExisting: bool = False,
@@ -62,7 +63,7 @@ def _check_arguments_proxy(kwargs) -> None:
     _check_argument_conditions(conditions, kwargs)
 
 
-class ProxiesMixin:
+class ProxiesMixin(MixinBase):
     def get_proxies(self) -> list[dict]:
         """
         Get all proxies.

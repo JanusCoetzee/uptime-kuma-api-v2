@@ -4,9 +4,10 @@ from .. import (
     Event,
     Timeout
 )
+from ._base import MixinBase
 
 
-class AuthMixin:
+class AuthMixin(MixinBase):
     def twofa_status(self) -> dict:
         """
         Get current 2FA status.
@@ -116,7 +117,7 @@ class AuthMixin:
         """
         return self._call('disable2FA', password)
 
-    def login(self, username: str = None, password: str = None, token: str = "") -> dict:
+    def login(self, username: str | None = None, password: str | None = None, token: str = "") -> dict:
         """
         Login.
 

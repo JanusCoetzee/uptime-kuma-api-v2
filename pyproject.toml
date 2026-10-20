@@ -83,3 +83,14 @@ do_not_mutate = ["uptime_kuma_api/docstrings.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.mypy]
+# Non-strict on purpose (#32): the public API is annotated but loosely
+# (bare `dict`/`list`). Tighten one flag at a time.
+python_version = "3.12"
+files = ["uptime_kuma_api"]
+
+[[tool.mypy.overrides]]
+# python-socketio ships no type hints or py.typed marker.
+module = ["socketio", "socketio.*"]
+ignore_missing_imports = true

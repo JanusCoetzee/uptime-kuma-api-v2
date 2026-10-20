@@ -19,7 +19,7 @@ def int_to_bool(data, keys) -> None:
 
 # keep the pre-split name: callers filter on it
 logger = logging.getLogger("uptime_kuma_api.api")
-_warned_values = set()
+_warned_values: set[tuple] = set()
 
 
 def parse_value(data, key, type_, default=None) -> None:

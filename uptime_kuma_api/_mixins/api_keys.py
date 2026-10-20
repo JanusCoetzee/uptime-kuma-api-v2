@@ -5,9 +5,10 @@ from .. import (
     UptimeKumaException
 )
 from .._helpers import int_to_bool
+from ._base import MixinBase
 
 
-class ApiKeysMixin:
+class ApiKeysMixin(MixinBase):
     def get_api_keys(self) -> list[dict]:
         """
         Get all api keys.
