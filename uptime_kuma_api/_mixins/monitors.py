@@ -21,74 +21,75 @@ from .._monitor_args import (
     parse_auth_method,
     parse_monitor_type,
 )
+from ._base import MixinBase
 
 
-class MonitorsMixin:
+class MonitorsMixin(MixinBase):
     def _build_monitor_data(
             self,
             type: MonitorType,
             name: str,
-            parent: int = None,
-            description: str = None,
-            conditions: list = None,
+            parent: int | None = None,
+            description: str | None = None,
+            conditions: list | None = None,
             interval: int = 60,
             retryInterval: int = 60,
             resendInterval: int = 0,
             maxretries: int = 1,
             upsideDown: bool = False,
-            notificationIDList: list = None,
+            notificationIDList: list | None = None,
             httpBodyEncoding: str = "json",
 
             # HTTP, KEYWORD, JSON_QUERY, REAL_BROWSER
-            url: str = None,
+            url: str | None = None,
 
             # HTTP, KEYWORD, GRPC_KEYWORD
             maxredirects: int = 10,
-            accepted_statuscodes: list[str] = None,
+            accepted_statuscodes: list[str] | None = None,
 
             # HTTP, KEYWORD, JSON_QUERY
             expiryNotification: bool = False,
             ignoreTls: bool = False,
-            proxyId: int = None,
+            proxyId: int | None = None,
             method: str = "GET",
-            body: str = None,
-            headers: str = None,
+            body: str | None = None,
+            headers: str | None = None,
             authMethod: AuthMethod = AuthMethod.NONE,
-            tlsCert: str = None,
-            tlsKey: str = None,
-            tlsCa: str = None,
-            basic_auth_user: str = None,
-            basic_auth_pass: str = None,
-            authDomain: str = None,
-            authWorkstation: str = None,
+            tlsCert: str | None = None,
+            tlsKey: str | None = None,
+            tlsCa: str | None = None,
+            basic_auth_user: str | None = None,
+            basic_auth_pass: str | None = None,
+            authDomain: str | None = None,
+            authWorkstation: str | None = None,
             oauth_auth_method: str = "client_secret_basic",
-            oauth_token_url: str = None,
-            oauth_client_id: str = None,
-            oauth_client_secret: str = None,
-            oauth_scopes: str = None,
+            oauth_token_url: str | None = None,
+            oauth_client_id: str | None = None,
+            oauth_client_secret: str | None = None,
+            oauth_scopes: str | None = None,
             timeout: int = 48,
 
             # KEYWORD
-            keyword: str = None,
+            keyword: str | None = None,
             invertKeyword: bool = False,
 
             # GRPC_KEYWORD
-            grpcUrl: str = None,
+            grpcUrl: str | None = None,
             grpcEnableTls: bool = False,
-            grpcServiceName: str = None,
-            grpcMethod: str = None,
-            grpcProtobuf: str = None,
-            grpcBody: str = None,
-            grpcMetadata: str = None,
+            grpcServiceName: str | None = None,
+            grpcMethod: str | None = None,
+            grpcProtobuf: str | None = None,
+            grpcBody: str | None = None,
+            grpcMetadata: str | None = None,
 
             # PORT, PING, DNS, STEAM, MQTT, RADIUS, TAILSCALE_PING
-            hostname: str = None,
+            hostname: str | None = None,
 
             # PING
             packetSize: int = 56,
 
             # PORT, DNS, STEAM, MQTT, RADIUS
-            port: int = None,
+            port: int | None = None,
 
             # DNS
             dns_resolve_server: str = "1.1.1.1",
@@ -101,43 +102,43 @@ class MonitorsMixin:
             mqttSuccessMessage: str = "",
 
             # SQLSERVER, POSTGRES, MYSQL, MONGODB, REDIS
-            databaseConnectionString: str = None,
+            databaseConnectionString: str | None = None,
 
             # SQLSERVER, POSTGRES, MYSQL
-            databaseQuery: str = None,
+            databaseQuery: str | None = None,
 
             # DOCKER
             docker_container: str = "",
-            docker_host: int = None,
+            docker_host: int | None = None,
 
             # RADIUS
-            radiusUsername: str = None,
-            radiusPassword: str = None,
-            radiusSecret: str = None,
-            radiusCalledStationId: str = None,
-            radiusCallingStationId: str = None,
+            radiusUsername: str | None = None,
+            radiusPassword: str | None = None,
+            radiusSecret: str | None = None,
+            radiusCalledStationId: str | None = None,
+            radiusCallingStationId: str | None = None,
 
             # GAMEDIG
-            game: str = None,
+            game: str | None = None,
             gamedigGivenPortOnly: bool = True,
 
             # JSON_QUERY
-            jsonPath: str = None,
-            expectedValue: str = None,
+            jsonPath: str | None = None,
+            expectedValue: str | None = None,
 
             # KAFKA_PRODUCER
-            kafkaProducerBrokers: list[str] = None,
-            kafkaProducerTopic: str = None,
-            kafkaProducerMessage: str = None,
+            kafkaProducerBrokers: list[str] | None = None,
+            kafkaProducerTopic: str | None = None,
+            kafkaProducerMessage: str | None = None,
             kafkaProducerSsl: bool = False,
             kafkaProducerAllowAutoTopicCreation: bool = False,
-            kafkaProducerSaslOptions: dict = None,
+            kafkaProducerSaslOptions: dict | None = None,
     ) -> dict:
         if accepted_statuscodes is None:
             accepted_statuscodes = ["200-299"]
 
-        if notificationIDList is None:
-            notificationIDList = {}
+        # the server expects an object here, an empty one when unset
+        notification_ids = {} if notificationIDList is None else notificationIDList
 
         data = {
             "type": type,
@@ -145,7 +146,7 @@ class MonitorsMixin:
             "interval": interval,
             "retryInterval": retryInterval,
             "maxretries": maxretries,
-            "notificationIDList": notificationIDList,
+            "notificationIDList": notification_ids,
             "upsideDown": upsideDown,
             "resendInterval": resendInterval,
             "description": description,

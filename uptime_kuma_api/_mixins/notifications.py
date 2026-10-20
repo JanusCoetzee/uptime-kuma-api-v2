@@ -18,6 +18,7 @@ from .._helpers import (
     _check_missing_arguments,
     parse_value,
 )
+from ._base import MixinBase
 
 
 # notification
@@ -32,7 +33,7 @@ def _build_notification_data(
     applyExisting: bool = False,
     **kwargs
 ) -> dict:
-    allowed_kwargs = []
+    allowed_kwargs: list[str] = []
     for keys in notification_provider_options.values():
         allowed_kwargs.extend(keys)
 
@@ -60,7 +61,7 @@ def _check_arguments_notification(kwargs) -> None:
     _check_argument_conditions(notification_provider_conditions, kwargs)
 
 
-class NotificationsMixin:
+class NotificationsMixin(MixinBase):
     def get_notifications(self) -> list[dict]:
         """
         Get all notifications.

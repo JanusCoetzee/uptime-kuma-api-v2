@@ -72,6 +72,7 @@ upstream project's changes) is not carried over. It remains available:
   (they used `random` and 10 characters).
 
 ### Development
+- mypy runs in CI (`types` job, config in `pyproject.toml`, non-strict) with no ignore list: the mixins now inherit a typing-only `MixinBase` that declares what they use from `UptimeKumaApi`, parameters that default to `None` are annotated `| None`, and `notificationIDList` no longer rebinds its parameter to a dict (#32).
 - Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_api/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
 - Unit tests are pytest-style (plain `assert`, fixtures, `parametrize`, `caplog`) and CI runs `pytest tests/unit --cov` (#93). Same coverage (99.21%); the old `subTest` loops are now separate parametrized cases (240 tests, was 194 plus subtests).
 - README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.

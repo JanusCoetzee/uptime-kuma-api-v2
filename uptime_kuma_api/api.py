@@ -123,7 +123,7 @@ class UptimeKumaApi(
             self,
             url: str,
             timeout: float = 10,
-            headers: dict = None,
+            headers: dict | None = None,
             ssl_verify: bool = True,
             wait_events: float = 0.2
     ) -> None:
@@ -133,7 +133,7 @@ class UptimeKumaApi(
         self.ssl_verify = ssl_verify
         self.wait_events = wait_events
         self.sio = socketio.Client(ssl_verify=ssl_verify)
-        self._version = None
+        self._version: str | None = None
         self._lock = threading.RLock()
 
         self._event_data: dict = {
@@ -391,11 +391,13 @@ class UptimeKumaApi(
     @property
     def version(self) -> str:
         # read the cached INFO directly: info() sleeps wait_events on every call
-        if self._version is None:
-            timestamp = time.time()
-            while self._event_data[Event.INFO] is None:
-                if time.time() - timestamp > self.timeout:
-                    raise Timeout(f"Timed out while waiting for event {Event.INFO}")
-                time.sleep(0.01)
-            self._version = self._event_data[Event.INFO].get("version")
-        return self._version
+        if self._version is not None:
+            return self._version
+        timestamp = time.time()
+        while self._event_data[Event.INFO] is None:
+            if time.time() - timestamp > self.timeout:
+                raise Timeout(f"Timed out while waiting for event {Event.INFO}")
+            time.sleep(0.01)
+        version: str = self._event_data[Event.INFO].get("version")
+        self._version = version
+        return version

@@ -12,6 +12,7 @@ from .. import (
     UptimeKumaException
 )
 from .._helpers import (int_to_bool, parse_value)
+from ._base import MixinBase
 
 
 # status page
@@ -41,7 +42,7 @@ def _build_status_page_response(config, r2) -> dict:
     return data
 
 
-class StatusPagesMixin:
+class StatusPagesMixin(MixinBase):
     def _build_status_page_data(
             self,
             slug: str,
@@ -49,19 +50,19 @@ class StatusPagesMixin:
             # config
             id: int,
             title: str,
-            description: str = None,
-            theme: str = None,
+            description: str | None = None,
+            theme: str | None = None,
             published: bool = True,
             showTags: bool = False,
-            domainNameList: list = None,
-            googleAnalyticsId: str = None,
+            domainNameList: list | None = None,
+            googleAnalyticsId: str | None = None,
             customCSS: str = "",
-            footerText: str = None,
+            footerText: str | None = None,
             showPoweredBy: bool = True,
             showCertificateExpiry: bool = False,
 
             icon: str = "/icon.svg",
-            publicGroupList: list = None
+            publicGroupList: list | None = None
     ) -> tuple[str, dict, str, list]:
         if not theme:
             if parse_version(self.version) >= parse_version("1.22"):

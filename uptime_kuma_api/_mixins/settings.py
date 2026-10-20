@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from packaging.version import parse as parse_version
+from ._base import MixinBase
 
 
 def _merge_settings(current, overrides) -> dict:
@@ -10,7 +11,7 @@ def _merge_settings(current, overrides) -> dict:
     return data
 
 
-class SettingsMixin:
+class SettingsMixin(MixinBase):
     def get_settings(self) -> dict:
         """
         Get settings.
@@ -48,33 +49,33 @@ class SettingsMixin:
 
     def set_settings(
             self,
-            password: str = None,  # only required if disableAuth is true
+            password: str | None = None,  # only required if disableAuth is true
 
             # about
-            checkUpdate: bool = None,
-            checkBeta: bool = None,
+            checkUpdate: bool | None = None,
+            checkBeta: bool | None = None,
 
             # monitor history
-            keepDataPeriodDays: int = None,
+            keepDataPeriodDays: int | None = None,
 
             # general
-            serverTimezone: str = None,
-            entryPage: str = None,
-            searchEngineIndex: bool = None,
-            primaryBaseURL: str = None,
-            steamAPIKey: str = None,
-            nscd: bool = None,
-            dnsCache: bool = None,
-            chromeExecutable: str = None,
+            serverTimezone: str | None = None,
+            entryPage: str | None = None,
+            searchEngineIndex: bool | None = None,
+            primaryBaseURL: str | None = None,
+            steamAPIKey: str | None = None,
+            nscd: bool | None = None,
+            dnsCache: bool | None = None,
+            chromeExecutable: str | None = None,
 
             # notifications
-            tlsExpiryNotifyDays: list = None,
+            tlsExpiryNotifyDays: list | None = None,
 
             # security
-            disableAuth: bool = None,
+            disableAuth: bool | None = None,
 
             # reverse proxy
-            trustProxy: bool = None
+            trustProxy: bool | None = None
     ) -> dict:
         r"""
         Set settings. Only the arguments that are not ``None`` are changed; all other

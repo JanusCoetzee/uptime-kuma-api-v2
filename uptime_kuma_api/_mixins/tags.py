@@ -9,6 +9,7 @@ from ..docstrings import (
     tag_docstring
 )
 from .._helpers import _check_missing_arguments
+from ._base import MixinBase
 
 
 def _build_tag_data(
@@ -31,7 +32,7 @@ def _check_arguments_tag(kwargs) -> None:
     _check_missing_arguments(required_args, kwargs)
 
 
-class TagsMixin:
+class TagsMixin(MixinBase):
     def _refresh_monitor_cache(self, monitor_id: int) -> None:
         # the monitor list event does not send the updated tags
         # store the raw response: get_monitor() converts it, the cache is raw
@@ -98,7 +99,7 @@ class TagsMixin:
                     "value": y["value"]
                 } for x in [
                     i.get("tags") for i in self.get_monitors()
-                ] for y in x
+                ] for y in x or []
             ]
             if {"monitor_id": monitor_id, "tag_id": tag_id, "value": value} not in tags:
                 raise UptimeKumaException("monitor tag does not exist")
