@@ -34,7 +34,7 @@ jobs:
         run: |
           set -eu
           set -a; . docker/kuma-test/versions.env; set +a
-          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr A-Z a-z)"
+          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
           image="ghcr.io/${owner}/uptime-kuma-test"
           # Content key: changes whenever the Dockerfile or the pinned ref does.
           key="${KUMA_VERSION}-$(git rev-parse --short=12 HEAD:docker/kuma-test)"
