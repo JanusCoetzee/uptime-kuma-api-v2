@@ -18,7 +18,11 @@ fi
 
 # Content-keyed tag, as in .github/workflows/kuma-image.yml.
 tag="kuma-test:${KUMA_VERSION}-$(git rev-parse --short=12 HEAD:docker/kuma-test)"
-if ! docker image inspect "$tag" > /dev/null 2>&1; then
+if [ -n "$(git status --porcelain docker/kuma-test)" ]; then
+  # The tag only sees committed files, so do not trust a cached image.
+  echo "docker/kuma-test has uncommitted changes: rebuilding $tag"
+  docker build -t "$tag" --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
+elif ! docker image inspect "$tag" > /dev/null 2>&1; then
   echo "Building $tag from Uptime Kuma $KUMA_REF..."
   docker build -t "$tag" --build-arg KUMA_REF="$KUMA_REF" docker/kuma-test
 fi
@@ -27,10 +31,18 @@ echo "Starting uptime kuma $version..."
 docker run -d --rm -p 3001:3001 --name kuma-test "$tag" > /dev/null
 trap 'echo "Stopping uptime kuma..."; docker stop kuma-test > /dev/null' EXIT
 
-while [[ "$(curl -s -L -o /dev/null -w '%{http_code}' 127.0.0.1:3001)" != "200" ]]
-do
+ready=
+for _ in $(seq 240); do
+  if [ "$(curl -s -L -o /dev/null -w '%{http_code}' 127.0.0.1:3001)" = "200" ]; then
+    ready=1
+    break
+  fi
   sleep 0.5
 done
+if [ -z "$ready" ]; then
+  echo "Uptime Kuma did not answer HTTP 200 within 120 s" >&2
+  exit 1
+fi
 
 echo "Running tests..."
 python -m unittest discover -s tests
