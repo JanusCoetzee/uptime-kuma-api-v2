@@ -3,7 +3,6 @@ from __future__ import annotations
 from urllib.parse import quote
 
 import requests
-from packaging.version import parse as parse_version
 
 from .. import (
     Event,
@@ -65,10 +64,7 @@ class StatusPagesMixin(MixinBase):
             publicGroupList: list | None = None
     ) -> tuple[str, dict, str, list]:
         if not theme:
-            if parse_version(self.version) >= parse_version("1.22"):
-                theme = "auto"
-            else:
-                theme = "light"
+            theme = "auto"
         if theme not in ["auto", "light", "dark"]:
             raise ValueError(f"Unknown theme: {theme}. Valid themes: auto, light, dark")
         if not domainNameList:
@@ -89,11 +85,8 @@ class StatusPagesMixin(MixinBase):
             "customCSS": customCSS,
             "footerText": footerText,
             "showPoweredBy": showPoweredBy,
+            "showCertificateExpiry": showCertificateExpiry,
         }
-        if parse_version(self.version) >= parse_version("1.23"):
-            config.update({
-                "showCertificateExpiry": showCertificateExpiry,
-            })
         return slug, config, icon, publicGroupList
 
     def get_status_pages(self) -> list[dict]:

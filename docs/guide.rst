@@ -143,6 +143,8 @@ Uptime Kuma               uptime-kuma-api-v2
 ========================  ===============================
 
 Integration tests run against Uptime Kuma 2.5.6, built from source in CI.
+Uptime Kuma 1.x is not supported: the code no longer branches on server
+versions below 2.0. Other 2.x versions are expected to work but are not tested.
 
 For contributors: generated code
 ================================

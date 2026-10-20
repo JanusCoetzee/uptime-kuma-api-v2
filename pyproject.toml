@@ -13,7 +13,6 @@ license-files = ["LICENSE"]
 authors = [{ name = "Janus Coetzee", email = "januscoetzee@gmail.com" }]
 dependencies = [
     "python-socketio[client]>=5.0.0",
-    "packaging",
     "requests",
 ]
 classifiers = [

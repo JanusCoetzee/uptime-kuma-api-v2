@@ -1,5 +1,4 @@
 import unittest
-from packaging.version import parse as parse_version
 
 from uptime_kuma_api import UptimeKumaException, MonitorType, AuthMethod, MonitorStatus
 from uptime_kuma_test_case import UptimeKumaTestCase
@@ -351,9 +350,6 @@ class TestMonitor(UptimeKumaTestCase):
         self.do_test_monitor_type(expected_monitor)
 
     def test_monitor_type_group(self):
-        if parse_version(self.api.version) < parse_version("1.22"):
-            self.skipTest("Unsupported in this Uptime Kuma version")
-
         # create monitor group
         expected_monitor = {
             "type": MonitorType.GROUP,
@@ -371,9 +367,6 @@ class TestMonitor(UptimeKumaTestCase):
         self.do_test_monitor_type(expected_monitor)
 
     def test_monitor_type_json_query(self):
-        if parse_version(self.api.version) < parse_version("1.23"):
-            self.skipTest("Unsupported in this Uptime Kuma version")
-
         expected_monitor = {
             "type": MonitorType.JSON_QUERY,
             "name": "monitor 1",
@@ -384,9 +377,6 @@ class TestMonitor(UptimeKumaTestCase):
         self.do_test_monitor_type(expected_monitor)
 
     def test_monitor_type_real_browser(self):
-        if parse_version(self.api.version) < parse_version("1.23"):
-            self.skipTest("Unsupported in this Uptime Kuma version")
-
         expected_monitor = {
             "type": MonitorType.REAL_BROWSER,
             "name": "monitor 1",
@@ -395,9 +385,6 @@ class TestMonitor(UptimeKumaTestCase):
         self.do_test_monitor_type(expected_monitor)
 
     def test_monitor_type_kafka_producer(self):
-        if parse_version(self.api.version) < parse_version("1.23"):
-            self.skipTest("Unsupported in this Uptime Kuma version")
-
         expected_monitor = {
             "type": MonitorType.KAFKA_PRODUCER,
             "name": "monitor 1",
@@ -407,9 +394,6 @@ class TestMonitor(UptimeKumaTestCase):
         self.do_test_monitor_type(expected_monitor)
 
     def test_monitor_type_tailscale_ping(self):
-        if parse_version(self.api.version) < parse_version("1.23"):
-            self.skipTest("Unsupported in this Uptime Kuma version")
-
         expected_monitor = {
             "type": MonitorType.TAILSCALE_PING,
             "name": "monitor 1",

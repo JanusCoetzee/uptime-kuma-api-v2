@@ -67,6 +67,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - A repeated login no longer duplicates heartbeats in the cache: a re-sent batch replaces the cached copies of the same beats, matched by `time` (live beats have no `id`) (#107).
 
+- **Breaking:** Uptime Kuma 1.x is no longer supported. The `1.22`/`1.23`/`1.23.1` version checks are gone, so `parent`, `invertKeyword`, `timeout`, `gamedigGivenPortOnly`, `showCertificateExpiry`, `chromeExecutable` and `nscd` are always sent, and the default status page theme is `auto`. `packaging` is no longer a dependency, and these calls no longer wait for the server info event to read the version (#33).
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).

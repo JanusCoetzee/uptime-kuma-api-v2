@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from packaging.version import parse as parse_version
 
 from .. import (
     AuthMethod,
@@ -154,19 +153,17 @@ class MonitorsMixin(MixinBase):
             "httpBodyEncoding": httpBodyEncoding,
         }
 
-        if parse_version(self.version) >= parse_version("1.22"):
-            data.update({
-                "parent": parent,
-            })
+        data.update({
+            "parent": parent,
+        })
 
         if type in [MonitorType.KEYWORD, MonitorType.GRPC_KEYWORD]:
             data.update({
                 "keyword": keyword,
             })
-            if parse_version(self.version) >= parse_version("1.23"):
-                data.update({
-                    "invertKeyword": invertKeyword,
-                })
+            data.update({
+                "invertKeyword": invertKeyword,
+            })
 
         # HTTP, KEYWORD, JSON_QUERY, REAL_BROWSER
         data.update({
@@ -189,10 +186,9 @@ class MonitorsMixin(MixinBase):
             "authMethod": authMethod,
         })
 
-        if parse_version(self.version) >= parse_version("1.23"):
-            data.update({
-                "timeout": timeout,
-            })
+        data.update({
+            "timeout": timeout,
+        })
 
         if authMethod in [AuthMethod.HTTP_BASIC, AuthMethod.NTLM]:
             data.update({
@@ -301,10 +297,9 @@ class MonitorsMixin(MixinBase):
             data.update({
                 "game": game,
             })
-            if parse_version(self.version) >= parse_version("1.23"):
-                data.update({
-                    "gamedigGivenPortOnly": gamedigGivenPortOnly,
-                })
+            data.update({
+                "gamedigGivenPortOnly": gamedigGivenPortOnly,
+            })
 
         # JSON_QUERY
         if type == MonitorType.JSON_QUERY:
