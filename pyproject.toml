@@ -36,8 +36,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/JanusCoetzee/uptime-kuma-api-v2"
 
-[tool.setuptools]
-packages = ["uptime_kuma_api", "uptime_kuma_api._mixins"]
+[tool.setuptools.packages.find]
+include = ["uptime_kuma_api*"]
 
 [tool.setuptools.package-data]
 uptime_kuma_api = ["py.typed"]
