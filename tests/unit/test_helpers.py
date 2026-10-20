@@ -1,9 +1,10 @@
 import contextlib
+import logging
 import threading
 import time
-import unittest
 from unittest import mock
 
+import pytest
 import requests
 import socketio
 
@@ -36,32 +37,32 @@ from uptime_kuma_api._mixins.status_pages import _build_status_page_response
 from uptime_kuma_api._mixins.tags import _check_arguments_tag
 
 
-class TestParsing(unittest.TestCase):
+class TestParsing:
     def test_int_to_bool_dict_and_list(self):
         d = {"a": 1, "b": 0, "c": 5}
         int_to_bool(d, ["a", "b", "c", "missing"])
-        self.assertEqual(d, {"a": True, "b": False, "c": False})
+        assert d == {"a": True, "b": False, "c": False}
         rows = [{"a": 1}, {"a": 0}]
         int_to_bool(rows, ["a"])
-        self.assertEqual(rows, [{"a": True}, {"a": False}])
+        assert rows == [{"a": True}, {"a": False}]
 
     def test_parse_value_enum_default_and_invalid(self):
         d = {"status": 1}
         parse_monitor_status(d)
-        self.assertIs(d["status"], MonitorStatus.UP)
+        assert d["status"] is MonitorStatus.UP
         d = {"x": None}
         parse_value(d, "x", int, default=7)
-        self.assertEqual(d["x"], 7)
+        assert d["x"] == 7
         d = {"status": 99}  # unknown value is left untouched
         parse_monitor_status(d)
-        self.assertEqual(d["status"], 99)
+        assert d["status"] == 99
         parse_value(None, "x", int)  # falsy data is a no-op
 
     def test_gen_secret(self):
         s = gen_secret(32)
-        self.assertEqual(len(s), 32)
-        self.assertTrue(s.isalnum())
-        self.assertNotEqual(s, gen_secret(32))
+        assert len(s) == 32
+        assert s.isalnum()
+        assert s != gen_secret(32)
 
 DATABASE_TYPES = (
     MonitorType.SQLSERVER, MonitorType.POSTGRES, MonitorType.MYSQL,
@@ -69,7 +70,7 @@ DATABASE_TYPES = (
 )
 
 
-class TestConvertMonitorInput(unittest.TestCase):
+class TestConvertMonitorInput:
     def kwargs(self, **kw):
         base = dict(accepted_statuscodes=None, notificationIDList=None,
                     databaseConnectionString=None, type=MonitorType.HTTP)
@@ -79,27 +80,27 @@ class TestConvertMonitorInput(unittest.TestCase):
     def test_defaults(self):
         k = self.kwargs(notificationIDList=[1, 2])
         _convert_monitor_input(k)
-        self.assertEqual(k["accepted_statuscodes"], ["200-299"])
-        self.assertEqual(k["notificationIDList"], {1: True, 2: True})
+        assert k["accepted_statuscodes"] == ["200-299"]
+        assert k["notificationIDList"] == {1: True, 2: True}
 
     def test_push_token_generated(self):
         k = self.kwargs(type=MonitorType.PUSH)
         _convert_monitor_input(k)
-        self.assertEqual(len(k["pushToken"]), 32)
+        assert len(k["pushToken"]) == 32
         k = self.kwargs(type=MonitorType.PUSH, pushToken="mine")
         _convert_monitor_input(k)
-        self.assertEqual(k["pushToken"], "mine")
+        assert k["pushToken"] == "mine"
 
     def test_no_placeholder_connection_string(self):
         for t in DATABASE_TYPES:
             k = self.kwargs(type=t)
             _convert_monitor_input(k)
-            self.assertIsNone(k["databaseConnectionString"], t)
+            assert k["databaseConnectionString"] is None
 
 
-class TestChecks(unittest.TestCase):
+class TestChecks:
     def test_missing_arguments(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_missing_arguments(["a", "b"], {"a": 1})
         _check_missing_arguments(["a"], {"a": 0})  # 0 is a value
 
@@ -109,7 +110,7 @@ class TestChecks(unittest.TestCase):
         _check_argument_conditions(c, {"n": None})
         _check_argument_conditions(c, {})
         for bad in (0, 4):
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 _check_argument_conditions(c, {"n": bad})
 
     def monitor(self, **kw):
@@ -121,35 +122,35 @@ class TestChecks(unittest.TestCase):
 
     def test_monitor_ok_and_required_by_type(self):
         _check_arguments_monitor(self.monitor())
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_monitor(self.monitor(type=MonitorType.PORT))
         _check_arguments_monitor(self.monitor(type=MonitorType.PORT, hostname="h", port=80))
 
     def test_monitor_ranges(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             _check_arguments_monitor(self.monitor(interval=19))
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             _check_arguments_monitor(self.monitor(type=MonitorType.PORT, hostname="h", port=70000))
 
     def test_database_types_require_connection_string(self):
         for t in DATABASE_TYPES:
-            with self.assertRaisesRegex(TypeError, "databaseConnectionString"):
+            with pytest.raises(TypeError, match="databaseConnectionString"):
                 _check_arguments_monitor(self.monitor(type=t))
             _check_arguments_monitor(
                 self.monitor(type=t, databaseConnectionString="x"))
 
     def test_unknown_type_raises_clean_error(self):
-        with self.assertRaisesRegex(ValueError, "unsupported monitor type: ntp"):
+        with pytest.raises(ValueError, match="unsupported monitor type: ntp"):
             _check_arguments_monitor(self.monitor(type="ntp"))
 
     def test_statuscode_error_names_the_offending_value(self):
         for good in ("200", "999", "100-199", "500-599"):
             _check_arguments_monitor(self.monitor(accepted_statuscodes=[good]))
         for bad in ("1000", "99", "foo", "200-300"):
-            with self.assertRaises(ValueError) as cm:
+            with pytest.raises(ValueError) as cm:
                 _check_arguments_monitor(self.monitor(accepted_statuscodes=[bad]))
-            self.assertIn(repr(bad), str(cm.exception))
-            self.assertLess(len(str(cm.exception)), 200)
+            assert repr(bad) in str(cm.value)
+            assert len(str(cm.value)) < 200
 
     def test_kafka_sasl_options_missing_or_none_means_no_mechanism(self):
         kafka = dict(type=MonitorType.KAFKA_PRODUCER, kafkaProducerTopic="t",
@@ -158,14 +159,14 @@ class TestChecks(unittest.TestCase):
             _check_arguments_monitor(self.monitor(kafkaProducerSaslOptions=opts, **kafka))
         _check_arguments_monitor(self.monitor(**kafka))
         for bad in ("x", ""):
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 _check_arguments_monitor(
                     self.monitor(kafkaProducerSaslOptions={"mechanism": bad}, **kafka))
 
     def test_status_page_theme_error_lists_valid_themes(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
-        with self.assertRaisesRegex(ValueError, "Valid themes: auto, light, dark"):
+        with pytest.raises(ValueError, match="Valid themes: auto, light, dark"):
             api._build_status_page_data("s", id=1, title="t", theme="neon")
 
     def test_every_monitor_type_has_required_args_entry(self):
@@ -174,68 +175,73 @@ class TestChecks(unittest.TestCase):
                 _check_arguments_monitor(self.monitor(type=t))
             except (TypeError, ValueError) as e:
                 if "unsupported monitor type" in str(e):
-                    self.fail(f"{t} missing from required_args_by_type")
+                    pytest.fail(f"{t} missing from required_args_by_type")
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
         _check_arguments_proxy(ok)
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_proxy(dict(ok, auth=True))
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             _check_arguments_proxy(dict(ok, port=65536))
 
     def test_maintenance(self):
         _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.MANUAL))
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.RECURRING_INTERVAL))
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.MANUAL, intervalDay=0))
 
     def test_tag(self):
         _check_arguments_tag(dict(name="n", color="#fff"))
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_tag(dict(name="n"))
 
     def test_notification(self):
         ok = dict(type=NotificationType.WEBHOOK, name="n",
                   webhookContentType="json", webhookURL="http://x")
         _check_arguments_notification(ok)
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_notification(dict(type=NotificationType.WEBHOOK, name="n"))
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _check_arguments_notification(dict(type=NotificationType.WEBHOOK))
 
 
-class TestBuildNotificationData(unittest.TestCase):
+class TestBuildNotificationData:
     def test_defaults_and_kwargs(self):
         d = _build_notification_data("n", NotificationType.WEBHOOK, webhookURL="u")
-        self.assertEqual(d, dict(name="n", type=NotificationType.WEBHOOK, isDefault=False,
-                                 applyExisting=False, webhookURL="u"))
+        assert d == dict(
+            name="n",
+            type=NotificationType.WEBHOOK,
+            isDefault=False,
+            applyExisting=False,
+            webhookURL="u",
+        )
 
     def test_unknown_argument(self):
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             _build_notification_data("n", NotificationType.WEBHOOK, nope=1)
 
 
-class TestStatusPageResponse(unittest.TestCase):
+class TestStatusPageResponse:
     inc = {"id": 1, "style": "danger", "title": "t"}
 
     def test_2_5_incidents_list(self):
         d = _build_status_page_response({}, {"incidents": [dict(self.inc)]})
-        self.assertEqual(len(d["incidents"]), 1)
-        self.assertEqual(d["incident"]["id"], 1)
-        self.assertEqual(d["incident"]["style"].value, "danger")
+        assert len(d["incidents"]) == 1
+        assert d["incident"]["id"] == 1
+        assert d["incident"]["style"].value == "danger"
 
     def test_legacy_incident(self):
         d = _build_status_page_response({}, {"incident": dict(self.inc)})
-        self.assertEqual(d["incidents"][0]["id"], 1)
+        assert d["incidents"][0]["id"] == 1
 
     def test_none(self):
         d = _build_status_page_response({}, {})
-        self.assertEqual((d["incident"], d["incidents"]), (None, []))
+        assert (d["incident"], d["incidents"]) == (None, [])
 
 
-class TestSaveStatusPage(unittest.TestCase):
+class TestSaveStatusPage:
     def test_derived_keys_not_sent(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -249,10 +255,10 @@ class TestSaveStatusPage(unittest.TestCase):
         api.save_status_page("s")
         config = sent[0][1][1]
         for key in ("incident", "incidents", "maintenanceList", "publicGroupList"):
-            self.assertNotIn(key, config)
+            assert key not in config
 
 
-class TestMonitorListDeltaEvents(unittest.TestCase):
+class TestMonitorListDeltaEvents:
     def api(self, monitors):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -263,23 +269,22 @@ class TestMonitorListDeltaEvents(unittest.TestCase):
     def test_update_adds_and_replaces(self):
         api = self.api({"1": {"name": "a"}})
         api._event_update_monitor_into_list({"1": {"name": "b"}, "2": {"name": "c"}})
-        self.assertEqual(api._event_data[Event.MONITOR_LIST],
-                         {"1": {"name": "b"}, "2": {"name": "c"}})
+        assert api._event_data[Event.MONITOR_LIST] == {"1": {"name": "b"}, "2": {"name": "c"}}
 
     def test_delete_removes_and_ignores_unknown(self):
         api = self.api({"1": {}, "2": {}})
         api._event_delete_monitor_from_list(1)
         api._event_delete_monitor_from_list(99)
-        self.assertEqual(list(api._event_data[Event.MONITOR_LIST]), ["2"])
+        assert list(api._event_data[Event.MONITOR_LIST]) == ["2"]
 
     def test_noop_before_initial_list(self):
         api = self.api(None)
         api._event_update_monitor_into_list({"1": {}})
         api._event_delete_monitor_from_list(1)
-        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+        assert api._event_data[Event.MONITOR_LIST] is None
 
 
-class TestGetStatusPageHttp(unittest.TestCase):
+class TestGetStatusPageHttp:
     def api(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -307,46 +312,46 @@ class TestGetStatusPageHttp(unittest.TestCase):
         ]
         for exc, expected in cases:
             get.side_effect = exc
-            with self.assertRaises(expected) as cm:
+            with pytest.raises(expected) as cm:
                 self.api().get_status_page("s")
-            self.assertIs(cm.exception.__cause__, exc)
+            assert cm.value.__cause__ is exc
 
     @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
     def test_invalid_json(self, get):
         get.return_value.json.side_effect = ValueError("not json")
-        with self.assertRaises(UptimeKumaException):
+        with pytest.raises(UptimeKumaException):
             self.api().get_status_page("s")
 
 
-class TestMergeSettings(unittest.TestCase):
+class TestMergeSettings:
     def test_only_non_none_override(self):
         cur = {"keepDataPeriodDays": 30, "trustProxy": True}
         d = _merge_settings(cur, {"checkUpdate": False, "keepDataPeriodDays": None, "trustProxy": None})
-        self.assertEqual(d["keepDataPeriodDays"], 30)
-        self.assertIs(d["trustProxy"], True)
-        self.assertIs(d["checkUpdate"], False)
+        assert d["keepDataPeriodDays"] == 30
+        assert d["trustProxy"] is True
+        assert d["checkUpdate"] is False
 
     def test_falsy_values_override(self):
         d = _merge_settings({"keepDataPeriodDays": 30, "steamAPIKey": "x"}, {"keepDataPeriodDays": 0, "steamAPIKey": ""})
-        self.assertEqual((d["keepDataPeriodDays"], d["steamAPIKey"]), (0, ""))
+        assert (d["keepDataPeriodDays"], d["steamAPIKey"]) == (0, "")
 
     def test_entry_page_fallback(self):
-        self.assertEqual(_merge_settings({}, {})["entryPage"], "dashboard")
+        assert _merge_settings({}, {})["entryPage"] == "dashboard"
 
 
-class TestLoginAutoLogin(unittest.TestCase):
+class TestLoginAutoLogin:
     def test_timeout_message_mentions_credentials(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
         api._event_data = {Event.AUTO_LOGIN: None}
         api._event_seq = dict.fromkeys(api._event_data, 0)
         api.timeout = 0.05
-        with self.assertRaises(Timeout) as cm:
+        with pytest.raises(Timeout) as cm:
             api.login()
-        self.assertIn("username and password", str(cm.exception))
+        assert "username and password" in str(cm.value)
 
 
-class TestHeartbeatCap(unittest.TestCase):
+class TestHeartbeatCap:
     def test_keeps_150_newest_last(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -355,11 +360,11 @@ class TestHeartbeatCap(unittest.TestCase):
         for i in range(200):
             api._event_heartbeat({"monitorID": 1, "important": False, "id": i})
         beats = api._event_data[Event.HEARTBEAT_LIST][1]
-        self.assertEqual(len(beats), 150)
-        self.assertEqual((beats[0]["id"], beats[-1]["id"]), (50, 199))
+        assert len(beats) == 150
+        assert (beats[0]["id"], beats[-1]["id"]) == (50, 199)
 
 
-class TestAddMonitorTagCache(unittest.TestCase):
+class TestAddMonitorTagCache:
     def api(self, cache):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -373,13 +378,13 @@ class TestAddMonitorTagCache(unittest.TestCase):
     def test_none_cache_does_not_raise(self):
         api, _ = self.api(None)
         api.add_monitor_tag(1, 1)
-        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+        assert api._event_data[Event.MONITOR_LIST] is None
 
     def test_cache_gets_raw_monitor(self):
         api, raw = self.api({})
         api.add_monitor_tag(1, 1)
-        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
-        self.assertEqual(raw["notificationIDList"], {"3": True})
+        assert api._event_data[Event.MONITOR_LIST]["1"] is raw
+        assert raw["notificationIDList"] == {"3": True}
 
     def delete_api(self, cache):
         api, raw = self.api(cache)
@@ -390,34 +395,33 @@ class TestAddMonitorTagCache(unittest.TestCase):
 
     def test_delete_returns_response_with_none_cache(self):
         api, _ = self.delete_api(None)
-        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
-        self.assertIsNone(api._event_data[Event.MONITOR_LIST])
+        assert api.delete_monitor_tag(1, 1) == {"msg": "ok"}
+        assert api._event_data[Event.MONITOR_LIST] is None
 
     def test_delete_caches_raw_monitor(self):
         api, raw = self.delete_api({})
-        self.assertEqual(api.delete_monitor_tag(1, 1), {"msg": "ok"})
-        self.assertIs(api._event_data[Event.MONITOR_LIST]["1"], raw)
+        assert api.delete_monitor_tag(1, 1) == {"msg": "ok"}
+        assert api._event_data[Event.MONITOR_LIST]["1"] is raw
 
 
-class TestUnknownEnumLogging(unittest.TestCase):
-    def setUp(self):
+class TestUnknownEnumLogging:
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         _warned_values.clear()
 
-    def test_warns_once_and_keeps_raw_value(self):
+    def test_warns_once_and_keeps_raw_value(self, caplog):
+        caplog.set_level(logging.WARNING, logger="uptime_kuma_api.api")
         d = {"type": "brand-new-type"}
-        with self.assertLogs("uptime_kuma_api.api", "WARNING") as cm:
-            parse_value(d, "type", MonitorType)
-        self.assertEqual(d["type"], "brand-new-type")
-        self.assertIn("brand-new-type", cm.output[0])
-        with self.assertNoLogs("uptime_kuma_api.api", "WARNING"):
-            parse_value(dict(d), "type", MonitorType)
+        parse_value(d, "type", MonitorType)
+        assert d["type"] == "brand-new-type"
+        assert len(caplog.records) == 1
+        assert "brand-new-type" in caplog.records[0].getMessage()
+        caplog.clear()
+        parse_value(dict(d), "type", MonitorType)
+        assert not caplog.records
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-class TestVersionCache(unittest.TestCase):
+class TestVersionCache:
     def _api(self, info):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -431,24 +435,24 @@ class TestVersionCache(unittest.TestCase):
         api = self._api({"version": "2.5.6"})
         with mock.patch.object(api, "_get_event_data") as get, \
                 mock.patch("time.sleep") as sleep:
-            self.assertEqual(api.version, "2.5.6")
+            assert api.version == "2.5.6"
             api._event_data[Event.INFO] = {"version": "9.9.9"}
-            self.assertEqual(api.version, "2.5.6")
+            assert api.version == "2.5.6"
         get.assert_not_called()
         sleep.assert_not_called()
 
     def test_new_info_event_resets_cache(self):
         api = self._api({"version": "2.5.6"})
-        self.assertEqual(api.version, "2.5.6")
+        assert api.version == "2.5.6"
         api._event_info({"version": "2.6.0"})
-        self.assertEqual(api.version, "2.6.0")
+        assert api.version == "2.6.0"
 
     def test_times_out_without_info(self):
-        with self.assertRaises(Timeout):
+        with pytest.raises(Timeout):
             _ = self._api(None).version
 
 
-class TestSocketErrorMapping(unittest.TestCase):
+class TestSocketErrorMapping:
     def api(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api.sio = mock.Mock()
@@ -461,37 +465,37 @@ class TestSocketErrorMapping(unittest.TestCase):
         api = self.api()
         cause = socketio.exceptions.TimeoutError()
         api.sio.call.side_effect = cause
-        with self.assertRaises(Timeout) as cm:
+        with pytest.raises(Timeout) as cm:
             api._call("getMonitor", 1)
-        self.assertIs(cm.exception.__cause__, cause)
+        assert cm.value.__cause__ is cause
 
     def test_call_maps_other_socketio_errors(self):
         for error in (socketio.exceptions.BadNamespaceError(),
                       socketio.exceptions.ConnectionError()):
             api = self.api()
             api.sio.call.side_effect = error
-            with self.assertRaises(UptimeKumaException) as cm:
+            with pytest.raises(UptimeKumaException) as cm:
                 api._call("getMonitor", 1)
-            self.assertNotIsInstance(cm.exception, Timeout)
-            self.assertIs(cm.exception.__cause__, error)
+            assert not isinstance(cm.value, Timeout)
+            assert cm.value.__cause__ is error
 
     def test_connect_raises_connection_error_with_cause(self):
         api = self.api()
         cause = socketio.exceptions.ConnectionError("refused")
         api.sio.connect.side_effect = cause
-        with self.assertRaises(UptimeKumaConnectionError) as cm:
+        with pytest.raises(UptimeKumaConnectionError) as cm:
             api.connect()
-        self.assertIs(cm.exception.__cause__, cause)
-        self.assertIsInstance(cm.exception, UptimeKumaException)
+        assert cm.value.__cause__ is cause
+        assert isinstance(cm.value, UptimeKumaException)
 
     def test_connect_does_not_swallow_keyboard_interrupt(self):
         api = self.api()
         api.sio.connect.side_effect = KeyboardInterrupt
-        with self.assertRaises(KeyboardInterrupt):
+        with pytest.raises(KeyboardInterrupt):
             api.connect()
 
 
-class TestWaitForNewEvent(unittest.TestCase):
+class TestWaitForNewEvent:
     def _api(self, timeout=1):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -508,8 +512,8 @@ class TestWaitForNewEvent(unittest.TestCase):
         start = time.time()
         with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
             pass
-        self.assertGreaterEqual(time.time() - start, 0.15)
-        self.assertEqual(api._event_data[Event.NOTIFICATION_LIST], [{"id": 1}])
+        assert time.time() - start >= 0.15
+        assert api._event_data[Event.NOTIFICATION_LIST] == [{"id": 1}]
 
     def test_event_during_body_counts(self):
         api = self._api()
@@ -518,13 +522,13 @@ class TestWaitForNewEvent(unittest.TestCase):
 
     def test_times_out_without_new_event(self):
         api = self._api(timeout=0.05)
-        with self.assertRaises(Timeout):
+        with pytest.raises(Timeout):
             with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
                 pass
 
     def test_body_error_propagates_without_waiting(self):
         api = self._api(timeout=0.05)
-        with self.assertRaises(UptimeKumaException):
+        with pytest.raises(UptimeKumaException):
             with api.wait_for_event(Event.NOTIFICATION_LIST, new=True):
                 raise UptimeKumaException("nope")
 
@@ -534,7 +538,7 @@ class TestWaitForNewEvent(unittest.TestCase):
             pass  # data already present, no new event needed
 
 
-class TestEditMonitorShapes(unittest.TestCase):
+class TestEditMonitorShapes:
     """edit_monitor feeds get_monitor() output through the add_monitor path."""
 
     def edit(self, stored=None, **kwargs):
@@ -554,42 +558,42 @@ class TestEditMonitorShapes(unittest.TestCase):
         with mock.patch.object(api, "_call", return_value={}) as call:
             api.edit_monitor(1, **kwargs)
         event, data = call.call_args.args
-        self.assertEqual(event, "editMonitor")
+        assert event == "editMonitor"
         return data
 
     def test_edit_only_name_keeps_the_rest(self):
         data = self.edit(name="new")
-        self.assertEqual(data["name"], "new")
-        self.assertEqual(data["url"], "http://x")
-        self.assertEqual(data["accepted_statuscodes"], ["200-299"])
-        self.assertEqual(data["notificationIDList"], {1: True, 2: True})
+        assert data["name"] == "new"
+        assert data["url"] == "http://x"
+        assert data["accepted_statuscodes"] == ["200-299"]
+        assert data["notificationIDList"] == {1: True, 2: True}
 
     def test_notification_id_list_as_list(self):
         data = self.edit(notificationIDList=[3])
-        self.assertEqual(data["notificationIDList"], {3: True})
+        assert data["notificationIDList"] == {3: True}
 
     def test_notification_id_list_as_dict(self):
         data = self.edit(notificationIDList={3: True})
-        self.assertEqual(data["notificationIDList"], {3: True})
+        assert data["notificationIDList"] == {3: True}
 
     def test_empty_accepted_statuscodes_gets_default(self):
         for empty in ([], None):
             data = self.edit(accepted_statuscodes=empty)
-            self.assertEqual(data["accepted_statuscodes"], ["200-299"])
+            assert data["accepted_statuscodes"] == ["200-299"]
 
     def test_push_token_is_preserved(self):
         data = self.edit(stored=dict(type=MonitorType.PUSH, pushToken="tok"),
                          name="new")
-        self.assertEqual(data["pushToken"], "tok")
+        assert data["pushToken"] == "tok"
 
     def test_auth_method_is_preserved(self):
         data = self.edit(stored=dict(authMethod=AuthMethod.HTTP_BASIC), name="n")
-        self.assertEqual(data["authMethod"], AuthMethod.HTTP_BASIC)
+        assert data["authMethod"] == AuthMethod.HTTP_BASIC
         data = self.edit(authMethod=AuthMethod.NTLM)
-        self.assertEqual(data["authMethod"], AuthMethod.NTLM)
+        assert data["authMethod"] == AuthMethod.NTLM
 
 
-class TestEventDataThreadSafety(unittest.TestCase):
+class TestEventDataThreadSafety:
     def api(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
@@ -606,8 +610,8 @@ class TestEventDataThreadSafety(unittest.TestCase):
         thread = threading.Thread(target=lambda: (func(), done.set()))
         with api._lock:
             thread.start()
-            self.assertFalse(done.wait(0.2), "ran without taking the lock")
-        self.assertTrue(done.wait(2))
+            assert not done.wait(0.2)
+        assert done.wait(2)
         thread.join()
 
     def test_handlers_take_the_lock(self):
@@ -617,7 +621,7 @@ class TestEventDataThreadSafety(unittest.TestCase):
         self.blocked_while_locked(api, lambda: api._event_monitor_list({}))
         self.blocked_while_locked(
             api, lambda: api._event_update_monitor_into_list({"1": {}}))
-        self.assertEqual(len(api._event_data[Event.HEARTBEAT_LIST][1]), 1)
+        assert len(api._event_data[Event.HEARTBEAT_LIST][1]) == 1
 
     def test_cache_copy_takes_the_lock(self):
         api = self.api()
@@ -631,10 +635,10 @@ class TestEventDataThreadSafety(unittest.TestCase):
         api._call = lambda event, data=None: {"config": {"id": 2, "slug": "b"}}
         api.get_status_page = lambda slug: {"id": 2, "slug": slug}
         self.blocked_while_locked(api, lambda: api.save_status_page("b"))
-        self.assertIn("2", api._event_data[Event.STATUS_PAGE_LIST])
+        assert "2" in api._event_data[Event.STATUS_PAGE_LIST]
         api.get_status_pages = lambda: [{"slug": "a"}]
         self.blocked_while_locked(api, lambda: api.delete_status_page("a"))
-        self.assertNotIn("1", api._event_data[Event.STATUS_PAGE_LIST])
+        assert "1" not in api._event_data[Event.STATUS_PAGE_LIST]
 
     def test_concurrent_heartbeats_and_reads_stay_consistent(self):
         api = self.api()
@@ -667,5 +671,5 @@ class TestEventDataThreadSafety(unittest.TestCase):
             t.join()
         stop.set()
         reader.join()
-        self.assertEqual(errors, [])
-        self.assertEqual(len(api._event_data[Event.HEARTBEAT_LIST][1]), 150)
+        assert errors == []
+        assert len(api._event_data[Event.HEARTBEAT_LIST][1]) == 150

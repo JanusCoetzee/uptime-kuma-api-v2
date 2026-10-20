@@ -4,7 +4,7 @@ These pin what is sent to the server, so changing a default, a key or a
 condition shows up here (and in mutation testing).
 """
 import datetime
-import unittest
+import pytest
 
 from tests.unit.fake_kuma import make_api
 from uptime_kuma_api import (
@@ -17,55 +17,58 @@ from uptime_kuma_api import (
 )
 
 
-class TestMonitorPayload(unittest.TestCase):
-    def setUp(self):
+class TestMonitorPayload:
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.api = make_api()
 
     def test_http_defaults(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://x")
-        self.assertEqual(self.api.sio.sent("add"), [{
-            "accepted_statuscodes": ["200-299"],
-            "authMethod": AuthMethod.NONE,
-            "body": None,
-            "conditions": None,
-            "databaseConnectionString": None,
-            "description": None,
-            "dns_resolve_server": "1.1.1.1",
-            "dns_resolve_type": "A",
-            "expiryNotification": False,
-            "headers": None,
-            "hostname": None,
-            "httpBodyEncoding": "json",
-            "ignoreTls": False,
-            "interval": 60,
-            "maxredirects": 10,
-            "maxretries": 1,
-            "method": "GET",
-            "mqttPassword": "",
-            "mqttSuccessMessage": "",
-            "mqttTopic": "",
-            "mqttUsername": "",
-            "name": "n",
-            "notificationIDList": {},
-            "packetSize": 56,
-            "parent": None,
-            "port": None,
-            "proxyId": None,
-            "resendInterval": 0,
-            "retryInterval": 60,
-            "timeout": 48,
-            "type": MonitorType.HTTP,
-            "upsideDown": False,
-            "url": "http://x",
-        }])
+        assert self.api.sio.sent("add") == [
+            {
+                "accepted_statuscodes": ["200-299"],
+                "authMethod": AuthMethod.NONE,
+                "body": None,
+                "conditions": None,
+                "databaseConnectionString": None,
+                "description": None,
+                "dns_resolve_server": "1.1.1.1",
+                "dns_resolve_type": "A",
+                "expiryNotification": False,
+                "headers": None,
+                "hostname": None,
+                "httpBodyEncoding": "json",
+                "ignoreTls": False,
+                "interval": 60,
+                "maxredirects": 10,
+                "maxretries": 1,
+                "method": "GET",
+                "mqttPassword": "",
+                "mqttSuccessMessage": "",
+                "mqttTopic": "",
+                "mqttUsername": "",
+                "name": "n",
+                "notificationIDList": {},
+                "packetSize": 56,
+                "parent": None,
+                "port": None,
+                "proxyId": None,
+                "resendInterval": 0,
+                "retryInterval": 60,
+                "timeout": 48,
+                "type": MonitorType.HTTP,
+                "upsideDown": False,
+                "url": "http://x",
+            }
+        ]
 
     def test_old_servers_do_not_get_new_fields(self):
         self.api._event_data[Event.INFO] = {"version": "1.21.0"}
         self.api._version = None
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u")
         (data,) = self.api.sio.sent("add")
-        self.assertNotIn("parent", data)
-        self.assertNotIn("timeout", data)
+        assert "parent" not in data
+        assert "timeout" not in data
 
     def test_overrides_are_sent(self):
         self.api.add_monitor(
@@ -83,7 +86,7 @@ class TestMonitorPayload(unittest.TestCase):
                 "ignoreTls": True, "expiryNotification": True, "proxyId": 2,
                 "maxredirects": 0, "accepted_statuscodes": ["300-399"],
                 "timeout": 7, "httpBodyEncoding": "xml"}.items():
-            self.assertEqual(data[key], value, key)
+            assert data[key] == value
 
     def test_type_specific_fields_are_only_sent_for_their_type(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u")
@@ -92,30 +95,30 @@ class TestMonitorPayload(unittest.TestCase):
                     "game", "jsonPath", "kafkaProducerTopic",
                     "databaseQuery", "basic_auth_user", "tlsCert",
                     "oauth_token_url"):
-            self.assertNotIn(key, data, key)
+            assert key not in data
 
     def test_basic_auth_fields_but_not_ntlm_ones(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
                              authMethod=AuthMethod.HTTP_BASIC,
                              basic_auth_user="u", basic_auth_pass="p")
         (data,) = self.api.sio.sent("add")
-        self.assertEqual((data["basic_auth_user"], data["basic_auth_pass"]),
-                         ("u", "p"))
-        self.assertNotIn("authDomain", data)
-        self.assertNotIn("tlsCert", data)
+        assert (data["basic_auth_user"], data["basic_auth_pass"]) == ("u", "p")
+        assert "authDomain" not in data
+        assert "tlsCert" not in data
 
 
-class TestMonitorValidation(unittest.TestCase):
-    def setUp(self):
+class TestMonitorValidation:
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.api = make_api()
 
     def rejects(self, error, **kwargs):
         kwargs.setdefault("type", MonitorType.HTTP)
         kwargs.setdefault("name", "n")
         kwargs.setdefault("url", "u")
-        with self.assertRaises(error):
+        with pytest.raises(error):
             self.api.add_monitor(**kwargs)
-        self.assertEqual(self.api.sio.calls, [])
+        assert self.api.sio.calls == []
 
     def test_numeric_bounds(self):
         self.rejects(ValueError, interval=19)
@@ -135,22 +138,20 @@ class TestMonitorValidation(unittest.TestCase):
                              port=65535)
         self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h",
                              port=0)
-        self.assertEqual(len(self.api.sio.sent("add")), 3)
+        assert len(self.api.sio.sent("add")) == 3
 
-    def test_required_arguments_per_type(self):
-        cases = {
-            MonitorType.HTTP: {},
-            MonitorType.PORT: {"hostname": "h"},
-            MonitorType.PING: {},
-            MonitorType.KEYWORD: {"url": "u"},
-            MonitorType.DOCKER: {"docker_container": "c"},
-            MonitorType.POSTGRES: {},
-            MonitorType.JSON_QUERY: {"url": "u"},
-        }
-        for monitor_type, given in cases.items():
-            with self.subTest(type=monitor_type):
-                with self.assertRaises(TypeError):
-                    self.api.add_monitor(type=monitor_type, name="n", **given)
+    @pytest.mark.parametrize("monitor_type, given", [
+        (MonitorType.HTTP, {}),
+        (MonitorType.PORT, {"hostname": "h"}),
+        (MonitorType.PING, {}),
+        (MonitorType.KEYWORD, {"url": "u"}),
+        (MonitorType.DOCKER, {"docker_container": "c"}),
+        (MonitorType.POSTGRES, {}),
+        (MonitorType.JSON_QUERY, {"url": "u"}),
+    ])
+    def test_required_arguments_per_type(self, monitor_type, given):
+        with pytest.raises(TypeError):
+            self.api.add_monitor(type=monitor_type, name="n", **given)
 
     def test_invalid_statuscodes_and_dns_types(self):
         for code in ("99", "1000", "abc", "200-300"):
@@ -163,29 +164,31 @@ class TestMonitorValidation(unittest.TestCase):
                              accepted_statuscodes=["100-199", "599", "100"])
 
 
-class TestMaintenancePayload(unittest.TestCase):
-    def setUp(self):
+class TestMaintenancePayload:
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.api = make_api()
 
     def test_defaults(self):
         self.api.add_maintenance(title="t",
                                  strategy=MaintenanceStrategy.MANUAL)
         today = datetime.date.today().strftime("%Y-%m-%d 00:00:00")
-        self.assertEqual(self.api.sio.sent("addMaintenance"), [{
-            "active": True,
-            "cron": "30 3 * * *",
-            "dateRange": [today],
-            "daysOfMonth": [],
-            "description": "",
-            "durationMinutes": 60,
-            "intervalDay": 1,
-            "strategy": MaintenanceStrategy.MANUAL,
-            "timeRange": [{"hours": 2, "minutes": 0},
-                          {"hours": 3, "minutes": 0}],
-            "timezoneOption": None,
-            "title": "t",
-            "weekdays": [],
-        }])
+        assert self.api.sio.sent("addMaintenance") == [
+            {
+                "active": True,
+                "cron": "30 3 * * *",
+                "dateRange": [today],
+                "daysOfMonth": [],
+                "description": "",
+                "durationMinutes": 60,
+                "intervalDay": 1,
+                "strategy": MaintenanceStrategy.MANUAL,
+                "timeRange": [{"hours": 2, "minutes": 0}, {"hours": 3, "minutes": 0}],
+                "timezoneOption": None,
+                "title": "t",
+                "weekdays": [],
+            }
+        ]
 
     def test_overrides(self):
         self.api.add_maintenance(
@@ -195,74 +198,114 @@ class TestMaintenancePayload(unittest.TestCase):
             timeRange=[{"hours": 1, "minutes": 2}, {"hours": 3, "minutes": 4}],
             cron="* * * * *", durationMinutes=5, timezoneOption="UTC")
         (data,) = self.api.sio.sent("addMaintenance")
-        self.assertEqual(data["dateRange"], ["a", "b"])
-        self.assertEqual(data["timeRange"][1], {"hours": 3, "minutes": 4})
-        self.assertEqual(
-            (data["active"], data["description"], data["intervalDay"],
-             data["weekdays"], data["daysOfMonth"], data["cron"],
-             data["durationMinutes"], data["timezoneOption"]),
-            (False, "d", 3, [1], [2], "* * * * *", 5, "UTC"))
+        assert data["dateRange"] == ["a", "b"]
+        assert data["timeRange"][1] == {"hours": 3, "minutes": 4}
+        assert (
+            data["active"],
+            data["description"],
+            data["intervalDay"],
+            data["weekdays"],
+            data["daysOfMonth"],
+            data["cron"],
+            data["durationMinutes"],
+            data["timezoneOption"],
+        ) == (False, "d", 3, [1], [2], "* * * * *", 5, "UTC")
 
     def test_strategy_arguments_are_validated(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.api.add_maintenance(
                 title="t", strategy=MaintenanceStrategy.RECURRING_INTERVAL,
                 intervalDay=0)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.api.add_maintenance(
                 title="t", strategy=MaintenanceStrategy.RECURRING_INTERVAL,
                 intervalDay=3651)
-        self.assertEqual(self.api.sio.calls, [])
+        assert self.api.sio.calls == []
 
 
-class TestOtherPayloads(unittest.TestCase):
-    def setUp(self):
+class TestOtherPayloads:
+    @pytest.fixture(autouse=True)
+    def _setup(self):
         self.api = make_api()
 
     def test_proxy_defaults(self):
         self.api.add_proxy(protocol=ProxyProtocol.HTTP, host="h", port=80)
-        self.assertEqual(self.api.sio.sent("addProxy"), [({
-            "active": True, "applyExisting": False, "auth": False,
-            "default": False, "host": "h", "password": None, "port": 80,
-            "protocol": ProxyProtocol.HTTP, "username": None}, None)])
+        assert self.api.sio.sent("addProxy") == [
+            (
+                {
+                    "active": True,
+                    "applyExisting": False,
+                    "auth": False,
+                    "default": False,
+                    "host": "h",
+                    "password": None,
+                    "port": 80,
+                    "protocol": ProxyProtocol.HTTP,
+                    "username": None,
+                },
+                None,
+            )
+        ]
 
     def test_proxy_with_auth(self):
         self.api.add_proxy(protocol=ProxyProtocol.SOCKS5, host="h", port=1,
                            auth=True, username="u", password="p",
                            active=False, default=True, applyExisting=True)
         ((data, _),) = self.api.sio.sent("addProxy")
-        self.assertEqual(
-            (data["auth"], data["username"], data["password"],
-             data["active"], data["default"], data["applyExisting"]),
-            (True, "u", "p", False, True, True))
-        with self.assertRaises(TypeError):
+        assert (
+            data["auth"],
+            data["username"],
+            data["password"],
+            data["active"],
+            data["default"],
+            data["applyExisting"],
+        ) == (True, "u", "p", False, True, True)
+        with pytest.raises(TypeError):
             self.api.add_proxy(protocol=ProxyProtocol.HTTP, host="h",
                                port=1, auth=True, username="u")
 
     def test_status_page_data_defaults_and_overrides(self):
-        self.assertEqual(
-            self.api._build_status_page_data("s", id=1, title="t"),
-            ("s", {
-                "customCSS": "", "description": None, "domainNameList": [],
-                "footerText": None, "googleAnalyticsId": None,
-                "icon": "/icon.svg", "id": 1, "published": True,
-                "showCertificateExpiry": False, "showPoweredBy": True,
-                "showTags": False, "slug": "s", "theme": "auto",
-                "title": "t"}, "/icon.svg", []))
+        assert self.api._build_status_page_data("s", id=1, title="t") == (
+            "s",
+            {
+                "customCSS": "",
+                "description": None,
+                "domainNameList": [],
+                "footerText": None,
+                "googleAnalyticsId": None,
+                "icon": "/icon.svg",
+                "id": 1,
+                "published": True,
+                "showCertificateExpiry": False,
+                "showPoweredBy": True,
+                "showTags": False,
+                "slug": "s",
+                "theme": "auto",
+                "title": "t",
+            },
+            "/icon.svg",
+            [],
+        )
         slug, config, icon, groups = self.api._build_status_page_data(
             "s", id=2, title="t", description="d", theme="dark",
             published=False, showTags=True, domainNameList=["a"],
             googleAnalyticsId="g", customCSS="c", footerText="f",
             showPoweredBy=False, showCertificateExpiry=True, icon="/i",
             publicGroupList=[{"name": "g"}])
-        self.assertEqual((icon, groups), ("/i", [{"name": "g"}]))
-        self.assertEqual(
-            (config["description"], config["theme"], config["published"],
-             config["showTags"], config["domainNameList"],
-             config["googleAnalyticsId"], config["customCSS"],
-             config["footerText"], config["showPoweredBy"],
-             config["showCertificateExpiry"], config["id"]),
-            ("d", "dark", False, True, ["a"], "g", "c", "f", False, True, 2))
+        assert (icon, groups) == ("/i", [{"name": "g"}])
+        assert (
+            config["description"],
+            config["theme"],
+            config["published"],
+            config["showTags"],
+            config["domainNameList"],
+            config["googleAnalyticsId"],
+            config["customCSS"],
+            config["footerText"],
+            config["showPoweredBy"],
+            config["showCertificateExpiry"],
+            config["id"],
+        ) == ("d", "dark", False, True, ["a"], "g", "c", "f", False, True, 2)
 
     def test_set_settings_sends_only_given_values(self):
         sio = self.api.sio
@@ -270,10 +313,14 @@ class TestOtherPayloads(unittest.TestCase):
             "checkUpdate": True, "serverTimezone": "UTC", "nscd": True}}
         self.api.set_settings(checkBeta=False)
         ((data, password),) = sio.sent("setSettings")
-        self.assertEqual(data, {"checkUpdate": True, "checkBeta": False,
-                                "serverTimezone": "UTC", "nscd": True,
-                                "entryPage": "dashboard"})
-        self.assertIsNone(password)
+        assert data == {
+            "checkUpdate": True,
+            "checkBeta": False,
+            "serverTimezone": "UTC",
+            "nscd": True,
+            "entryPage": "dashboard",
+        }
+        assert password is None
 
     def test_set_settings_all_arguments(self):
         sio = self.api.sio
@@ -286,8 +333,8 @@ class TestOtherPayloads(unittest.TestCase):
             chromeExecutable="c", nscd=False)
         self.api.set_settings(password="pw", **values)
         ((data, password),) = sio.sent("setSettings")
-        self.assertEqual(data, values)
-        self.assertEqual(password, "pw")
+        assert data == values
+        assert password == "pw"
 
     def test_set_settings_skips_newer_options_on_old_servers(self):
         self.api._event_data[Event.INFO] = {"version": "1.22.0"}
@@ -295,32 +342,34 @@ class TestOtherPayloads(unittest.TestCase):
         self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
         self.api.set_settings(chromeExecutable="c", nscd=True)
         ((data, _),) = self.api.sio.sent("setSettings")
-        self.assertNotIn("chromeExecutable", data)
-        self.assertNotIn("nscd", data)
+        assert "chromeExecutable" not in data
+        assert "nscd" not in data
 
 
-class TestConstructorDefaults(unittest.TestCase):
+class TestConstructorDefaults:
     def test_documented_defaults(self):
         import inspect
         params = inspect.signature(UptimeKumaApi.__init__).parameters
-        self.assertEqual(
-            {k: v.default for k, v in params.items() if k != "self"
-             and v.default is not inspect.Parameter.empty},
-            {"timeout": 10, "headers": None, "ssl_verify": True,
-             "wait_events": 0.2})
+        assert (
+            {
+                k: v.default
+                for k, v in params.items()
+                if k != "self" and v.default is not inspect.Parameter.empty
+            }
+        ) == {"timeout": 10, "headers": None, "ssl_verify": True, "wait_events": 0.2}
 
-    def test_all_events_start_empty_with_a_counter(self):
+    @pytest.mark.parametrize("event", [
+        Event.MONITOR_LIST, Event.NOTIFICATION_LIST, Event.PROXY_LIST,
+        Event.STATUS_PAGE_LIST, Event.HEARTBEAT_LIST,
+        Event.IMPORTANT_HEARTBEAT_LIST, Event.AVG_PING, Event.UPTIME,
+        Event.CERT_INFO, Event.DOCKER_HOST_LIST, Event.AUTO_LOGIN,
+        Event.MAINTENANCE_LIST, Event.API_KEY_LIST,
+    ])
+    def test_all_events_start_empty_with_a_counter(self, event):
         api = make_api()
-        for event in (Event.MONITOR_LIST, Event.NOTIFICATION_LIST,
-                      Event.PROXY_LIST, Event.STATUS_PAGE_LIST,
-                      Event.HEARTBEAT_LIST, Event.IMPORTANT_HEARTBEAT_LIST,
-                      Event.AVG_PING, Event.UPTIME, Event.CERT_INFO,
-                      Event.DOCKER_HOST_LIST, Event.AUTO_LOGIN,
-                      Event.MAINTENANCE_LIST, Event.API_KEY_LIST):
-            with self.subTest(event=event):
-                self.assertIsNone(api._event_data[event])
-                self.assertEqual(api._event_seq[event], 0)
-        self.assertEqual(len(api._event_seq), len(api._event_data))
+        assert api._event_data[event] is None
+        assert api._event_seq[event] == 0
+        assert len(api._event_seq) == len(api._event_data)
 
     def test_every_event_is_registered_with_its_handler(self):
         api = make_api()
@@ -349,14 +398,14 @@ class TestConstructorDefaults(unittest.TestCase):
             Event.MAINTENANCE_LIST: api._event_maintenance_list,
             Event.API_KEY_LIST: api._event_api_key_list,
         }
-        self.assertEqual(api.sio.handlers, handlers)
+        assert api.sio.handlers == handlers
 
     def test_constructor_stores_its_arguments(self):
         api = make_api(timeout=3, wait_events=0.5, ssl_verify=False,
                        headers={"a": "b"})
-        self.assertEqual((api.timeout, api.wait_events, api.ssl_verify,
-                          api.headers), (3, 0.5, False, {"a": "b"}))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert (api.timeout, api.wait_events, api.ssl_verify, api.headers) == (
+            3,
+            0.5,
+            False,
+            {"a": "b"},
+        )

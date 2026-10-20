@@ -43,10 +43,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt requests coverage==7.16.2
+      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
-      - run: coverage run -m unittest discover -s tests/unit -t .
-      - run: coverage report
+      - run: pytest tests/unit --cov
 
   integration:
     name: integration (Kuma ${{ matrix.kuma }})
@@ -85,6 +84,7 @@ jobs:
           docker run -d --rm -p 3001:3001 --name kuma-test kuma-test
           for _ in $(seq 60); do curl -sf http://127.0.0.1:3001/api/entry-page && break; sleep 2; done
       - run: pip install -r requirements.txt -r dev-requirements.txt requests
+      # unittest finds only the live-server tests here; tests/unit is pytest and runs in the unit job
       - run: python -m unittest discover -s tests
 
   mutation:
