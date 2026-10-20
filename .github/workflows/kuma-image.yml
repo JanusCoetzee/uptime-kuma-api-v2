@@ -1,0 +1,72 @@
+name: kuma-test image
+
+# Builds the throwaway Uptime Kuma used by the integration tests (see
+# docker/kuma-test) and publishes it to ghcr.io. The integration job in ci.yml
+# pulls it and falls back to building from source when no matching image exists.
+on:
+  push:
+    branches: [master]
+    paths:
+      - docker/kuma-test/**
+      - .github/workflows/kuma-image.yml
+  schedule:
+    - cron: "41 4 * * 1"  # weekly, so the audit sees new advisories
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: publish (Kuma image)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          set -a; . docker/kuma-test/versions.env; set +a
+          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          image="ghcr.io/${owner}/uptime-kuma-test"
+          # Content key: changes whenever the Dockerfile or the pinned ref does.
+          key="${KUMA_VERSION}-$(git rev-parse --short=12 HEAD:docker/kuma-test)"
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull "${image}:${KUMA_VERSION}" || true  # layer cache
+          docker build \
+            --cache-from "${image}:${KUMA_VERSION}" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg KUMA_REF="$KUMA_REF" \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${KUMA_REF}" \
+            -t "${image}:${key}" -t "${image}:${KUMA_VERSION}" \
+            docker/kuma-test
+          docker push "${image}:${key}"
+          docker push "${image}:${KUMA_VERSION}"
+          echo "Published ${image}:${key}" >> "$GITHUB_STEP_SUMMARY"
+
+  audit:
+    name: npm audit (Kuma checkout, non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Audit the pinned Kuma commit
+        run: |
+          set -eu
+          set -a; . docker/kuma-test/versions.env; set +a
+          git init -q kuma && cd kuma
+          git remote add origin https://github.com/louislam/uptime-kuma.git
+          git fetch -q --depth 1 origin "$KUMA_REF"
+          git checkout -q FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$KUMA_REF"
+          npm audit --omit=dev --package-lock-only
