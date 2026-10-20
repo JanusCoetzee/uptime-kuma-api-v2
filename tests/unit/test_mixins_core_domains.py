@@ -43,7 +43,7 @@ class TestMonitors(Base):
         (monitor,) = self.api.get_monitors()
         assert monitor["notificationIDList"] == [3]
         # the cache itself keeps the raw form
-        assert self.data[Event.MONITOR_LIST]["1"] ["notificationIDList"] == {"3": True}
+        assert self.data[Event.MONITOR_LIST]["1"]["notificationIDList"] == {"3": True}
 
     def test_get_monitor_converts_the_reply(self):
         self.sio.replies["getMonitor"] = {"ok": True, "monitor": raw_monitor()}
