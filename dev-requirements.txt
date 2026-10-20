@@ -1,4 +1,4 @@
-Sphinx==9.1.0
+-r docs/requirements.txt
 pyotp==2.10.0
 Jinja2==3.1.6
 BeautifulSoup4==4.15.0
