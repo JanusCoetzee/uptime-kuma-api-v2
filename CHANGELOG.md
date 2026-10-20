@@ -65,6 +65,8 @@ upstream project's changes) is not carried over. It remains available:
 
 - Heartbeat list events from the server (`heartbeatList`, `importantHeartbeatList`) are merged into the cache instead of nested as a list inside the list, which broke `get_monitor_status` once a monitor already had cached heartbeats (#102). The new beats are placed before the cached ones, as in Kuma's frontend.
 
+- A repeated login no longer duplicates heartbeats in the cache: a re-sent batch replaces the cached copies of the same beats, matched by `time` (live beats have no `id`) (#107).
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
@@ -75,6 +77,7 @@ upstream project's changes) is not carried over. It remains available:
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with
   mutmut, and a CI workflow with SHA-pinned actions.
+- The from-source Kuma test image is published to ghcr.io (`kuma-image.yml`, tagged by version and a hash of `docker/kuma-test`) and the integration job pulls it instead of rebuilding, with a build-from-source fallback; a non-blocking `npm audit` runs on the pinned Kuma checkout (#51).
 - PR validation workflow (`pr-validation.yml`): CodeQL, pip-audit, gitleaks, dependency review, package build check, docs build with warnings as errors, actionlint and a check that every action is SHA-pinned; Dependabot for actions, pip and the test image.
 - Integration tests run against an Uptime Kuma built from source at a pinned
   commit (`docker/kuma-test`).

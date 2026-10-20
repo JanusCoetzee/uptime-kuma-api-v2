@@ -328,4 +328,3 @@ class TestStatusPages(Base):
             "s", id=1, title="t")
         assert config["theme"] == "light"
         assert "showCertificateExpiry" not in config
-

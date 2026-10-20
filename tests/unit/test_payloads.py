@@ -409,4 +409,3 @@ class TestConstructorDefaults:
             False,
             {"a": "b"},
         )
-

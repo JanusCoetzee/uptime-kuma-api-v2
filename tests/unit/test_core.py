@@ -161,6 +161,36 @@ class TestEventHandlers:
         assert len(beats) == 150
         assert beats[-1] == {"n": 99}
 
+    def test_overlapping_batch_does_not_duplicate_beats(self):
+        live = [{"time": "t1", "status": 1}, {"time": "t2", "status": 1}]
+        self.api._event_heartbeat_list("1", live, False)
+        batch = [{"id": 1, "time": "t1", "status": 1},
+                 {"id": 2, "time": "t2", "status": 1}]
+        self.api._event_heartbeat_list("1", batch, False)
+        assert self.data[Event.HEARTBEAT_LIST][1] == batch
+
+    def test_partly_overlapping_batch_keeps_the_other_cached_beats(self):
+        self.api._event_heartbeat_list(
+            "1", [{"time": "t2"}, {"time": "t3"}], False)
+        self.api._event_heartbeat_list(
+            "1", [{"id": 1, "time": "t1"}, {"id": 2, "time": "t2"}], False)
+        assert self.data[Event.HEARTBEAT_LIST][1] == [
+            {"id": 1, "time": "t1"}, {"id": 2, "time": "t2"},
+            {"time": "t3"}]
+
+    def test_beats_without_a_time_are_never_dropped(self):
+        self.api._event_heartbeat_list("1", [{"a": 1}], False)
+        self.api._event_heartbeat_list("1", [{"a": 1}], False)
+        assert len(self.data[Event.HEARTBEAT_LIST][1]) == 2
+
+    def test_overlapping_important_batch_does_not_duplicate_beats(self):
+        self.api._event_important_heartbeat_list(
+            "2", [{"time": "t1"}], False)
+        self.api._event_important_heartbeat_list(
+            "2", [{"id": 9, "time": "t1"}, {"id": 8, "time": "t0"}], False)
+        assert self.data[Event.IMPORTANT_HEARTBEAT_LIST][2] == [
+            {"id": 9, "time": "t1"}, {"id": 8, "time": "t0"}]
+
     def test_important_heartbeat_list_extends_with_the_new_beats(self):
         self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
         self.api._event_important_heartbeat_list("2", [{"a": 2}], False)

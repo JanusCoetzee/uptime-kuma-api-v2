@@ -110,7 +110,7 @@ class TestApiKeys(Base):
     def test_get(self):
         assert self.api.get_api_keys() == [{"id": 1, "name": "k"}]
         assert self.api.get_api_key(1)["name"] == "k"
-        with pytest.raises(UptimeKumaException):
+        with pytest.raises(UptimeKumaException, match="api key does not exist"):
             self.api.get_api_key(2)
 
     def test_add_converts_active_to_int(self):
@@ -337,4 +337,3 @@ class TestMaintenance(Base):
         assert self.sio.sent("deleteMaintenance") == [1]
         with pytest.raises(UptimeKumaException):
             self.api.delete_maintenance(2)
-
