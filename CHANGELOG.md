@@ -70,6 +70,7 @@ upstream project's changes) is not carried over. It remains available:
   (they used `random` and 10 characters).
 
 ### Development
+- Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_api/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
 - README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`uptime-kuma-api-v2` is a Python wrapper (fork of lucasheld/uptime-kuma-api) for the Uptime Kuma **Socket.IO** API, targeting Uptime Kuma 2.0.0-beta.x. The only runtime deps are `python-socketio[client]` and `packaging` (see [setup.py](setup.py)). Docs are Sphinx ([docs/](docs/)), built on Read the Docs.
+`uptime-kuma-api-v2` is a Python wrapper (fork of lucasheld/uptime-kuma-api) for the Uptime Kuma **Socket.IO** API, targeting Uptime Kuma 2.0.0-beta.x. The only runtime deps are `python-socketio[client]` and `packaging` (see [pyproject.toml](pyproject.toml)). Docs are Sphinx ([docs/](docs/)), built on Read the Docs.
 
 ## Commands
 
@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-- [uptime_kuma_api/api.py](uptime_kuma_api/api.py) holds the `UptimeKumaApi` core: connection, `_call`, the event cache and `_event_*` handlers. The public methods live in per-domain mixins in [uptime_kuma_api/_mixins/](uptime_kuma_api/_mixins/) (`monitors`, `tags`, `notifications`, `proxies`, `status_pages`, `heartbeats`, `settings`, `auth`, `docker_hosts`, `maintenance`, `api_keys`), which `UptimeKumaApi` inherits. Module-level helpers sit next to the domain that uses them; helpers shared by several domains are in [_helpers.py](uptime_kuma_api/_helpers.py), and the monitor argument checks are in [_monitor_args.py](uptime_kuma_api/_monitor_args.py). Keep every file under ~800 lines. A new subpackage must be added to `packages` in [setup.py](setup.py).
+- [uptime_kuma_api/api.py](uptime_kuma_api/api.py) holds the `UptimeKumaApi` core: connection, `_call`, the event cache and `_event_*` handlers. The public methods live in per-domain mixins in [uptime_kuma_api/_mixins/](uptime_kuma_api/_mixins/) (`monitors`, `tags`, `notifications`, `proxies`, `status_pages`, `heartbeats`, `settings`, `auth`, `docker_hosts`, `maintenance`, `api_keys`), which `UptimeKumaApi` inherits. Module-level helpers sit next to the domain that uses them; helpers shared by several domains are in [_helpers.py](uptime_kuma_api/_helpers.py), and the monitor argument checks are in [_monitor_args.py](uptime_kuma_api/_monitor_args.py). Keep every file under ~800 lines. A new subpackage must be added to `[tool.setuptools] packages` in [pyproject.toml](pyproject.toml).
   - **Two communication patterns**: (1) request/response via `self._call(event, data)` → `sio.call`, which raises `UptimeKumaException` when the reply has `ok: false`; (2) server-pushed state (monitor list, notifications, heartbeats, etc.) cached in `self._event_data[Event.X]` by `_event_*` handlers, read via `_get_event_data`, which polls until the event arrives and then sleeps `wait_events` seconds because there is no "last message" marker. Getters like `get_monitors()` read the cache; they don't call the server.
   - Module-level helpers: `parse_*`/`_convert_*` translate between server payloads and the enums (`MonitorType`, `AuthMethod`, `NotificationType`, ...), `_build_*_data` assemble payloads with defaults, and `_check_arguments_*` validate kwargs per monitor/notification type, raising on missing/invalid params. New monitor or notification fields generally need changes in several of these places.
 - [uptime_kuma_api/docstrings.py](uptime_kuma_api/docstrings.py) generates shared `:param` docstrings (`monitor_docstring`, `notification_docstring`, ...) injected into `add_*`/`edit_*` methods through `append_docstring`, so keep param docs there rather than duplicating them.
@@ -32,5 +32,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Conventions
 
-- Version lives in [uptime_kuma_api/__version__.py](uptime_kuma_api/__version__.py) (read by setup.py); update [CHANGELOG.md](CHANGELOG.md) and the supported-versions table in [README.md](README.md) when bumping or adding Uptime Kuma support.
+- Version lives in [uptime_kuma_api/__version__.py](uptime_kuma_api/__version__.py) (read dynamically by pyproject.toml); update [CHANGELOG.md](CHANGELOG.md) and the supported-versions table in [README.md](README.md) when bumping or adding Uptime Kuma support.
 - `env/` (a committed venv) and `build/` (stale build output that differs from source) are tracked in git by mistake. They are not source, so ignore them and never edit them.
