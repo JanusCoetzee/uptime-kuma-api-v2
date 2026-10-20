@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt requests pytest==9.1.1 pytest-cov==7.1.0
+      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
       - run: pytest tests/unit --cov
 
