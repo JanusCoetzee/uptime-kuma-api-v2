@@ -314,6 +314,17 @@ class TestOtherPayloads:
         }
         assert password is None
 
+    @pytest.mark.parametrize("kwargs, absent", [
+        ({"nscd": True}, "chromeExecutable"),
+        ({"chromeExecutable": "c"}, "nscd"),
+    ])
+    def test_set_settings_forwards_each_option_alone(self, kwargs, absent):
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
+        self.api.set_settings(**kwargs)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert kwargs.items() <= data.items()
+        assert absent not in data
+
     def test_set_settings_all_arguments(self):
         sio = self.api.sio
         sio.replies["getSettings"] = {"ok": True, "data": {}}
