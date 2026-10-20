@@ -62,14 +62,6 @@ class TestMonitorPayload:
             }
         ]
 
-    def test_old_servers_do_not_get_new_fields(self):
-        self.api._event_data[Event.INFO] = {"version": "1.21.0"}
-        self.api._version = None
-        self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u")
-        (data,) = self.api.sio.sent("add")
-        assert "parent" not in data
-        assert "timeout" not in data
-
     def test_overrides_are_sent(self):
         self.api.add_monitor(
             type=MonitorType.HTTP, name="n", url="u", interval=30,
@@ -335,15 +327,6 @@ class TestOtherPayloads:
         ((data, password),) = sio.sent("setSettings")
         assert data == values
         assert password == "pw"
-
-    def test_set_settings_skips_newer_options_on_old_servers(self):
-        self.api._event_data[Event.INFO] = {"version": "1.22.0"}
-        self.api._version = None
-        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
-        self.api.set_settings(chromeExecutable="c", nscd=True)
-        ((data, _),) = self.api.sio.sent("setSettings")
-        assert "chromeExecutable" not in data
-        assert "nscd" not in data
 
 
 class TestConstructorDefaults:

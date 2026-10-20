@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from packaging.version import parse as parse_version
 from ._base import MixinBase
 
 
@@ -138,11 +137,9 @@ class SettingsMixin(MixinBase):
             "tlsExpiryNotifyDays": tlsExpiryNotifyDays,
             "disableAuth": disableAuth,
             "trustProxy": trustProxy,
+            "chromeExecutable": chromeExecutable,
+            "nscd": nscd,
         }
-        if parse_version(self.version) >= parse_version("1.23"):
-            overrides["chromeExecutable"] = chromeExecutable
-        if parse_version(self.version) >= parse_version("1.23.1"):
-            overrides["nscd"] = nscd
         data = _merge_settings(self.get_settings(), overrides)
         return self._call('setSettings', (data, password))
 

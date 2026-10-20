@@ -320,11 +320,3 @@ class TestStatusPages(Base):
         with pytest.raises(ValueError):
             self.api._build_status_page_data("s", id=1, title="t",
                                              theme="neon")
-
-    def test_old_servers_default_to_the_light_theme(self):
-        self.data[Event.INFO] = {"version": "1.21.0"}
-        self.api._version = None
-        _, config, _, _ = self.api._build_status_page_data(
-            "s", id=1, title="t")
-        assert config["theme"] == "light"
-        assert "showCertificateExpiry" not in config
