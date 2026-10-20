@@ -18,7 +18,7 @@ class ApiKeysMixin:
 
         Example::
 
-            >>> api.get_api_key_list()
+            >>> api.get_api_keys()
             [
                 {
                     "id": 1,
@@ -73,7 +73,7 @@ class ApiKeysMixin:
         for api_key in api_keys:
             if api_key["id"] == id_:
                 return api_key
-        raise UptimeKumaException("notification does not exist")
+        raise UptimeKumaException("api key does not exist")
 
     def add_api_key(self, name: str, expires: str, active: bool) -> dict:
         """
