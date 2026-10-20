@@ -30,6 +30,14 @@ from ._mixins.maintenance import MaintenanceMixin
 from ._mixins.api_keys import ApiKeysMixin
 
 
+def _merge_beats(batch: list, cached: list) -> list:
+    # The server re-sends recent beats on every login, so the batch overlaps
+    # the cache. A beat is identified by its time (live beats carry no id);
+    # the batch's copy wins, the order is batch first, then the other cached.
+    seen = {beat.get("time") for beat in batch if beat.get("time")}
+    return batch + [beat for beat in cached if beat.get("time") not in seen]
+
+
 def _locked(method):
     # the socketio background thread runs the _event_* handlers while the
     # caller thread reads the cache, so every cache update holds self._lock
@@ -268,7 +276,7 @@ class UptimeKumaApi(
             # like Kuma's frontend: the received batch goes before the cached
             # beats; keep the 150 newest (the list is oldest first)
             cache = self._event_data[Event.HEARTBEAT_LIST]
-            cache[monitor_id] = (data + cache[monitor_id])[-150:]
+            cache[monitor_id] = _merge_beats(data, cache[monitor_id])[-150:]
 
     @_locked
     def _event_important_heartbeat_list(self, monitor_id, data, overwrite) -> None:
@@ -282,7 +290,7 @@ class UptimeKumaApi(
             # like Kuma's frontend: the received batch goes before the cached
             # beats (the list is newest first)
             cache = self._event_data[Event.IMPORTANT_HEARTBEAT_LIST]
-            cache[monitor_id] = data + cache[monitor_id]
+            cache[monitor_id] = _merge_beats(data, cache[monitor_id])
 
     @_locked
     def _event_avg_ping(self, monitor_id, data) -> None:
