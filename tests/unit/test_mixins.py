@@ -116,7 +116,8 @@ class TestApiKeys(Base):
     def test_get(self):
         self.assertEqual(self.api.get_api_keys(), [{"id": 1, "name": "k"}])
         self.assertEqual(self.api.get_api_key(1)["name"], "k")
-        with self.assertRaises(UptimeKumaException):
+        with self.assertRaisesRegex(UptimeKumaException,
+                                    "api key does not exist"):
             self.api.get_api_key(2)
 
     def test_add_converts_active_to_int(self):
