@@ -1,4 +1,50 @@
-# Tool configuration only. Packaging metadata still lives in setup.py (see #26).
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uptime_kuma_api_v2"
+dynamic = ["version"]
+description = "A python wrapper for the Uptime Kuma WebSocket API"
+readme = "README.md"
+requires-python = ">=3.12, <4"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Janus Coetzee", email = "januscoetzee@gmail.com" }]
+dependencies = [
+    "python-socketio[client]>=5.0.0",
+    "packaging",
+    "requests",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/JanusCoetzee/uptime-kuma-api-v2"
+
+[tool.setuptools.packages.find]
+include = ["uptime_kuma_api*"]
+
+[tool.setuptools.package-data]
+uptime_kuma_api = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "uptime_kuma_api.__version__.__version__" }
+
 
 [tool.ruff]
 line-length = 79  # PEP 8
