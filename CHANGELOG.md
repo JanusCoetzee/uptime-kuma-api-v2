@@ -34,6 +34,7 @@ upstream project's changes) is not carried over. It remains available:
   to reset unspecified settings to library defaults, for example
   `keepDataPeriodDays` back to 180. Pass values explicitly if you relied on
   the reset.
+- `uptime_kuma_api` defines `__all__` (the enums, exceptions, `Event`, `UptimeKumaApi`, the notification provider tables and the version metadata). `from uptime_kuma_api import *` no longer also binds the submodule names (`api`, `monitor_type`, ...) (#58).
 - `get_status_page` returns an `incidents` list (Kuma 2.5.x). `incident` is
   kept as the first incident, or `None`.
 
