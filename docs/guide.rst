@@ -139,10 +139,12 @@ Compatibility
 Uptime Kuma               uptime-kuma-api-v2
 ========================  ===============================
 2.0.0-beta.2              1.0.0 - 1.0.3
-2.5.6                     unreleased (``master``)
+2.5.6                     2.0.0
 ========================  ===============================
 
 Integration tests run against Uptime Kuma 2.5.6, built from source in CI.
+The library has its own version, independent of the Uptime Kuma version, and
+follows `semantic versioning <https://semver.org/>`_ from 2.0.0.
 Uptime Kuma 1.x is not supported: the code no longer branches on server
 versions below 2.0. Other 2.x versions are expected to work but are not tested.
 

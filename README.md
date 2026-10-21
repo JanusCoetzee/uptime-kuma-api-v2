@@ -16,9 +16,9 @@ Supported Uptime Kuma versions:
 | Uptime Kuma     | uptime-kuma-api-v2 |
 |-----------------|-----------------|
 | 2.0.0-beta.2     | 1.0.0 - 1.0.3   |
-| 2.5.6            | unreleased (`master`, tested in CI) |
+| 2.5.6            | 2.0.0 (tested in CI) |
 
-Uptime Kuma 1.x is not supported (the 1.x code paths were removed in #33). Only 2.5.6 is tested in CI; other 2.x versions are expected to work but are not tested.
+The library has its own version, independent of the Uptime Kuma version: from 2.0.0 it follows [semantic versioning](https://semver.org/), so a breaking change to the Python API bumps the major version. Uptime Kuma 1.x is not supported (the 1.x code paths were removed in #33). Only 2.5.6 is tested in CI; other 2.x versions are expected to work but are not tested.
 
 
 Installation

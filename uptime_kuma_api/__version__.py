@@ -1,5 +1,5 @@
 __title__ = "uptime_kuma_api_v2"
-__version__ = "1.0.3"
+__version__ = "2.0.0"
 __author__ = "Janus Coetzee"
 __license__ = "MIT"
 __copyright__ = (

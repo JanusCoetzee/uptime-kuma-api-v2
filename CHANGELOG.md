@@ -10,6 +10,10 @@ upstream project's changes) is not carried over. It remains available:
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-21
+
+First release with the library's own version number: it is independent of the Uptime Kuma version (2.5.6 is the tested one, see the README table) and follows semantic versioning from here on (#72). It collects everything below since 1.0.3.
+
 ### Added
 
 - Unit tests cover 98% of the package (was 60%) with an offline fake Socket.IO client; `.coveragerc` now fails below 90%.
@@ -63,7 +67,7 @@ upstream project's changes) is not carried over. It remains available:
 - Unknown enum values from a newer server (for example a new monitor type) are logged once as a warning on the `uptime_kuma_api.api` logger. The returned value is still the raw one.
 - The `add_*`/`edit_*` docstrings now list `:raises TypeError:` (missing or unknown arguments) and `:raises ValueError:` (invalid values). The status page theme error names the valid themes.
 - Removed a no-op `except: raise` and a commented-out method; `wait_for_event` is annotated `Iterator[None]`; `run_tests.sh` uses a bash shebang and quotes its variables.
-- README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
+- README lists the supported Uptime Kuma versions, and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
 
 - `UptimeKumaApi.version` is cached and no longer sleeps `wait_events` on every access, so `add_monitor`, `add_status_page` and `set_settings` are about a second faster.
 
@@ -98,7 +102,6 @@ upstream project's changes) is not carried over. It remains available:
 - Read the Docs config fixed: `install` is nested under `python:`, Sphinx comes from `docs/requirements.txt`, and `fail_on_warning` is on. `docs/conf.py` names the fork (project, GitHub banner) and credits the original author (#27).
 - Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_api/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
 - Unit tests are pytest-style (plain `assert`, fixtures, `parametrize`, `caplog`) and CI runs `pytest tests/unit --cov` (#93). Same coverage (99.21%); the old `subTest` loops are now separate parametrized cases (240 tests, was 194 plus subtests).
-- README lists 1.0.3 and Uptime Kuma 2.5.6 (unreleased), and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with
   mutmut, and a CI workflow with SHA-pinned actions.
