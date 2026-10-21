@@ -10,10 +10,23 @@ def _merge_settings(current, overrides) -> dict:
     return data
 
 
+def _check_notify_days(name, days) -> None:
+    # as the settings page: whole numbers above 0
+    if days is not None and (not isinstance(days, (list, tuple)) or not all(
+            isinstance(d, int) and not isinstance(d, bool) and d > 0
+            for d in days)):
+        raise ValueError(f"{name} must be a list of positive integers")
+
+
 class SettingsMixin(MixinBase):
     def get_settings(self) -> dict:
         """
         Get settings.
+
+        Uptime Kuma only returns the settings it has stored. A fresh server
+        returns almost nothing (only ``serverTimezone`` on a fresh 2.5.6
+        install) until settings are saved, so a missing key means "server
+        default", not an error. ``set_settings`` keeps whatever is stored.
 
         :return: Settings.
         :rtype: dict
@@ -28,7 +41,13 @@ class SettingsMixin(MixinBase):
                 'chromeExecutable': '',
                 'disableAuth': False,
                 'dnsCache': True,
+                'domainExpiryNotifyDays': [
+                    7,
+                    14,
+                    21
+                ],
                 'entryPage': 'dashboard',
+                'globalpingApiToken': '',
                 'keepDataPeriodDays': 180,
                 'nscd': False,
                 'primaryBaseURL': '',
@@ -69,6 +88,10 @@ class SettingsMixin(MixinBase):
 
             # notifications
             tlsExpiryNotifyDays: list | None = None,
+            domainExpiryNotifyDays: list | None = None,
+
+            # globalping monitors
+            globalpingApiToken: str | None = None,
 
             # security
             disableAuth: bool | None = None,
@@ -93,6 +116,8 @@ class SettingsMixin(MixinBase):
         :param bool, optional dnsCache: True to enable DNS Cache. It may be not working in some IPv6 environments, disable it if you encounter any issues., defaults to None (keep the current server value)
         :param str, optional chromeExecutable: Chrome/Chromium Executable, defaults to None (keep the current server value)
         :param list, optional tlsExpiryNotifyDays: TLS Certificate Expiry. HTTPS Monitors trigger notification when TLS certificate expires in., defaults to None (keep the current server value)
+        :param list, optional domainExpiryNotifyDays: Domain Name Expiry. Notify when a domain expires in these many days, a list of positive integers, defaults to None (keep the current server value)
+        :param str, optional globalpingApiToken: Globalping API token for ``MonitorType.GLOBALPING`` monitors, from https://dash.globalping.io. It is a secret and ``get_settings`` returns it in clear text, defaults to None (keep the current server value)
         :param bool, optional disableAuth: Disable Authentication, defaults to None (keep the current server value)
         :param bool, optional trustProxy: Trust Proxy. Trust 'X-Forwarded-\*' headers. If you want to get the correct client IP and your Uptime Kuma is behind such as Nginx or Apache, you should enable this., defaults to None (keep the current server value)
         :return: The server response.
@@ -116,6 +141,11 @@ class SettingsMixin(MixinBase):
             ...         14,
             ...         21
             ...     ],
+            ...     domainExpiryNotifyDays=[
+            ...         7,
+            ...         14,
+            ...         21
+            ...     ],
             ...     disableAuth=False,
             ...     trustProxy=False
             ... )
@@ -135,11 +165,14 @@ class SettingsMixin(MixinBase):
             "steamAPIKey": steamAPIKey,
             "dnsCache": dnsCache,
             "tlsExpiryNotifyDays": tlsExpiryNotifyDays,
+            "domainExpiryNotifyDays": domainExpiryNotifyDays,
+            "globalpingApiToken": globalpingApiToken,
             "disableAuth": disableAuth,
             "trustProxy": trustProxy,
             "chromeExecutable": chromeExecutable,
             "nscd": nscd,
         }
+        _check_notify_days("domainExpiryNotifyDays", domainExpiryNotifyDays)
         data = _merge_settings(self.get_settings(), overrides)
         return self._call('setSettings', (data, password))
 

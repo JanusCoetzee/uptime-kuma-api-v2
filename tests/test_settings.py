@@ -18,7 +18,9 @@ class TestSettings(UptimeKumaTestCase):
             "disableAuth": False,
             "trustProxy": False,
             "serverTimezone": "Europe/Berlin",
-            "dnsCache": True
+            "dnsCache": True,
+            "domainExpiryNotifyDays": [7, 14, 21],
+            "globalpingApiToken": "token 1"
         }
 
         # set settings
