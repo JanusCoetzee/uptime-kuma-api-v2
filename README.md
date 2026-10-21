@@ -1,6 +1,6 @@
 # uptime-kuma-client
 
-[![CI](https://github.com/JanusCoetzee/uptime-kuma-api-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/JanusCoetzee/uptime-kuma-api-v2/actions/workflows/ci.yml)
+[![CI](https://github.com/JanusCoetzee/uptime-kuma-client/actions/workflows/ci.yml/badge.svg)](https://github.com/JanusCoetzee/uptime-kuma-client/actions/workflows/ci.yml)
 
 A Python wrapper for the [Uptime Kuma](https://github.com/louislam/uptime-kuma) Socket.IO API: manage monitors, notifications, proxies, status pages, maintenance windows, API keys and more from code.
 
@@ -27,7 +27,7 @@ Releases 1.0.x of the earlier exaland fork (Uptime Kuma 2.0.0-beta.2) are a diff
 This project is not on PyPI yet (checked 2026-10-21), and the name `uptime-kuma-client` is not registered, so install from GitHub rather than from an index:
 
 ```
-pip install git+https://github.com/JanusCoetzee/uptime-kuma-api-v2
+pip install git+https://github.com/JanusCoetzee/uptime-kuma-client
 ```
 
 The import package is `uptime_kuma_client`. Coming from the original library there is no compatibility alias: update your imports (see the breaking change in [CHANGELOG.md](CHANGELOG.md)).

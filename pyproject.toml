@@ -33,7 +33,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JanusCoetzee/uptime-kuma-api-v2"
+Homepage = "https://github.com/JanusCoetzee/uptime-kuma-client"
 
 [tool.setuptools.packages.find]
 include = ["uptime_kuma_client*"]

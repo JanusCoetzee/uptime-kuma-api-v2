@@ -5,7 +5,7 @@ Installation
 
 This project is not on PyPI yet. Install it from GitHub::
 
-    $ pip install git+https://github.com/JanusCoetzee/uptime-kuma-api-v2
+    $ pip install git+https://github.com/JanusCoetzee/uptime-kuma-client
 
 .. warning::
 
