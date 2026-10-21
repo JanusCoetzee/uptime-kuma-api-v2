@@ -19,6 +19,7 @@ upstream project's changes) is not carried over. It remains available:
 - `MonitorType.ORACLEDB`, `WEBSOCKET_UPGRADE` and `SNMP` can be added and edited (`basic_auth_user`/`basic_auth_pass`/`databaseQuery`; `wsSubprotocol`, `wsIgnoreSecWebsocketAcceptHeader`; `snmpOid`, `snmpVersion`, `jsonPathOperator`, with the community string in `radiusPassword`). A websocket-upgrade monitor accepts close code `1000` by default (`accepted_statuscodes` takes close codes 1000-4999 for that type), and an SNMP monitor's `timeout` defaults to 5 seconds like Kuma's form. `snmpVersion` accepts `1` and `2c` only: Kuma 2.5.6 does not save the SNMPv3 username.
 - `MonitorType.SFTP` and `RABBITMQ` can be added and edited (`sshUsername`, `sshAuthMethod`, `sshPassword` or `sshPrivateKey`/`sshPassphrase`, `sftpPath`; `rabbitmqNodes`, `rabbitmqUsername`, `rabbitmqPassword`). Only the secret of the chosen SSH method is sent.
 - `MonitorType.GLOBALPING` can be added and edited for the `ping`, `http` and `dns` subtypes (`subtype`, `location`, `protocol`, `ipFamily`, `ping_count`, `cacheBust`, plus the existing http and dns arguments), and `AuthMethod.BEARER` with `bearer_token`. All 12 monitor types added in Kuma 2.x are now supported (#40, #118); `UNSUPPORTED_MONITOR_TYPES` is gone.
+- `get_incident_history`, `edit_incident`, `resolve_incident` and `delete_incident` complete the incident lifecycle on status pages (#41).
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed

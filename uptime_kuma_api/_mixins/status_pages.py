@@ -389,3 +389,149 @@ class StatusPagesMixin(MixinBase):
         r = self._call('unpinIncident', slug)
         self.save_status_page(slug)
         return r
+
+    def get_incident_history(
+            self,
+            slug: str,
+            cursor: str | None = None
+    ) -> dict:
+        """
+        Get one page of the incidents of a status page, newest first.
+
+        :param str slug: Slug
+        :param str, optional cursor: The ``nextCursor`` of the previous page, defaults to the first page
+        :return: The incidents of the page and the paging state.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error.
+
+        Example::
+
+            >>> api.get_incident_history("slug1")
+            {
+                'hasMore': False,
+                'incidents': [
+                    {
+                        'active': True,
+                        'content': 'content 1',
+                        'createdDate': '2022-12-15 16:51:43',
+                        'id': 1,
+                        'lastUpdatedDate': None,
+                        'pin': True,
+                        'status_page_id': 1,
+                        'style': <IncidentStyle.DANGER: 'danger'>,
+                        'title': 'title 1'
+                    }
+                ],
+                'nextCursor': None,
+                'total': 1
+            }
+        """
+        r = self._call('getIncidentHistory', (slug, cursor))
+        parse_incident_style(r["incidents"])
+        return r
+
+    def edit_incident(
+            self,
+            slug: str,
+            incident_id: int,
+            title: str,
+            content: str,
+            style: IncidentStyle = IncidentStyle.PRIMARY,
+            pin: bool = True
+    ) -> dict:
+        """
+        Edit an incident of a status page. The server replaces the whole incident.
+
+        :param str slug: Slug
+        :param int incident_id: Id of the incident
+        :param str title: Title
+        :param str content: Content
+        :param IncidentStyle, optional style: Style, defaults to :attr:`~.IncidentStyle.PRIMARY`
+        :param bool, optional pin: Whether the incident stays pinned, defaults to ``True``
+        :return: The edited incident.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error, for
+            example when the incident does not belong to the status page.
+
+        Example::
+
+            >>> api.edit_incident(
+            ...     slug="slug1",
+            ...     incident_id=1,
+            ...     title="title 2",
+            ...     content="content 2",
+            ...     style=IncidentStyle.INFO
+            ... )
+            {
+                'active': True,
+                'content': 'content 2',
+                'createdDate': '2022-12-15 16:51:43',
+                'id': 1,
+                'lastUpdatedDate': '2022-12-15 17:02:10',
+                'pin': True,
+                'status_page_id': 1,
+                'style': <IncidentStyle.INFO: 'info'>,
+                'title': 'title 2'
+            }
+        """
+        incident = {
+            "title": title,
+            "content": content,
+            "style": style,
+            "pin": pin
+        }
+        r = self._call(
+            'editIncident', (slug, incident_id, incident))["incident"]
+        parse_incident_style(r)
+        return r
+
+    def resolve_incident(self, slug: str, incident_id: int) -> dict:
+        """
+        Resolve an incident of a status page.
+
+        :param str slug: Slug
+        :param int incident_id: Id of the incident
+        :return: The resolved incident.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error, for
+            example when the incident does not belong to the status page.
+
+        Example::
+
+            >>> api.resolve_incident("slug1", 1)
+            {
+                'active': False,
+                'content': 'content 1',
+                'createdDate': '2022-12-15 16:51:43',
+                'id': 1,
+                'lastUpdatedDate': '2022-12-15 17:02:10',
+                'pin': False,
+                'status_page_id': 1,
+                'style': <IncidentStyle.DANGER: 'danger'>,
+                'title': 'title 1'
+            }
+        """
+        r = self._call('resolveIncident', (slug, incident_id))["incident"]
+        parse_incident_style(r)
+        return r
+
+    def delete_incident(self, slug: str, incident_id: int) -> dict:
+        """
+        Delete an incident of a status page.
+
+        :param str slug: Slug
+        :param int incident_id: Id of the incident
+        :return: The server response.
+        :rtype: dict
+        :raises UptimeKumaException: If the server returns an error, for
+            example when the incident does not belong to the status page.
+
+        Example::
+
+            >>> api.delete_incident("slug1", 1)
+            {
+                'msg': 'successDeleted',
+                'msgi18n': True
+            }
+        """
+        return self._call('deleteIncident', (slug, incident_id))
