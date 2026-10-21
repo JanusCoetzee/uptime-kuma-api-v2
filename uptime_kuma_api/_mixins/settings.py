@@ -7,6 +7,9 @@ def _merge_settings(current, overrides) -> dict:
     data = {**current, **{k: v for k, v in overrides.items() if v is not None}}
     # the server assigns data.entryPage unconditionally; unset settings are absent from getSettings
     data.setdefault("entryPage", "dashboard")
+    # an unset nscd means "on" to Kuma, but setSettings compares the stored
+    # value with data.nscd and stops the service when it is missing
+    data.setdefault("nscd", True)
     return data
 
 
@@ -23,10 +26,12 @@ class SettingsMixin(MixinBase):
         """
         Get settings.
 
-        Uptime Kuma only returns the settings it has stored. A fresh server
-        returns almost nothing (only ``serverTimezone`` on a fresh 2.5.6
-        install) until settings are saved, so a missing key means "server
-        default", not an error. ``set_settings`` keeps whatever is stored.
+        Uptime Kuma only returns the settings it has stored, plus
+        ``serverTimezone``, which it computes when it is not stored. A fresh
+        2.5.6 server returns only that; the clean-up job adds
+        ``keepDataPeriodDays`` when it first runs, which is why a live server
+        showed those two keys. A missing key means "server default", not an
+        error. ``set_settings`` keeps whatever is stored.
 
         :return: Settings.
         :rtype: dict

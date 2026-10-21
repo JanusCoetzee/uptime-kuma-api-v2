@@ -925,7 +925,7 @@ class TestOtherPayloads:
 
     @pytest.mark.parametrize("kwargs, absent", [
         ({"nscd": True}, "chromeExecutable"),
-        ({"chromeExecutable": "c"}, "nscd"),
+        ({"chromeExecutable": "c"}, "checkBeta"),
     ])
     def test_set_settings_forwards_each_option_alone(self, kwargs, absent):
         self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
@@ -933,6 +933,21 @@ class TestOtherPayloads:
         ((data, _),) = self.api.sio.sent("setSettings")
         assert kwargs.items() <= data.items()
         assert absent not in data
+
+    def test_set_settings_does_not_stop_nscd_when_it_was_never_saved(self):
+        # Kuma reads an unset nscd as "on" but stops the service when
+        # setSettings gets no value for it
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
+        self.api.set_settings(checkBeta=True)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["nscd"] is True
+
+    def test_set_settings_keeps_a_stored_nscd_off(self):
+        self.api.sio.replies["getSettings"] = {
+            "ok": True, "data": {"nscd": False}}
+        self.api.set_settings(checkBeta=True)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["nscd"] is False
 
     def test_set_settings_all_arguments(self):
         sio = self.api.sio

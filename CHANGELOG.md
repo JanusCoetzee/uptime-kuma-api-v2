@@ -20,7 +20,7 @@ upstream project's changes) is not carried over. It remains available:
 - `MonitorType.SFTP` and `RABBITMQ` can be added and edited (`sshUsername`, `sshAuthMethod`, `sshPassword` or `sshPrivateKey`/`sshPassphrase`, `sftpPath`; `rabbitmqNodes`, `rabbitmqUsername`, `rabbitmqPassword`). Only the secret of the chosen SSH method is sent.
 - `MonitorType.GLOBALPING` can be added and edited for the `ping`, `http` and `dns` subtypes (`subtype`, `location`, `protocol`, `ipFamily`, `ping_count`, `cacheBust`, plus the existing http and dns arguments), and `AuthMethod.BEARER` with `bearer_token`. All 12 monitor types added in Kuma 2.x are now supported (#40, #118); `UNSUPPORTED_MONITOR_TYPES` is gone.
 - `get_incident_history`, `edit_incident`, `resolve_incident` and `delete_incident` complete the incident lifecycle on status pages (#41).
-- `set_settings` takes `domainExpiryNotifyDays` and `globalpingApiToken`, and `get_settings` documents that Kuma only returns stored keys (#42).
+- `set_settings` takes `domainExpiryNotifyDays` and `globalpingApiToken`, and `get_settings` documents that Kuma only returns stored keys. `set_settings` now sends `nscd` as on when it was never saved: leaving it out made Kuma stop the nscd service (#42).
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed

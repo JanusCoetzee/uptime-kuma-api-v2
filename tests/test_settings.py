@@ -35,6 +35,14 @@ class TestSettings(UptimeKumaTestCase):
         settings = self.api.get_settings()
         self.compare(settings, expected_settings)
 
+    def test_set_one_setting_keeps_the_others(self):
+        self.api.set_settings(steamAPIKey="key 1", keepDataPeriodDays=90)
+        self.api.set_settings(domainExpiryNotifyDays=[5])
+        settings = self.api.get_settings()
+        self.assertEqual(settings["steamAPIKey"], "key 1")
+        self.assertEqual(settings["keepDataPeriodDays"], 90)
+        self.assertEqual(settings["domainExpiryNotifyDays"], [5])
+
     def test_change_password(self):
         new_password = "321terces"
 
