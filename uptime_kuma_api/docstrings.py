@@ -125,6 +125,15 @@ def monitor_docstring(mode) -> str:
         :param str, optional snmpOid: SNMP only. OID to query, for example ``1.3.6.1.2.1.1.3.0``. Required for that type., defaults to None
         :param str, optional snmpVersion: SNMP only. ``1`` or ``2c``; ``3`` is not usable on Kuma 2.5.6 because the server does not save the username, defaults to "2c"
         :param str, optional jsonPathOperator: SNMP only. Comparison of the value found at ``jsonPath`` with ``expectedValue``: ``>``, ``>=``, ``<``, ``<=``, ``!=``, ``==`` or ``contains``, defaults to "=="
+        :param str, optional sshUsername: SFTP only. SSH user name. Required for that type., defaults to None
+        :param str, optional sshAuthMethod: SFTP only. ``password`` or ``privateKey``, defaults to "password"
+        :param str, optional sshPassword: SFTP only. Password, required for ``sshAuthMethod="password"`` and not sent otherwise., defaults to None
+        :param str, optional sshPrivateKey: SFTP only. Private key, required for ``sshAuthMethod="privateKey"`` and not sent otherwise., defaults to None
+        :param str, optional sshPassphrase: SFTP only. Passphrase of the private key, defaults to None
+        :param str, optional sftpPath: SFTP only. Path that must exist on the server, defaults to None
+        :param list, optional rabbitmqNodes: RABBITMQ only. Base URLs (``http://`` or ``https://``) of the management API of the nodes. At least one is required for that type., defaults to None
+        :param str, optional rabbitmqUsername: RABBITMQ only. Required for that type., defaults to None
+        :param str, optional rabbitmqPassword: RABBITMQ only. Required for that type., defaults to None
         :param int, optional manual_status: MANUAL only. 1 sets the monitor up, 0 sets it down; it stays pending when not set. The server does not return this value; editing without it keeps the current one., defaults to None
     """
 

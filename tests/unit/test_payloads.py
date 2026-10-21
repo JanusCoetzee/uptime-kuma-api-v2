@@ -331,6 +331,102 @@ class TestMonitorPayload:
             self.api.add_monitor(**self.SNMP, jsonPathOperator=operator)
         assert self.api.sio.sent("add") == []
 
+    SFTP = dict(type=MonitorType.SFTP, name="n", hostname="h",
+                sshUsername="u", sshPassword="pw")
+    RABBIT = dict(type=MonitorType.RABBITMQ, name="n",
+                  rabbitmqNodes=["http://a:15672"], rabbitmqUsername="u",
+                  rabbitmqPassword="pw")
+
+    def test_sftp_password_defaults(self):
+        self.api.add_monitor(**self.SFTP)
+        (data,) = self.api.sio.sent("add")
+        assert data["port"] == 22
+        assert (data["sshUsername"], data["sshAuthMethod"],
+                data["sshPassword"], data["sftpPath"]) == (
+            "u", "password", "pw", None)
+        assert "sshPrivateKey" not in data
+        assert "sshPassphrase" not in data
+
+    def test_sftp_none_auth_method_means_password(self):
+        self.api.add_monitor(**self.SFTP, sshAuthMethod=None)
+        (data,) = self.api.sio.sent("add")
+        assert (data["sshAuthMethod"], data["sshPassword"]) == (
+            "password", "pw")
+
+    def test_sftp_private_key_sends_only_the_key_secrets(self):
+        kwargs = {k: v for k, v in self.SFTP.items() if k != "sshPassword"}
+        self.api.add_monitor(
+            **kwargs, sshAuthMethod="privateKey", sshPrivateKey="KEY",
+            sshPassphrase="pp", sshPassword="stale", port=2222,
+            sftpPath="/data")
+        (data,) = self.api.sio.sent("add")
+        assert (data["sshAuthMethod"], data["sshPrivateKey"],
+                data["sshPassphrase"], data["sftpPath"], data["port"]) == (
+            "privateKey", "KEY", "pp", "/data", 2222)
+        assert "sshPassword" not in data
+
+    @pytest.mark.parametrize("missing", ["hostname", "sshUsername"])
+    def test_sftp_required_arguments(self, missing):
+        kwargs = {k: v for k, v in self.SFTP.items() if k != missing}
+        with pytest.raises(TypeError, match=missing):
+            self.api.add_monitor(**kwargs)
+
+    def test_sftp_needs_the_secret_of_the_chosen_method(self):
+        no_pw = {k: v for k, v in self.SFTP.items() if k != "sshPassword"}
+        with pytest.raises(TypeError, match="sshPassword"):
+            self.api.add_monitor(**no_pw)
+        with pytest.raises(TypeError, match="sshPrivateKey"):
+            self.api.add_monitor(**self.SFTP, sshAuthMethod="privateKey")
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("method", ["key", "Password", ""])
+    def test_sftp_rejects_other_auth_methods(self, method):
+        with pytest.raises(ValueError, match="^Unknown sshAuthMethod value: "
+                           r".*, expected 'password' or 'privateKey'$"):
+            self.api.add_monitor(**self.SFTP, sshAuthMethod=method)
+        assert self.api.sio.sent("add") == []
+
+    def test_rabbitmq_payload(self):
+        self.api.add_monitor(**self.RABBIT)
+        (data,) = self.api.sio.sent("add")
+        assert data["rabbitmqNodes"] == ["http://a:15672"]
+        assert (data["rabbitmqUsername"], data["rabbitmqPassword"]) == (
+            "u", "pw")
+        assert "sshPassword" not in data
+
+    @pytest.mark.parametrize("missing", [
+        "rabbitmqNodes", "rabbitmqUsername", "rabbitmqPassword"])
+    def test_rabbitmq_required_arguments(self, missing):
+        kwargs = {k: v for k, v in self.RABBIT.items() if k != missing}
+        with pytest.raises(TypeError, match=missing):
+            self.api.add_monitor(**kwargs)
+
+    @pytest.mark.parametrize("nodes", [
+        [], ["ftp://a"], ["a:15672"], ["http://a", "b"], "http://a", [None]])
+    def test_rabbitmq_rejects_bad_nodes(self, nodes):
+        kwargs = dict(self.RABBIT, rabbitmqNodes=nodes)
+        with pytest.raises(ValueError, match="^rabbitmqNodes must be a "
+                           "non-empty list of http:// or https:// URLs$"):
+            self.api.add_monitor(**kwargs)
+        assert self.api.sio.sent("add") == []
+
+    def test_rabbitmq_accepts_several_https_nodes(self):
+        nodes = ["https://a", "http://b:15672"]
+        self.api.add_monitor(**dict(self.RABBIT, rabbitmqNodes=nodes))
+        (data,) = self.api.sio.sent("add")
+        assert data["rabbitmqNodes"] == nodes
+
+    def test_sftp_and_rabbitmq_secrets_are_not_sent_for_other_types(self):
+        self.api.add_monitor(
+            type=MonitorType.PORT, name="n", hostname="h", port=1,
+            sshPassword="x", sshPrivateKey="x", sshPassphrase="x",
+            rabbitmqPassword="x", rabbitmqNodes=["http://a"])
+        (data,) = self.api.sio.sent("add")
+        for key in ("sshUsername", "sshPassword", "sshPrivateKey",
+                    "sshPassphrase", "sshAuthMethod", "sftpPath",
+                    "rabbitmqNodes", "rabbitmqUsername", "rabbitmqPassword"):
+            assert key not in data
+
     def test_new_type_fields_are_only_sent_for_their_type(self):
         self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h", port=1)
         (data,) = self.api.sio.sent("add")

@@ -558,6 +558,56 @@ class TestMonitor(UptimeKumaTestCase):
              monitor["hostname"], monitor["snmpVersion"]),
             ("contains", "1.3.6.1.2.1.1.5.0", "127.0.0.1", "2c"))
 
+    def test_monitor_type_sftp(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.SFTP,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "sshUsername": "user",
+            "sshPassword": "secret",
+            "sftpPath": "/tmp",
+        })
+        self.assertEqual(monitor["port"], 22)
+        self.assertEqual(monitor["sshAuthMethod"], "password")
+
+    def test_sftp_private_key_and_switching_the_method(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.SFTP, name="monitor 1", hostname="127.0.0.1",
+            sshUsername="user", sshAuthMethod="privateKey",
+            sshPrivateKey="not-a-real-key", sshPassphrase="phrase",
+            port=2222)["monitorID"]
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["sshAuthMethod"], monitor["sshPrivateKey"],
+             monitor["port"]), ("privateKey", "not-a-real-key", 2222))
+        self.api.edit_monitor(monitor_id, sshAuthMethod="password",
+                              sshPassword="secret")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual((monitor["sshAuthMethod"], monitor["sshPassword"],
+                          monitor["hostname"]),
+                         ("password", "secret", "127.0.0.1"))
+
+    def test_monitor_type_rabbitmq(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.RABBITMQ,
+            "name": "monitor 1",
+            "rabbitmqNodes": ["http://127.0.0.1:15672", "https://example.org"],
+            "rabbitmqUsername": "guest",
+            "rabbitmqPassword": "guest",
+        })
+
+    def test_rabbitmq_is_changed_by_edit_and_keeps_the_rest(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.RABBITMQ, name="monitor 1",
+            rabbitmqNodes=["http://127.0.0.1:15672"],
+            rabbitmqUsername="guest", rabbitmqPassword="guest")["monitorID"]
+        self.api.edit_monitor(monitor_id, rabbitmqUsername="admin")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["rabbitmqNodes"], monitor["rabbitmqUsername"],
+             monitor["rabbitmqPassword"]),
+            (["http://127.0.0.1:15672"], "admin", "guest"))
+
     def wait_for_status(self, monitor_id, status, timeout=30):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
