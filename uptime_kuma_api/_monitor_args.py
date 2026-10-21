@@ -17,9 +17,7 @@ from ._helpers import (
 # In MonitorType (generated from Kuma 2.5.6) but without argument checks or
 # payload fields yet; add_monitor/edit_monitor reject them (#118).
 UNSUPPORTED_MONITOR_TYPES = frozenset({
-    MonitorType.SFTP,
     MonitorType.GLOBALPING,
-    MonitorType.RABBITMQ,
 })
 
 
@@ -109,6 +107,9 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.WEBSOCKET_UPGRADE: ["url"],
         MonitorType.SNMP: [
             "hostname", "snmpOid", "radiusPassword", "expectedValue"],
+        MonitorType.SFTP: ["hostname", "sshUsername"],
+        MonitorType.RABBITMQ: [
+            "rabbitmqNodes", "rabbitmqUsername", "rabbitmqPassword"],
     }
     type_ = kwargs["type"]
     if type_ in UNSUPPORTED_MONITOR_TYPES:
@@ -210,6 +211,26 @@ def _check_arguments_monitor(kwargs) -> None:
             raise ValueError(
                 f"Unknown jsonPathOperator value: {operator!r}, expected "
                 "'>', '>=', '<', '<=', '!=', '==' or 'contains'")
+
+    if type_ == MonitorType.SFTP:
+        auth_method = kwargs.get("sshAuthMethod")
+        if auth_method not in (None, "password", "privateKey"):
+            raise ValueError(
+                f"Unknown sshAuthMethod value: {auth_method!r}, "
+                "expected 'password' or 'privateKey'")
+        if auth_method == "privateKey":
+            _check_missing_arguments(["sshPrivateKey"], kwargs)
+        else:
+            _check_missing_arguments(["sshPassword"], kwargs)
+
+    if type_ == MonitorType.RABBITMQ:
+        nodes = kwargs["rabbitmqNodes"]
+        if (not isinstance(nodes, (list, tuple)) or not nodes or not all(
+                isinstance(n, str) and n.startswith(("http://", "https://"))
+                for n in nodes)):
+            raise ValueError(
+                "rabbitmqNodes must be a non-empty list of http:// or "
+                "https:// URLs")
 
     if type_ == MonitorType.MANUAL:
         manual_status = kwargs.get("manual_status")

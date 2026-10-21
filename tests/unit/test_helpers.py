@@ -184,8 +184,8 @@ class TestChecks:
             _check_arguments_monitor(self.monitor(type=t))
 
     def test_new_kuma_type_given_as_raw_string_is_rejected_clearly(self):
-        with pytest.raises(ValueError, match="'sftp' is not supported yet"):
-            _check_arguments_monitor(self.monitor(type="sftp"))
+        with pytest.raises(ValueError, match="'globalping' is not supported yet"):
+            _check_arguments_monitor(self.monitor(type="globalping"))
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
@@ -617,6 +617,51 @@ class TestEditMonitorShapes:
         nulls = dict(stored, snmpVersion=None, jsonPathOperator=None,
                      jsonPath=None)
         assert self.edit(nulls, name="x")["name"] == "x"
+
+    def test_edit_sftp_is_merged_and_validated(self):
+        stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
+                      sshUsername="u", sshAuthMethod="password",
+                      sshPassword="pw", sshPrivateKey=None,
+                      sshPassphrase=None, sftpPath=None)
+        data = self.edit(stored, sftpPath="/x")
+        assert (data["sftpPath"], data["sshPassword"], data["port"]) == (
+            "/x", "pw", 22)
+        with pytest.raises(TypeError, match="sshPrivateKey"):
+            self.edit(stored, sshAuthMethod="privateKey")
+        keyed = self.edit(stored, sshAuthMethod="privateKey",
+                          sshPrivateKey="K")
+        assert (keyed["sshPrivateKey"], keyed["sshAuthMethod"]) == (
+            "K", "privateKey")
+
+    def test_edit_sftp_private_key_monitor_keeps_its_secrets(self):
+        stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
+                      sshUsername="u", sshAuthMethod="privateKey",
+                      sshPrivateKey="K", sshPassphrase="pp",
+                      sshPassword=None)
+        data = self.edit(stored, name="x")
+        assert (data["sshPrivateKey"], data["sshPassphrase"]) == ("K", "pp")
+        back = self.edit(stored, sshAuthMethod="password", sshPassword="pw")
+        assert (back["sshAuthMethod"], back["sshPassword"]) == (
+            "password", "pw")
+
+    def test_edit_sftp_stored_without_auth_method_is_password(self):
+        stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
+                      sshUsername="u", sshAuthMethod=None, sshPassword="pw")
+        assert self.edit(stored, name="x")["name"] == "x"
+        no_pw = dict(stored, sshPassword=None)
+        with pytest.raises(TypeError, match="sshPassword"):
+            self.edit(no_pw, name="x")
+
+    def test_edit_rabbitmq_is_merged_and_validated(self):
+        stored = dict(type=MonitorType.RABBITMQ,
+                      rabbitmqNodes=["http://a"], rabbitmqUsername="u",
+                      rabbitmqPassword="pw")
+        data = self.edit(stored, rabbitmqUsername="v")
+        assert data["rabbitmqNodes"] == ["http://a"]
+        assert (data["rabbitmqUsername"], data["rabbitmqPassword"]) == (
+            "v", "pw")
+        with pytest.raises(ValueError, match="rabbitmqNodes"):
+            self.edit(stored, rabbitmqNodes=["a"])
 
     def test_edit_websocket_and_oracledb_fields_are_merged(self):
         ws = dict(type=MonitorType.WEBSOCKET_UPGRADE, url="ws://h",

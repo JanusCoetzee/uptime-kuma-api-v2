@@ -133,6 +133,19 @@ def _build_monitor_data(
         snmpOid: str | None = None,
         snmpVersion: str = "2c",
         jsonPathOperator: str = "==",
+
+        # SFTP
+        sshUsername: str | None = None,
+        sshPassword: str | None = None,
+        sshPrivateKey: str | None = None,
+        sshPassphrase: str | None = None,
+        sshAuthMethod: str = "password",
+        sftpPath: str | None = None,
+
+        # RABBITMQ
+        rabbitmqNodes: list[str] | None = None,
+        rabbitmqUsername: str | None = None,
+        rabbitmqPassword: str | None = None,
 ) -> dict:
     if accepted_statuscodes is None:
         # a websocket check compares the close code, 1000 on success
@@ -255,6 +268,8 @@ def _build_monitor_data(
             port = 1812
         elif type == MonitorType.SNMP:
             port = 161
+        elif type == MonitorType.SFTP:
+            port = 22
     data.update({
         "port": port,
     })
@@ -385,5 +400,27 @@ def _build_monitor_data(
     # MANUAL
     if type == MonitorType.MANUAL:
         data["manual_status"] = manual_status
+
+    # SFTP: only the secret of the chosen method is sent
+    if type == MonitorType.SFTP:
+        auth = "password" if sshAuthMethod is None else sshAuthMethod
+        data.update({
+            "sshUsername": sshUsername,
+            "sshAuthMethod": auth,
+            "sftpPath": sftpPath,
+        })
+        if auth == "privateKey":
+            data["sshPrivateKey"] = sshPrivateKey
+            data["sshPassphrase"] = sshPassphrase
+        else:
+            data["sshPassword"] = sshPassword
+
+    # RABBITMQ
+    if type == MonitorType.RABBITMQ:
+        data.update({
+            "rabbitmqNodes": rabbitmqNodes,
+            "rabbitmqUsername": rabbitmqUsername,
+            "rabbitmqPassword": rabbitmqPassword,
+        })
 
     return data
