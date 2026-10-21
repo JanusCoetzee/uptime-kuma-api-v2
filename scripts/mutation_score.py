@@ -1,7 +1,8 @@
 """Fail when the mutmut score drops below the threshold.
 
 Run after `mutmut run`: python scripts/mutation_score.py [threshold]
-Score = killed / (killed + survived + no_tests), from mutants/mutmut-cicd-stats.json.
+Score = killed / (killed + survived + no_tests), from
+mutants/mutmut-cicd-stats.json.
 The threshold is a ratchet: only ever raise it (#70).
 """
 import json

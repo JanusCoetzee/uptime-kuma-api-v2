@@ -39,10 +39,14 @@ def parse_vue_template(path):
 
 
 def check_mode():
-    """True for --check; any other option is an error so a typo cannot fall through to writing."""
+    """True for --check; any other option is an error.
+
+    A typo must not fall through to writing.
+    """
     unknown = [a for a in sys.argv[1:] if a.startswith("-") and a != "--check"]
     if unknown:
-        raise SystemExit(f"unknown option {unknown[0]!r}; the only option is --check")
+        raise SystemExit(
+            f"unknown option {unknown[0]!r}; the only option is --check")
     return "--check" in sys.argv
 
 
@@ -63,7 +67,8 @@ def write_to_file(template, destination, **kwargs):
             )
             print("\n".join(list(diff)[:80]))
             raise SystemExit(
-                f"{destination} is out of date with Uptime Kuma at {KUMA_SRC}; "
+                f"{destination} is out of date with Uptime Kuma at "
+                f"{KUMA_SRC}; "
                 "regenerate it (see scripts/README.md)"
             )
         return

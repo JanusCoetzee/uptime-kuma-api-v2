@@ -44,7 +44,8 @@ def parse_proxy_keys(root):
 
 
 def parse_notification_keys(root):
-    content = parse_vue_template(f"{root}/src/components/NotificationDialog.vue")
+    content = parse_vue_template(
+        f"{root}/src/components/NotificationDialog.vue")
     keys = parse_model_keys(content, "notification")
     return keys
 
