@@ -571,6 +571,16 @@ class TestEditMonitorShapes:
         assert event == "editMonitor"
         return data
 
+    def test_edit_ntp_threshold_is_merged_and_validated(self):
+        stored = dict(type=MonitorType.NTP, hostname="h", port=123,
+                      ntpStratumThreshold=5, ntpTimeOffsetThreshold=1000,
+                      ntpRootDispersionThreshold=500)
+        data = self.edit(stored, ntpTimeOffsetThreshold=50)
+        assert data["ntpTimeOffsetThreshold"] == 50
+        assert data["ntpStratumThreshold"] == 5
+        with pytest.raises(ValueError, match="ntpStratumThreshold"):
+            self.edit(stored, ntpStratumThreshold=16)
+
     def test_edit_only_name_keeps_the_rest(self):
         data = self.edit(name="new")
         assert data["name"] == "new"
