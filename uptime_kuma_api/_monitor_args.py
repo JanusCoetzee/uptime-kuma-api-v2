@@ -23,7 +23,6 @@ UNSUPPORTED_MONITOR_TYPES = frozenset({
     MonitorType.SFTP,
     MonitorType.MANUAL,
     MonitorType.GLOBALPING,
-    MonitorType.NTP,
     MonitorType.RABBITMQ,
     MonitorType.SIP_OPTIONS,
     MonitorType.SMTP,
@@ -97,6 +96,7 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.REAL_BROWSER: ["url"],
         MonitorType.KAFKA_PRODUCER: ["kafkaProducerTopic", "kafkaProducerMessage"],
         MonitorType.TAILSCALE_PING: ["hostname"],
+        MonitorType.NTP: ["hostname"],
     }
     type_ = kwargs["type"]
     if type_ in UNSUPPORTED_MONITOR_TYPES:
@@ -122,6 +122,16 @@ def _check_arguments_monitor(kwargs) -> None:
         port=dict(
             min=0,
             max=65535,
+        ),
+        ntpStratumThreshold=dict(
+            min=1,
+            max=15,
+        ),
+        ntpTimeOffsetThreshold=dict(
+            min=1,
+        ),
+        ntpRootDispersionThreshold=dict(
+            min=1,
         ),
     )
     _check_argument_conditions(conditions, kwargs)

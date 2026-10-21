@@ -132,6 +132,11 @@ class MonitorsMixin(MixinBase):
             kafkaProducerSsl: bool = False,
             kafkaProducerAllowAutoTopicCreation: bool = False,
             kafkaProducerSaslOptions: dict | None = None,
+
+            # NTP
+            ntpStratumThreshold: int = 5,
+            ntpTimeOffsetThreshold: int = 1000,
+            ntpRootDispersionThreshold: int = 500,
     ) -> dict:
         if accepted_statuscodes is None:
             accepted_statuscodes = ["200-299"]
@@ -323,6 +328,14 @@ class MonitorsMixin(MixinBase):
                 "kafkaProducerSsl": kafkaProducerSsl,
                 "kafkaProducerAllowAutoTopicCreation": kafkaProducerAllowAutoTopicCreation,
                 "kafkaProducerSaslOptions": kafkaProducerSaslOptions,
+            })
+
+        # NTP
+        if type == MonitorType.NTP:
+            data.update({
+                "ntpStratumThreshold": ntpStratumThreshold,
+                "ntpTimeOffsetThreshold": ntpTimeOffsetThreshold,
+                "ntpRootDispersionThreshold": ntpRootDispersionThreshold,
             })
         return data
 

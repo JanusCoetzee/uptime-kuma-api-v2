@@ -401,6 +401,17 @@ class TestMonitor(UptimeKumaTestCase):
         }
         self.do_test_monitor_type(expected_monitor)
 
+    def test_monitor_type_ntp(self):
+        expected_monitor = {
+            "type": MonitorType.NTP,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "ntpStratumThreshold": 3,
+            "ntpTimeOffsetThreshold": 50,
+            "ntpRootDispersionThreshold": 20,
+        }
+        self.do_test_monitor_type(expected_monitor)
+
     def test_delete_not_existing_monitor(self):
         with self.assertRaises(UptimeKumaException):
             self.api.delete_monitor(42)

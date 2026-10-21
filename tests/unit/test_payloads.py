@@ -86,8 +86,33 @@ class TestMonitorPayload:
         for key in ("keyword", "grpcUrl", "radiusSecret", "docker_host",
                     "game", "jsonPath", "kafkaProducerTopic",
                     "databaseQuery", "basic_auth_user", "tlsCert",
-                    "oauth_token_url"):
+                    "oauth_token_url", "ntpStratumThreshold"):
             assert key not in data
+
+    def test_ntp_defaults_and_overrides(self):
+        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="pool.ntp.org")
+        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", port=124,
+                             ntpStratumThreshold=3, ntpTimeOffsetThreshold=50,
+                             ntpRootDispersionThreshold=20)
+        first, second = self.api.sio.sent("add")
+        assert first["type"] == MonitorType.NTP
+        assert first["hostname"] == "pool.ntp.org"
+        assert (first["ntpStratumThreshold"], first["ntpTimeOffsetThreshold"],
+                first["ntpRootDispersionThreshold"]) == (5, 1000, 500)
+        assert second["port"] == 124
+        assert (second["ntpStratumThreshold"], second["ntpTimeOffsetThreshold"],
+                second["ntpRootDispersionThreshold"]) == (3, 50, 20)
+
+    @pytest.mark.parametrize("field, bad, good", [
+        ("ntpStratumThreshold", 0, 1),
+        ("ntpStratumThreshold", 16, 15),
+        ("ntpTimeOffsetThreshold", 0, 1),
+        ("ntpRootDispersionThreshold", 0, 1),
+    ])
+    def test_ntp_threshold_bounds(self, field, bad, good):
+        with pytest.raises(ValueError, match=field):
+            self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: bad})
+        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: good})
 
     def test_basic_auth_fields_but_not_ntlm_ones(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
@@ -140,6 +165,7 @@ class TestMonitorValidation:
         (MonitorType.DOCKER, {"docker_container": "c"}),
         (MonitorType.POSTGRES, {}),
         (MonitorType.JSON_QUERY, {"url": "u"}),
+        (MonitorType.NTP, {}),
     ])
     def test_required_arguments_per_type(self, monitor_type, given):
         with pytest.raises(TypeError):
