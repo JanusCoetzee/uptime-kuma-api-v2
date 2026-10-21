@@ -312,6 +312,86 @@ class TestStatusPages(Base):
         assert self.sio.sent("unpinIncident") == ["s"]
         assert len(self.sio.sent("saveStatusPage")) == 2
 
+    def test_incident_changes_refresh_the_status_page_cache(self):
+        # Kuma caches the status page for 5 minutes; only saveStatusPage
+        # clears it, so the changes call it like post_incident does
+        self.sio.replies["editIncident"] = {
+            "ok": True, "incident": {"id": 7, "style": "info"}}
+        self.sio.replies["resolveIncident"] = {
+            "ok": True, "incident": {"id": 7, "style": "info"}}
+        self.sio.replies["deleteIncident"] = {"ok": True}
+        with mock.patch(self.GET, http_reply(self.page)):
+            self.api.edit_incident("s", 7, "t", "c")
+            self.api.resolve_incident("s", 7)
+            self.api.delete_incident("s", 7)
+        assert len(self.sio.sent("saveStatusPage")) == 3
+
+    def test_get_incident_history(self):
+        self.sio.replies["getIncidentHistory"] = {
+            "ok": True, "total": 2, "hasMore": True, "nextCursor": "c1",
+            "incidents": [{"id": 2, "style": "danger"},
+                          {"id": 1, "style": "info"}]}
+        first = self.api.get_incident_history("s")
+        assert self.sio.sent("getIncidentHistory") == [("s", None)]
+        assert [i["style"] for i in first["incidents"]] == [
+            IncidentStyle.DANGER, IncidentStyle.INFO]
+        assert (first["total"], first["hasMore"], first["nextCursor"]) == (
+            2, True, "c1")
+        assert "ok" not in first
+        self.api.get_incident_history("s", cursor="c1")
+        assert self.sio.sent("getIncidentHistory")[1] == ("s", "c1")
+
+    def test_edit_incident(self):
+        with mock.patch(self.GET, http_reply(self.page)):
+            self.sio.replies["editIncident"] = {
+                "ok": True, "incident": {"id": 7, "style": "info"}}
+            incident = self.api.edit_incident(
+                "s", 7, "t", "c", IncidentStyle.INFO, pin=False)
+            assert self.sio.sent("editIncident") == [
+                ("s", 7, {"title": "t", "content": "c",
+                          "style": IncidentStyle.INFO, "pin": False})]
+            assert incident["style"] == IncidentStyle.INFO
+
+    def test_edit_incident_defaults_to_primary_and_pinned(self):
+        with mock.patch(self.GET, http_reply(self.page)):
+            self.sio.replies["editIncident"] = {
+                "ok": True, "incident": {"id": 7, "style": "primary"}}
+            self.api.edit_incident("s", 7, "t", "c")
+            sent = self.sio.sent("editIncident")[0][2]
+            assert (sent["style"], sent["pin"]) == (IncidentStyle.PRIMARY, True)
+
+    def test_resolve_incident(self):
+        with mock.patch(self.GET, http_reply(self.page)):
+            self.sio.replies["resolveIncident"] = {
+                "ok": True,
+                "incident": {"id": 7, "style": "danger", "pin": False}}
+            incident = self.api.resolve_incident("s", 7)
+            assert self.sio.sent("resolveIncident") == [("s", 7)]
+            assert incident == {"id": 7, "style": IncidentStyle.DANGER,
+                                "pin": False}
+
+    def test_delete_incident(self):
+        with mock.patch(self.GET, http_reply(self.page)):
+            self.sio.replies["deleteIncident"] = {
+                "ok": True, "msg": "successDeleted", "msgi18n": True}
+            r = self.api.delete_incident("s", 7)
+            assert self.sio.sent("deleteIncident") == [("s", 7)]
+            assert r == {"msg": "successDeleted", "msgi18n": True}
+
+    @pytest.mark.parametrize("call", [
+        lambda api: api.get_incident_history("s"),
+        lambda api: api.edit_incident("s", 7, "t", "c"),
+        lambda api: api.resolve_incident("s", 7),
+        lambda api: api.delete_incident("s", 7),
+    ])
+    def test_incident_errors_are_raised(self, call):
+        for event in ("getIncidentHistory", "editIncident",
+                      "resolveIncident", "deleteIncident"):
+            self.sio.replies[event] = {
+                "ok": False, "msg": "Incident not found or access denied"}
+        with pytest.raises(UptimeKumaException, match="not found"):
+            call(self.api)
+
     def test_build_status_page_data(self):
         slug, config, icon, groups = self.api._build_status_page_data(
             "s", id=1, title="t")

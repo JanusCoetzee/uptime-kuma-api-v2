@@ -78,10 +78,50 @@ class TestStatusPage(UptimeKumaTestCase):
         self.compare(status_page["incident"], incident)
         self.assertTrue(type(status_page["incident"]["style"]) == IncidentStyle)
 
+        # edit, resolve and list incidents
+        edited = self.api.edit_incident(
+            slug, incident["id"], "title 2", "content 2", IncidentStyle.INFO)
+        self.assertEqual(edited["title"], "title 2")
+        self.assertEqual(edited["style"], IncidentStyle.INFO)
+        self.assertTrue(edited["pin"])
+        self.assertIsNotNone(edited["lastUpdatedDate"])
+        status_page = self.api.get_status_page(slug)
+        self.assertEqual(status_page["incident"]["title"], "title 2")
+        history = self.api.get_incident_history(slug)
+        self.assertEqual(history["total"], 1)
+        self.assertEqual(history["incidents"][0]["id"], incident["id"])
+        self.assertFalse(history["hasMore"])
+
+        # an edit with pin=False leaves the incident unpinned
+        unpinned = self.api.edit_incident(
+            slug, incident["id"], "title 2", "content 2", pin=False)
+        self.assertFalse(unpinned["pin"])
+        status_page = self.api.get_status_page(slug)
+        self.assertIsNone(status_page["incident"])
+
+        resolved = self.api.resolve_incident(slug, incident["id"])
+        self.assertFalse(resolved["pin"])
+        self.assertFalse(resolved["active"])
+
+        # post a second incident, then unpin it
+        self.api.post_incident(slug, **incident_expected)
+        self.assertEqual(self.api.get_incident_history(slug)["total"], 2)
+        status_page = self.api.get_status_page(slug)
+        self.assertIsNotNone(status_page["incident"])
+
         # unpin incident
         self.api.unpin_incident(slug)
         status_page = self.api.get_status_page(slug)
         self.assertIsNone(status_page["incident"])
+        history = self.api.get_incident_history(slug)
+        self.assertFalse(any(i["pin"] for i in history["incidents"]))
+
+        # delete incidents
+        incident_id = incident["id"]
+        self.api.delete_incident(slug, incident_id)
+        self.assertEqual(self.api.get_incident_history(slug)["total"], 1)
+        with self.assertRaises(UptimeKumaException):
+            self.api.delete_incident(slug, incident_id)
 
         # delete status page
         self.api.delete_status_page(slug)
