@@ -16,7 +16,9 @@ class TestDockerHost(UptimeKumaTestCase):
         }
 
         # test docker host
-        with self.assertRaisesRegex(UptimeKumaException, r'connect ENOENT /var/run/docker.sock'):
+        with self.assertRaisesRegex(
+            UptimeKumaException, r"connect ENOENT /var/run/docker.sock"
+        ):
             self.api.test_docker_host(**expected_docker_host)
 
         # add docker host
@@ -30,7 +32,7 @@ class TestDockerHost(UptimeKumaTestCase):
 
         # get docker hosts
         docker_hosts = self.api.get_docker_hosts()
-        self.assertTrue(type(docker_hosts[0]["dockerType"]) == DockerType)
+        self.assertTrue(type(docker_hosts[0]["dockerType"]) is DockerType)
         docker_host = self.find_by_id(docker_hosts, docker_host_id)
         self.assertIsNotNone(docker_host)
         self.compare(docker_host, expected_docker_host)

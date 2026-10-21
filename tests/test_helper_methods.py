@@ -8,7 +8,7 @@ class TestHelperMethods(UptimeKumaTestCase):
     def test_monitor_status(self):
         monitor_id = self.add_monitor()
         status = self.api.get_monitor_status(monitor_id)
-        self.assertTrue(type(status) == MonitorStatus)
+        self.assertTrue(type(status) is MonitorStatus)
 
 
 if __name__ == '__main__':

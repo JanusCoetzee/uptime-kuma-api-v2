@@ -1,7 +1,12 @@
 import time
 import unittest
 
-from uptime_kuma_api import UptimeKumaException, MonitorType, AuthMethod, MonitorStatus
+from uptime_kuma_api import (
+    UptimeKumaException,
+    MonitorType,
+    AuthMethod,
+    MonitorStatus,
+)
 from uptime_kuma_test_case import UptimeKumaTestCase
 
 
@@ -36,11 +41,11 @@ class TestMonitor(UptimeKumaTestCase):
 
         # get monitors
         monitors = self.api.get_monitors()
-        self.assertTrue(type(monitors[0]["type"]) == MonitorType)
-        self.assertTrue(type(monitors[0]["authMethod"]) == AuthMethod)
+        self.assertTrue(type(monitors[0]["type"]) is MonitorType)
+        self.assertTrue(type(monitors[0]["authMethod"]) is AuthMethod)
         monitor = self.find_by_id(monitors, monitor_id)
-        self.assertTrue(type(monitor["type"]) == MonitorType)
-        self.assertTrue(type(monitor["authMethod"]) == AuthMethod)
+        self.assertTrue(type(monitor["type"]) is MonitorType)
+        self.assertTrue(type(monitor["authMethod"]) is AuthMethod)
         self.assertIsNotNone(monitor)
         self.compare(monitor, expected_monitor)
 
@@ -64,7 +69,7 @@ class TestMonitor(UptimeKumaTestCase):
 
         # get monitor beats
         r = self.api.get_monitor_beats(monitor_id, 6)
-        self.assertTrue(type(r[0]["status"]) == MonitorStatus)
+        self.assertTrue(type(r[0]["status"]) is MonitorStatus)
 
         # delete monitor
         r = self.api.delete_monitor(monitor_id)
@@ -106,11 +111,15 @@ class TestMonitor(UptimeKumaTestCase):
         monitor = self.api.get_monitor(monitor_id)
         self.assertEqual(monitor["name"], "monitor 2")
         self.assertEqual(monitor["url"], "http://127.0.0.1")
-        self.assertEqual(monitor["accepted_statuscodes"], ["200-299", "300-399"])
+        self.assertEqual(
+            monitor["accepted_statuscodes"], ["200-299", "300-399"]
+        )
         self.assertEqual(monitor["notificationIDList"], [notification_id_1])
 
         # notifications as a list
-        self.api.edit_monitor(monitor_id, notificationIDList=[notification_id_2])
+        self.api.edit_monitor(
+            monitor_id, notificationIDList=[notification_id_2]
+        )
         monitor = self.api.get_monitor(monitor_id)
         self.assertEqual(monitor["notificationIDList"], [notification_id_2])
 
@@ -298,9 +307,11 @@ class TestMonitor(UptimeKumaTestCase):
         expected_monitor = {
             "type": MonitorType.SQLSERVER,
             "name": "monitor 1",
-            "databaseConnectionString": "Server=127.0.0.1,8888;Database=test;User Id=1;Password=secret123;Encrypt=true;"
-                                        "TrustServerCertificate=Yes;Connection Timeout=5",
-            "databaseQuery": "select getdate()"
+            "databaseConnectionString": (
+                "Server=127.0.0.1,8888;Database=test;User Id=1;"
+                "Password=secret123;Encrypt=true;"
+                "TrustServerCertificate=Yes;Connection Timeout=5"),
+            "databaseQuery": "select getdate()",
         }
         self.do_test_monitor_type(expected_monitor)
 
@@ -516,7 +527,9 @@ class TestMonitor(UptimeKumaTestCase):
             url="ws://127.0.0.1:9/socket")["monitorID"]
         monitor = self.api.get_monitor(monitor_id)
         self.assertFalse(monitor["wsIgnoreSecWebsocketAcceptHeader"])
-        self.api.edit_monitor(monitor_id, wsIgnoreSecWebsocketAcceptHeader=True)
+        self.api.edit_monitor(
+            monitor_id, wsIgnoreSecWebsocketAcceptHeader=True
+        )
         monitor = self.api.get_monitor(monitor_id)
         self.assertTrue(monitor["wsIgnoreSecWebsocketAcceptHeader"])
         self.assertEqual(monitor["url"], "ws://127.0.0.1:9/socket")

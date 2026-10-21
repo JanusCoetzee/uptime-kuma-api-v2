@@ -44,7 +44,9 @@ class TestStatusPage(UptimeKumaTestCase):
 
         # save status page
         self.api.save_status_page(**expected_status_page)
-        expected_status_page["googleAnalyticsId"] = None  # Kuma 2.x returns empty as null
+        expected_status_page["googleAnalyticsId"] = (
+            None  # Kuma 2.x returns empty as null
+        )
 
         # get status page
         status_page = self.api.get_status_page(slug)
@@ -55,7 +57,11 @@ class TestStatusPage(UptimeKumaTestCase):
         status_page = self.find_by_id(status_pages, slug, "slug")
         self.assertIsNotNone(status_page)
         # publicGroupList and incident is not available in status pages
-        expected_status_page_config = {i: expected_status_page[i] for i in expected_status_page if i != "publicGroupList"}
+        expected_status_page_config = {
+            i: expected_status_page[i]
+            for i in expected_status_page
+            if i != "publicGroupList"
+        }
         self.compare(status_page, expected_status_page_config)
 
         # edit status page
@@ -72,11 +78,13 @@ class TestStatusPage(UptimeKumaTestCase):
             "style": IncidentStyle.DANGER
         }
         incident = self.api.post_incident(slug, **incident_expected)
-        self.assertTrue(type(incident["style"]) == IncidentStyle)
+        self.assertTrue(type(incident["style"]) is IncidentStyle)
         self.compare(incident, incident_expected)
         status_page = self.api.get_status_page(slug)
         self.compare(status_page["incident"], incident)
-        self.assertTrue(type(status_page["incident"]["style"]) == IncidentStyle)
+        self.assertTrue(
+            type(status_page["incident"]["style"]) is IncidentStyle
+        )
 
         # edit, resolve and list incidents
         edited = self.api.edit_incident(

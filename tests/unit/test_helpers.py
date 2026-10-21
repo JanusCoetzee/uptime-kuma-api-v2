@@ -115,9 +115,16 @@ class TestChecks:
                 _check_argument_conditions(c, {"n": bad})
 
     def monitor(self, **kw):
-        base = dict(type=MonitorType.PUSH, name="n", interval=60, maxretries=0, retryInterval=60,
-                    accepted_statuscodes=["200-299"], dns_resolve_type="A",
-                    kafkaProducerSaslOptions={"mechanism": "None"})
+        base = dict(
+            type=MonitorType.PUSH,
+            name="n",
+            interval=60,
+            maxretries=0,
+            retryInterval=60,
+            accepted_statuscodes=["200-299"],
+            dns_resolve_type="A",
+            kafkaProducerSaslOptions={"mechanism": "None"},
+        )
         base.update(kw)
         return base
 
@@ -125,13 +132,17 @@ class TestChecks:
         _check_arguments_monitor(self.monitor())
         with pytest.raises(TypeError):
             _check_arguments_monitor(self.monitor(type=MonitorType.PORT))
-        _check_arguments_monitor(self.monitor(type=MonitorType.PORT, hostname="h", port=80))
+        _check_arguments_monitor(
+            self.monitor(type=MonitorType.PORT, hostname="h", port=80)
+        )
 
     def test_monitor_ranges(self):
         with pytest.raises(ValueError):
             _check_arguments_monitor(self.monitor(interval=19))
         with pytest.raises(ValueError):
-            _check_arguments_monitor(self.monitor(type=MonitorType.PORT, hostname="h", port=70000))
+            _check_arguments_monitor(
+                self.monitor(type=MonitorType.PORT, hostname="h", port=70000)
+            )
 
     def test_database_types_require_connection_string(self):
         for t in DATABASE_TYPES:
@@ -141,7 +152,9 @@ class TestChecks:
                 self.monitor(type=t, databaseConnectionString="x"))
 
     def test_unknown_type_raises_clean_error(self):
-        with pytest.raises(ValueError, match="unsupported monitor type: not-a-type"):
+        with pytest.raises(
+            ValueError, match="unsupported monitor type: not-a-type"
+        ):
             _check_arguments_monitor(self.monitor(type="not-a-type"))
 
     def test_statuscode_error_names_the_offending_value(self):
@@ -157,17 +170,24 @@ class TestChecks:
         kafka = dict(type=MonitorType.KAFKA_PRODUCER, kafkaProducerTopic="t",
                      kafkaProducerMessage="m")
         for opts in (None, {}, {"mechanism": None}, {"mechanism": "plain"}):
-            _check_arguments_monitor(self.monitor(kafkaProducerSaslOptions=opts, **kafka))
+            _check_arguments_monitor(
+                self.monitor(kafkaProducerSaslOptions=opts, **kafka)
+            )
         _check_arguments_monitor(self.monitor(**kafka))
         for bad in ("x", ""):
             with pytest.raises(ValueError):
                 _check_arguments_monitor(
-                    self.monitor(kafkaProducerSaslOptions={"mechanism": bad}, **kafka))
+                    self.monitor(
+                        kafkaProducerSaslOptions={"mechanism": bad}, **kafka
+                    )
+                )
 
     def test_status_page_theme_error_lists_valid_themes(self):
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
-        with pytest.raises(ValueError, match="Valid themes: auto, light, dark"):
+        with pytest.raises(
+            ValueError, match="Valid themes: auto, light, dark"
+        ):
             api._build_status_page_data("s", id=1, title="t", theme="neon")
 
     def test_every_monitor_type_has_required_args_entry(self):
@@ -191,11 +211,23 @@ class TestChecks:
             _check_arguments_proxy(dict(ok, port=65536))
 
     def test_maintenance(self):
-        _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.MANUAL))
+        _check_arguments_maintenance(
+            dict(title="t", strategy=MaintenanceStrategy.MANUAL)
+        )
         with pytest.raises(TypeError):
-            _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.RECURRING_INTERVAL))
+            _check_arguments_maintenance(
+                dict(
+                    title="t", strategy=MaintenanceStrategy.RECURRING_INTERVAL
+                )
+            )
         with pytest.raises(ValueError):
-            _check_arguments_maintenance(dict(title="t", strategy=MaintenanceStrategy.MANUAL, intervalDay=0))
+            _check_arguments_maintenance(
+                dict(
+                    title="t",
+                    strategy=MaintenanceStrategy.MANUAL,
+                    intervalDay=0,
+                )
+            )
 
     def test_tag(self):
         _check_arguments_tag(dict(name="n", color="#fff"))
@@ -207,14 +239,18 @@ class TestChecks:
                   webhookContentType="json", webhookURL="http://x")
         _check_arguments_notification(ok)
         with pytest.raises(TypeError):
-            _check_arguments_notification(dict(type=NotificationType.WEBHOOK, name="n"))
+            _check_arguments_notification(
+                dict(type=NotificationType.WEBHOOK, name="n")
+            )
         with pytest.raises(TypeError):
             _check_arguments_notification(dict(type=NotificationType.WEBHOOK))
 
 
 class TestBuildNotificationData:
     def test_defaults_and_kwargs(self):
-        d = _build_notification_data("n", NotificationType.WEBHOOK, webhookURL="u")
+        d = _build_notification_data(
+            "n", NotificationType.WEBHOOK, webhookURL="u"
+        )
         assert d == dict(
             name="n",
             type=NotificationType.WEBHOOK,
@@ -251,15 +287,26 @@ class TestSaveStatusPage:
         api = UptimeKumaApi.__new__(UptimeKumaApi)
         api._lock = threading.RLock()
         api._event_data = {Event.STATUS_PAGE_LIST: {}}
-        page = {"id": 1, "incident": {}, "incidents": [{}], "maintenanceList": [],
-                "publicGroupList": [], "title": "t"}
+        page = {
+            "id": 1,
+            "incident": {},
+            "incidents": [{}],
+            "maintenanceList": [],
+            "publicGroupList": [],
+            "title": "t",
+        }
         api.get_status_page = lambda slug: dict(page)
         sent = []
         api._call = lambda event, data=None: (
             sent.append((event, data)) or {"config": {"id": 1}})
         api.save_status_page("s")
         config = sent[0][1][1]
-        for key in ("incident", "incidents", "maintenanceList", "publicGroupList"):
+        for key in (
+            "incident",
+            "incidents",
+            "maintenanceList",
+            "publicGroupList",
+        ):
             assert key not in config
 
 
@@ -273,8 +320,13 @@ class TestMonitorListDeltaEvents:
 
     def test_update_adds_and_replaces(self):
         api = self.api({"1": {"name": "a"}})
-        api._event_update_monitor_into_list({"1": {"name": "b"}, "2": {"name": "c"}})
-        assert api._event_data[Event.MONITOR_LIST] == {"1": {"name": "b"}, "2": {"name": "c"}}
+        api._event_update_monitor_into_list(
+            {"1": {"name": "b"}, "2": {"name": "c"}}
+        )
+        assert api._event_data[Event.MONITOR_LIST] == {
+            "1": {"name": "b"},
+            "2": {"name": "c"},
+        }
 
     def test_delete_removes_and_ignores_unknown(self):
         api = self.api({"1": {}, "2": {}})
@@ -331,13 +383,23 @@ class TestGetStatusPageHttp:
 class TestMergeSettings:
     def test_only_non_none_override(self):
         cur = {"keepDataPeriodDays": 30, "trustProxy": True}
-        d = _merge_settings(cur, {"checkUpdate": False, "keepDataPeriodDays": None, "trustProxy": None})
+        d = _merge_settings(
+            cur,
+            {
+                "checkUpdate": False,
+                "keepDataPeriodDays": None,
+                "trustProxy": None,
+            },
+        )
         assert d["keepDataPeriodDays"] == 30
         assert d["trustProxy"] is True
         assert d["checkUpdate"] is False
 
     def test_falsy_values_override(self):
-        d = _merge_settings({"keepDataPeriodDays": 30, "steamAPIKey": "x"}, {"keepDataPeriodDays": 0, "steamAPIKey": ""})
+        d = _merge_settings(
+            {"keepDataPeriodDays": 30, "steamAPIKey": "x"},
+            {"keepDataPeriodDays": 0, "steamAPIKey": ""},
+        )
         assert (d["keepDataPeriodDays"], d["steamAPIKey"]) == (0, "")
 
     def test_entry_page_fallback(self):
@@ -752,7 +814,9 @@ class TestEditMonitorShapes:
         assert data["pushToken"] == "tok"
 
     def test_auth_method_is_preserved(self):
-        data = self.edit(stored=dict(authMethod=AuthMethod.HTTP_BASIC), name="n")
+        data = self.edit(
+            stored=dict(authMethod=AuthMethod.HTTP_BASIC), name="n"
+        )
         assert data["authMethod"] == AuthMethod.HTTP_BASIC
         data = self.edit(authMethod=AuthMethod.NTLM)
         assert data["authMethod"] == AuthMethod.NTLM
@@ -821,13 +885,17 @@ class TestEventDataThreadSafety:
         def read():
             try:
                 while not stop.is_set():
-                    beats = api._get_event_data(Event.HEARTBEAT_LIST).get(1, [])
+                    beats = api._get_event_data(Event.HEARTBEAT_LIST).get(
+                        1, []
+                    )
                     assert len(beats) <= 150, len(beats)
                     time.sleep(0.001)
             except Exception as e:
                 errors.append(e)
 
-        writers = [threading.Thread(target=write, args=(n * 10000,)) for n in range(4)]
+        writers = [
+            threading.Thread(target=write, args=(n * 10000,)) for n in range(4)
+        ]
         reader = threading.Thread(target=read)
         reader.start()
         for t in writers:
