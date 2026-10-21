@@ -5,7 +5,8 @@ from ._base import MixinBase
 
 def _merge_settings(current, overrides) -> dict:
     data = {**current, **{k: v for k, v in overrides.items() if v is not None}}
-    # the server assigns data.entryPage unconditionally; unset settings are absent from getSettings
+    # the server assigns data.entryPage unconditionally; unset settings
+    # are absent from getSettings
     data.setdefault("entryPage", "dashboard")
     # an unset nscd means "on" to Kuma, but setSettings compares the stored
     # value with data.nscd and stops the service when it is missing
@@ -72,7 +73,8 @@ class SettingsMixin(MixinBase):
 
     def set_settings(
             self,
-            password: str | None = None,  # only required if disableAuth is true
+            # only required if disableAuth is true
+            password: str | None = None,
 
             # about
             checkUpdate: bool | None = None,
@@ -105,26 +107,54 @@ class SettingsMixin(MixinBase):
             trustProxy: bool | None = None
     ) -> dict:
         r"""
-        Set settings. Only the arguments that are not ``None`` are changed; all other
-        settings keep their current server value.
+        Set settings. Only the arguments that are not ``None`` are changed;
+        all other settings keep their current server value.
 
-        :param str, optional password: Password, only required if disableAuth is enabled, defaults to None
-        :param bool, optional checkUpdate: Show update if available, defaults to None (keep the current server value)
-        :param bool, optional checkBeta: Also check beta release, defaults to None (keep the current server value)
-        :param int, optional keepDataPeriodDays: Keep monitor history data for X days. Set to 0 for infinite retention., defaults to None (keep the current server value)
-        :param str, optional serverTimezone: Server Timezone, defaults to None (keep the current server value)
-        :param str, optional entryPage: Entry Page, defaults to None (keep the current server value)
-        :param bool, optional searchEngineIndex: Search Engine Visibility, defaults to None (keep the current server value)
-        :param str, optional primaryBaseURL: Primary Base URL, defaults to None (keep the current server value)
-        :param str, optional steamAPIKey: Steam API Key. For monitoring a Steam Game Server you need a Steam Web-API key., defaults to None (keep the current server value)
-        :param bool, optional nscd: Enable NSCD (Name Service Cache Daemon) for caching all DNS requests, defaults to None (keep the current server value)
-        :param bool, optional dnsCache: True to enable DNS Cache. It may be not working in some IPv6 environments, disable it if you encounter any issues., defaults to None (keep the current server value)
-        :param str, optional chromeExecutable: Chrome/Chromium Executable, defaults to None (keep the current server value)
-        :param list, optional tlsExpiryNotifyDays: TLS Certificate Expiry. HTTPS Monitors trigger notification when TLS certificate expires in., defaults to None (keep the current server value)
-        :param list, optional domainExpiryNotifyDays: Domain Name Expiry. Notify when a domain expires in these many days, a list of positive integers, defaults to None (keep the current server value)
-        :param str, optional globalpingApiToken: Globalping API token for ``MonitorType.GLOBALPING`` monitors, from https://dash.globalping.io. It is a secret and ``get_settings`` returns it in clear text, defaults to None (keep the current server value)
-        :param bool, optional disableAuth: Disable Authentication, defaults to None (keep the current server value)
-        :param bool, optional trustProxy: Trust Proxy. Trust 'X-Forwarded-\*' headers. If you want to get the correct client IP and your Uptime Kuma is behind such as Nginx or Apache, you should enable this., defaults to None (keep the current server value)
+        :param str, optional password: Password, only required if disableAuth
+            is enabled, defaults to None
+        :param bool, optional checkUpdate: Show update if available, defaults
+            to None (keep the current server value)
+        :param bool, optional checkBeta: Also check beta release, defaults to
+            None (keep the current server value)
+        :param int, optional keepDataPeriodDays: Keep monitor history data for
+            X days. Set to 0 for infinite retention., defaults to None (keep
+            the current server value)
+        :param str, optional serverTimezone: Server Timezone, defaults to None
+            (keep the current server value)
+        :param str, optional entryPage: Entry Page, defaults to None (keep the
+            current server value)
+        :param bool, optional searchEngineIndex: Search Engine Visibility,
+            defaults to None (keep the current server value)
+        :param str, optional primaryBaseURL: Primary Base URL, defaults to None
+            (keep the current server value)
+        :param str, optional steamAPIKey: Steam API Key. For monitoring a Steam
+            Game Server you need a Steam Web-API key., defaults to None (keep
+            the current server value)
+        :param bool, optional nscd: Enable NSCD (Name Service Cache Daemon) for
+            caching all DNS requests, defaults to None (keep the current server
+            value)
+        :param bool, optional dnsCache: True to enable DNS Cache. It may be not
+            working in some IPv6 environments, disable it if you encounter any
+            issues., defaults to None (keep the current server value)
+        :param str, optional chromeExecutable: Chrome/Chromium Executable,
+            defaults to None (keep the current server value)
+        :param list, optional tlsExpiryNotifyDays: TLS Certificate Expiry.
+            HTTPS Monitors trigger notification when TLS certificate expires
+            in., defaults to None (keep the current server value)
+        :param list, optional domainExpiryNotifyDays: Domain Name Expiry.
+            Notify when a domain expires in these many days, a list of positive
+            integers, defaults to None (keep the current server value)
+        :param str, optional globalpingApiToken: Globalping API token for
+            ``MonitorType.GLOBALPING`` monitors, from
+            https://dash.globalping.io. It is a secret and ``get_settings``
+            returns it in clear text, defaults to None (keep the current server
+            value)
+        :param bool, optional disableAuth: Disable Authentication, defaults to
+            None (keep the current server value)
+        :param bool, optional trustProxy: Trust Proxy. Trust 'X-Forwarded-\*'
+            headers. If you want to get the correct client IP and your Uptime
+            Kuma is behind such as Nginx or Apache, you should enable this.,
+            defaults to None (keep the current server value)
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -206,12 +236,16 @@ class SettingsMixin(MixinBase):
             "newPassword": new_password,
         })
 
-    def upload_backup(self, json_data: str, import_handle: str = "skip") -> dict:
+    def upload_backup(
+            self, json_data: str, import_handle: str = "skip") -> dict:
         """
         Import Backup.
 
         :param str json_data: Backup data as json string.
-        :param str, optional import_handle: Choose "skip" if you want to skip every monitor or notification with the same name. "overwrite" will delete every existing monitor and notification. "keep" will keep both., defaults to "skip"
+        :param str, optional import_handle: Choose "skip" if you want to skip
+            every monitor or notification with the same name. "overwrite" will
+            delete every existing monitor and notification. "keep" will keep
+            both., defaults to "skip"
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -257,7 +291,8 @@ class SettingsMixin(MixinBase):
         """
         Shrink database.
 
-        Trigger database VACUUM for SQLite. If your database is created after 1.10.0, AUTO_VACUUM is already enabled and this action is not needed.
+        Trigger database VACUUM for SQLite. If your database is created after
+        1.10.0, AUTO_VACUUM is already enabled and this action is not needed.
 
         :return: The server response.
         :rtype: dict

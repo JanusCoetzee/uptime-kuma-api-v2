@@ -21,7 +21,8 @@ def parse_incident_style(data) -> None:
 
 def _build_status_page_response(config, r2) -> dict:
     config.update(r2.get("config", {}))
-    # Kuma 2.5+ returns a list under "incidents"; older versions a single "incident".
+    # Kuma 2.5+ returns a list under "incidents"; older versions a single
+    # "incident".
     # Keep "incident" (first one) for backwards compatibility.
     incidents = r2.get("incidents")
     if incidents is None:
@@ -66,7 +67,8 @@ class StatusPagesMixin(MixinBase):
         if not theme:
             theme = "auto"
         if theme not in ["auto", "light", "dark"]:
-            raise ValueError(f"Unknown theme: {theme}. Valid themes: auto, light, dark")
+            raise ValueError(
+                f"Unknown theme: {theme}. Valid themes: auto, light, dark")
         if not domainNameList:
             domainNameList = []
         if not publicGroupList:
@@ -227,12 +229,14 @@ class StatusPagesMixin(MixinBase):
                 raise UptimeKumaException("status page does not exist")
             r = self._call('deleteStatusPage', slug)
 
-            # uptime kuma does not send the status page list event when a status page is deleted
+            # uptime kuma does not send the status page list
+            # event when a status page is deleted
             with self._lock:
-                for status_page in self._event_data[Event.STATUS_PAGE_LIST].values():
+                pages = self._event_data[Event.STATUS_PAGE_LIST]
+                for status_page in pages.values():
                     if status_page["slug"] == slug:
                         status_page_id = status_page["id"]
-                        del self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)]
+                        del pages[str(status_page_id)]
                         break
 
             return r
@@ -249,13 +253,16 @@ class StatusPagesMixin(MixinBase):
         :param bool, optional published: Published, defaults to True
         :param bool, optional showTags: Show Tags, defaults to False
         :param list, optional domainNameList: Domain Names, defaults to None
-        :param str, optional googleAnalyticsId: Google Analytics ID, defaults to None
+        :param str, optional googleAnalyticsId: Google Analytics ID, defaults
+            to None
         :param str, optional customCSS: Custom CSS, defaults to ""
         :param str, optional footerText: Custom Footer, defaults to None
         :param bool, optional showPoweredBy: Show Powered By, defaults to True
-        :param bool, optional showCertificateExpiry: Show Certificate Expiry, defaults to False
+        :param bool, optional showCertificateExpiry: Show Certificate Expiry,
+            defaults to False
         :param str, optional icon: Icon, defaults to "/icon.svg"
-        :param list, optional publicGroupList: Public Group List, defaults to None
+        :param list, optional publicGroupList: Public Group List, defaults to
+            None
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -317,13 +324,15 @@ class StatusPagesMixin(MixinBase):
         data = (slug, status_page, icon, public_group_list)
         r = self._call('saveStatusPage', data)
 
-        # uptime kuma does not send the status page list event when a status page is saved
+        # uptime kuma does not send the status page list event when a
+        # status page is saved
         status_page = self._call('getStatusPage', slug)["config"]
         status_page_id = status_page["id"]
         with self._lock:
             if self._event_data[Event.STATUS_PAGE_LIST] is None:
                 self._event_data[Event.STATUS_PAGE_LIST] = {}
-            self._event_data[Event.STATUS_PAGE_LIST][str(status_page_id)] = status_page
+            pages = self._event_data[Event.STATUS_PAGE_LIST]
+            pages[str(status_page_id)] = status_page
 
         return r
 
@@ -340,7 +349,8 @@ class StatusPagesMixin(MixinBase):
         :param str slug: Slug
         :param str title: Title
         :param str content: Content
-        :param IncidentStyle, optional style: Style, defaults to :attr:`~.IncidentStyle.PRIMARY`
+        :param IncidentStyle, optional style: Style, defaults to
+            :attr:`~.IncidentStyle.PRIMARY`
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -399,7 +409,8 @@ class StatusPagesMixin(MixinBase):
         Get one page of the incidents of a status page, newest first.
 
         :param str slug: Slug
-        :param str, optional cursor: The ``nextCursor`` of the previous page, defaults to the first page
+        :param str, optional cursor: The ``nextCursor`` of the previous page,
+            defaults to the first page
         :return: The incidents of the page and the paging state.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -440,14 +451,18 @@ class StatusPagesMixin(MixinBase):
             pin: bool = True
     ) -> dict:
         """
-        Edit an incident of a status page. The server replaces the whole incident.
+        Edit an incident of a status page. The server replaces the whole
+        incident.
 
         :param str slug: Slug
         :param int incident_id: Id of the incident
         :param str title: Title
         :param str content: Content
-        :param IncidentStyle, optional style: Style, defaults to :attr:`~.IncidentStyle.PRIMARY`
-        :param bool, optional pin: Whether the incident is pinned, defaults to ``True``. The server pins the incident again on every edit unless this is ``False``, also one that was unpinned or resolved.
+        :param IncidentStyle, optional style: Style, defaults to
+            :attr:`~.IncidentStyle.PRIMARY`
+        :param bool, optional pin: Whether the incident is pinned, defaults to
+            ``True``. The server pins the incident again on every edit unless
+            this is ``False``, also one that was unpinned or resolved.
         :return: The edited incident.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error, for
