@@ -23,6 +23,7 @@ from uptime_kuma_api._helpers import (
 )
 from uptime_kuma_api._mixins.maintenance import _check_arguments_maintenance
 from uptime_kuma_api._monitor_args import (
+    UNSUPPORTED_MONITOR_TYPES,
     _check_arguments_monitor,
     _convert_monitor_input,
     gen_secret,
@@ -140,8 +141,8 @@ class TestChecks:
                 self.monitor(type=t, databaseConnectionString="x"))
 
     def test_unknown_type_raises_clean_error(self):
-        with pytest.raises(ValueError, match="unsupported monitor type: ntp"):
-            _check_arguments_monitor(self.monitor(type="ntp"))
+        with pytest.raises(ValueError, match="unsupported monitor type: not-a-type"):
+            _check_arguments_monitor(self.monitor(type="not-a-type"))
 
     def test_statuscode_error_names_the_offending_value(self):
         for good in ("200", "999", "100-199", "500-599"):
@@ -176,6 +177,11 @@ class TestChecks:
             except (TypeError, ValueError) as e:
                 if "unsupported monitor type" in str(e):
                     pytest.fail(f"{t} missing from required_args_by_type")
+
+    @pytest.mark.parametrize("t", sorted(UNSUPPORTED_MONITOR_TYPES))
+    def test_new_kuma_types_are_rejected_clearly(self, t):
+        with pytest.raises(ValueError, match="is not supported yet"):
+            _check_arguments_monitor(self.monitor(type=t))
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)

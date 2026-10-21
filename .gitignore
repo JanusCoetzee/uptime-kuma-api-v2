@@ -14,3 +14,6 @@ env/
 build/
 .venv/
 coverage.xml
+
+# Uptime Kuma source checkout for the generator scripts
+/uptime-kuma/

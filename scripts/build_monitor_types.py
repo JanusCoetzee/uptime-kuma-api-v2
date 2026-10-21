@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-from utils import parse_vue_template, write_to_file
+from utils import KUMA_SRC, parse_vue_template, require_titles, write_to_file
 
 
 titles = {
@@ -25,20 +25,34 @@ titles = {
     "json-query": "HTTP(s) - Json Query",
     "real-browser": "HTTP(s) - Browser Engine (Chrome/Chromium)",
     "kafka-producer": "Kafka Producer",
-    "tailscale-ping": "Tailscale Ping"
+    "tailscale-ping": "Tailscale Ping",
+    "system-service": "System Service",
+    "pm2": "PM2 Process",
+    "websocket-upgrade": "Websocket Upgrade",
+    "sftp": "SFTP",
+    "manual": "Manual",
+    "globalping": "Globalping - Access global monitoring probes",
+    "ntp": "NTP",
+    "rabbitmq": "RabbitMQ",
+    "sip-options": "SIP Options Ping",
+    "smtp": "SMTP",
+    "snmp": "SNMP",
+    "oracledb": "Oracle Database",
 }
 
 
 def parse_monitor_types():
-    content = parse_vue_template("uptime-kuma/src/pages/EditMonitor.vue")
+    content = parse_vue_template(KUMA_SRC / "src/pages/EditMonitor.vue")
 
     soup = BeautifulSoup(content, "html.parser")
     select = soup.find("select", id="type")
     options = select.find_all("option")
 
+    values = list(dict.fromkeys(o.attrs["value"] for o in options))
+    require_titles("monitor types", values, titles, "build_monitor_types.py")
+
     types = {}
-    for o in options:
-        type_ = o.attrs["value"]
+    for type_ in values:
         types[type_] = {
             "value": type_,
             "title": titles[type_]
@@ -49,6 +63,6 @@ def parse_monitor_types():
 monitor_types = parse_monitor_types()
 
 write_to_file(
-    "monitor_type.py.j2", "./../uptime_kuma_api/monitor_type.py",
+    "monitor_type.py.j2", "uptime_kuma_api/monitor_type.py",
     monitor_types=monitor_types
 )
