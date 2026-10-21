@@ -184,8 +184,8 @@ class TestChecks:
             _check_arguments_monitor(self.monitor(type=t))
 
     def test_new_kuma_type_given_as_raw_string_is_rejected_clearly(self):
-        with pytest.raises(ValueError, match="'snmp' is not supported yet"):
-            _check_arguments_monitor(self.monitor(type="snmp"))
+        with pytest.raises(ValueError, match="'sftp' is not supported yet"):
+            _check_arguments_monitor(self.monitor(type="sftp"))
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
@@ -597,6 +597,28 @@ class TestEditMonitorShapes:
         manual = dict(type=MonitorType.MANUAL, manual_status=1)
         with pytest.raises(ValueError, match="manual_status"):
             self.edit(manual, manual_status=2)
+
+    def test_edit_snmp_is_merged_and_validated(self):
+        stored = dict(type=MonitorType.SNMP, hostname="h", port=161,
+                      snmpOid="1.3", snmpVersion="2c", radiusPassword="public",
+                      jsonPath="$", jsonPathOperator="==", expectedValue="1")
+        data = self.edit(stored, jsonPathOperator=">", expectedValue="5")
+        assert (data["jsonPathOperator"], data["expectedValue"]) == (">", "5")
+        assert (data["snmpOid"], data["radiusPassword"], data["port"]) == (
+            "1.3", "public", 161)
+        with pytest.raises(ValueError, match="snmpVersion"):
+            self.edit(stored, snmpVersion="3")
+
+    def test_edit_websocket_and_oracledb_fields_are_merged(self):
+        ws = dict(type=MonitorType.WEBSOCKET_UPGRADE, url="ws://h",
+                  wsSubprotocol="a", wsIgnoreSecWebsocketAcceptHeader=False)
+        data = self.edit(ws, wsIgnoreSecWebsocketAcceptHeader=True)
+        assert data["wsIgnoreSecWebsocketAcceptHeader"] is True
+        assert (data["url"], data["wsSubprotocol"]) == ("ws://h", "a")
+        db = dict(type=MonitorType.ORACLEDB, databaseConnectionString="c",
+                  basic_auth_user="u", basic_auth_pass="p")
+        data = self.edit(db, basic_auth_pass="q")
+        assert (data["basic_auth_user"], data["basic_auth_pass"]) == ("u", "q")
 
     def test_edit_only_name_keeps_the_rest(self):
         data = self.edit(name="new")

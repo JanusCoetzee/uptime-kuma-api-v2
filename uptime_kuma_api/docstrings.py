@@ -87,7 +87,7 @@ def monitor_docstring(mode) -> str:
         :param str, optional docker_container: Container Name / ID, defaults to ""
         :param int, optional docker_host: Docker Host, defaults to None
         :param str, optional radiusUsername: Radius Username, defaults to None
-        :param str, optional radiusPassword: Radius Password, defaults to None
+        :param str, optional radiusPassword: Radius Password. For SNMP this is the community string., defaults to None
         :param str, optional radiusSecret: Radius Secret. Shared Secret between client and server., defaults to None
         :param str, optional radiusCalledStationId: Called Station Id. Identifier of the called device., defaults to None
         :param str, optional radiusCallingStationId: Calling Station Id. Identifier of the calling device., defaults to None
@@ -120,6 +120,11 @@ def monitor_docstring(mode) -> str:
         :param int, optional ntpRootDispersionThreshold: NTP only. Maximum acceptable root dispersion in milliseconds, defaults to 500
         :param str, optional system_service_name: SYSTEM_SERVICE and PM2 only. Name of the system service, or of the pm2 process. Required for those types., defaults to None
         :param str, optional smtpSecurity: SMTP only. "secure" (SMTPS), "starttls" (require STARTTLS) or "nostarttls" (ignore STARTTLS), defaults to None (server default)
+        :param str, optional wsSubprotocol: WEBSOCKET_UPGRADE only. Comma separated subprotocols to request, defaults to ""
+        :param bool, optional wsIgnoreSecWebsocketAcceptHeader: WEBSOCKET_UPGRADE only. Ignore the ``Sec-WebSocket-Accept`` header of the response, defaults to False
+        :param str, optional snmpOid: SNMP only. OID to query, for example ``1.3.6.1.2.1.1.3.0``. Required for that type., defaults to None
+        :param str, optional snmpVersion: SNMP only. ``1`` or ``2c``; ``3`` is not usable on Kuma 2.5.6 because the server does not save the username, defaults to "2c"
+        :param str, optional jsonPathOperator: SNMP only. Comparison of the value found at ``jsonPath`` with ``expectedValue``: ``>``, ``>=``, ``<``, ``<=``, ``!=``, ``==`` or ``contains``, defaults to "=="
         :param int, optional manual_status: MANUAL only. 1 sets the monitor up, 0 sets it down; it stays pending when not set. The server does not return this value; editing without it keeps the current one., defaults to None
     """
 

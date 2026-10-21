@@ -476,6 +476,68 @@ class TestMonitor(UptimeKumaTestCase):
             (monitor["smtpSecurity"], monitor["port"], monitor["hostname"]),
             ("starttls", 587, "127.0.0.1"))
 
+    def test_monitor_type_oracledb(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.ORACLEDB,
+            "name": "monitor 1",
+            "databaseConnectionString": "127.0.0.1:1521/XEPDB1",
+            "basic_auth_user": "scott",
+            "basic_auth_pass": "tiger",
+            "databaseQuery": "SELECT 1 FROM DUAL",
+        })
+        self.assertEqual(monitor["basic_auth_user"], "scott")
+
+    def test_monitor_type_websocket_upgrade(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.WEBSOCKET_UPGRADE,
+            "name": "monitor 1",
+            "url": "ws://127.0.0.1:9/socket",
+            "wsSubprotocol": "soap,mqtt",
+            "wsIgnoreSecWebsocketAcceptHeader": True,
+        })
+        self.assertEqual(monitor["wsSubprotocol"], "soap,mqtt")
+
+    def test_websocket_upgrade_flag_is_changed_by_edit(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.WEBSOCKET_UPGRADE, name="monitor 1",
+            url="ws://127.0.0.1:9/socket")["monitorID"]
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertFalse(monitor["wsIgnoreSecWebsocketAcceptHeader"])
+        self.api.edit_monitor(monitor_id, wsIgnoreSecWebsocketAcceptHeader=True)
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertTrue(monitor["wsIgnoreSecWebsocketAcceptHeader"])
+        self.assertEqual(monitor["url"], "ws://127.0.0.1:9/socket")
+
+    def test_monitor_type_snmp(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.SNMP,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "snmpOid": "1.3.6.1.2.1.1.3.0",
+            "snmpVersion": "1",
+            "radiusPassword": "public",
+            "jsonPath": "$",
+            "jsonPathOperator": ">=",
+            "expectedValue": "0",
+        })
+        self.assertEqual(monitor["port"], 161)
+
+    def test_snmp_is_changed_by_edit_and_keeps_the_rest(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.SNMP, name="monitor 1", hostname="127.0.0.1",
+            snmpOid="1.3.6.1.2.1.1.3.0", radiusPassword="public",
+            expectedValue="0")["monitorID"]
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual((monitor["snmpVersion"], monitor["jsonPathOperator"],
+                          monitor["jsonPath"]), ("2c", "==", "$"))
+        self.api.edit_monitor(monitor_id, jsonPathOperator="contains",
+                              snmpOid="1.3.6.1.2.1.1.5.0")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["jsonPathOperator"], monitor["snmpOid"],
+             monitor["hostname"], monitor["snmpVersion"]),
+            ("contains", "1.3.6.1.2.1.1.5.0", "127.0.0.1", "2c"))
+
     def wait_for_status(self, monitor_id, status, timeout=30):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

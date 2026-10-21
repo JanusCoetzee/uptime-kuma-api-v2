@@ -124,6 +124,15 @@ def _build_monitor_data(
 
         # MANUAL
         manual_status: int | None = None,
+
+        # WEBSOCKET_UPGRADE
+        wsSubprotocol: str = "",
+        wsIgnoreSecWebsocketAcceptHeader: bool = False,
+
+        # SNMP
+        snmpOid: str | None = None,
+        snmpVersion: str = "2c",
+        jsonPathOperator: str = "==",
 ) -> dict:
     if accepted_statuscodes is None:
         accepted_statuscodes = ["200-299"]
@@ -238,6 +247,8 @@ def _build_monitor_data(
             port = 53
         elif type == MonitorType.RADIUS:
             port = 1812
+        elif type == MonitorType.SNMP:
+            port = 161
     data.update({
         "port": port,
     })
@@ -264,6 +275,7 @@ def _build_monitor_data(
     # SQLSERVER, POSTGRES, MYSQL
     if type in [
         MonitorType.SQLSERVER, MonitorType.POSTGRES, MonitorType.MYSQL,
+        MonitorType.ORACLEDB,
     ]:
         data.update({
             "databaseQuery": databaseQuery,
@@ -293,6 +305,32 @@ def _build_monitor_data(
         })
         data.update({
             "gamedigGivenPortOnly": gamedigGivenPortOnly,
+        })
+
+    # ORACLEDB: the login is separate from the connection string
+    if type == MonitorType.ORACLEDB:
+        data.update({
+            "basic_auth_user": basic_auth_user,
+            "basic_auth_pass": basic_auth_pass,
+        })
+
+    # WEBSOCKET_UPGRADE
+    if type == MonitorType.WEBSOCKET_UPGRADE:
+        data.update({
+            "wsSubprotocol": wsSubprotocol,
+            "wsIgnoreSecWebsocketAcceptHeader": (
+                wsIgnoreSecWebsocketAcceptHeader),
+        })
+
+    # SNMP: the community string travels in radiusPassword
+    if type == MonitorType.SNMP:
+        data.update({
+            "radiusPassword": radiusPassword,
+            "snmpOid": snmpOid,
+            "snmpVersion": snmpVersion,
+            "jsonPath": jsonPath if jsonPath is not None else "$",
+            "jsonPathOperator": jsonPathOperator,
+            "expectedValue": expectedValue,
         })
 
     # JSON_QUERY

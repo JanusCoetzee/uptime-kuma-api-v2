@@ -17,12 +17,9 @@ from ._helpers import (
 # In MonitorType (generated from Kuma 2.5.6) but without argument checks or
 # payload fields yet; add_monitor/edit_monitor reject them (#118).
 UNSUPPORTED_MONITOR_TYPES = frozenset({
-    MonitorType.WEBSOCKET_UPGRADE,
     MonitorType.SFTP,
     MonitorType.GLOBALPING,
     MonitorType.RABBITMQ,
-    MonitorType.SNMP,
-    MonitorType.ORACLEDB,
 })
 
 
@@ -97,6 +94,10 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.MANUAL: [],
         MonitorType.SIP_OPTIONS: ["hostname", "port"],
         MonitorType.SMTP: ["hostname", "port"],
+        MonitorType.ORACLEDB: ["databaseConnectionString"],
+        MonitorType.WEBSOCKET_UPGRADE: ["url"],
+        MonitorType.SNMP: [
+            "hostname", "snmpOid", "radiusPassword", "expectedValue"],
     }
     type_ = kwargs["type"]
     if type_ in UNSUPPORTED_MONITOR_TYPES:
@@ -176,6 +177,19 @@ def _check_arguments_monitor(kwargs) -> None:
             raise ValueError(
                 f"Unknown smtpSecurity value: {smtp_security!r}, "
                 "expected 'secure', 'starttls' or 'nostarttls'")
+
+    if type_ == MonitorType.SNMP:
+        # Kuma 2.5.6 never saves the SNMPv3 username, so v3 cannot work yet
+        snmp_version = kwargs.get("snmpVersion")
+        if snmp_version not in ("1", "2c"):
+            raise ValueError(
+                f"Unknown snmpVersion value: {snmp_version!r}, "
+                "expected '1' or '2c' (SNMPv3 is not supported by Kuma 2.5.6)")
+        operator = kwargs.get("jsonPathOperator")
+        if operator not in (">", ">=", "<", "<=", "!=", "==", "contains"):
+            raise ValueError(
+                f"Unknown jsonPathOperator value: {operator!r}, expected "
+                "'>', '>=', '<', '<=', '!=', '==' or 'contains'")
 
     if type_ == MonitorType.MANUAL:
         manual_status = kwargs.get("manual_status")

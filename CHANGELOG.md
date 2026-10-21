@@ -16,6 +16,7 @@ upstream project's changes) is not carried over. It remains available:
 - Mutation score 86.2% (was 68.0%) from exact-payload tests for monitor, maintenance, proxy, status page and settings requests; the weekly CI job now fails below 85% (`scripts/mutation_score.py`).
 - `MonitorType.NTP` can be added and edited (`hostname`, optional `port`, `ntpStratumThreshold`, `ntpTimeOffsetThreshold`, `ntpRootDispersionThreshold`). The other new Kuma 2.x monitor types are still rejected until #118 is done.
 - `MonitorType.SYSTEM_SERVICE`, `PM2`, `MANUAL`, `SIP_OPTIONS` and `SMTP` can be added and edited (`system_service_name`, `manual_status`, `smtpSecurity`, `hostname`, `port`). The remaining new types are still rejected until #118 is done (#40).
+- `MonitorType.ORACLEDB`, `WEBSOCKET_UPGRADE` and `SNMP` can be added and edited (`basic_auth_user`/`basic_auth_pass`/`databaseQuery`; `wsSubprotocol`, `wsIgnoreSecWebsocketAcceptHeader`; `snmpOid`, `snmpVersion`, `jsonPathOperator`, with the community string in `radiusPassword`). `snmpVersion` accepts `1` and `2c` only: Kuma 2.5.6 does not save the SNMPv3 username. sftp, rabbitmq and globalping are still rejected (#40).
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed
