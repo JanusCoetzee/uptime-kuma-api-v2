@@ -42,7 +42,8 @@ so bumping `KUMA_REF` without regenerating fails CI.
   add the input to `ignored_inputs` in `build_notifications.py` if it is
   internal or legacy, otherwise fix the scraping.
 - A new monitor type also needs argument checks and payload fields by hand
-  (see `UNSUPPORTED_MONITOR_TYPES` in `_monitor_args.py`).
+  (`required_args_by_type` in `_monitor_args.py`; a type missing there
+  raises `unsupported monitor type`, which a unit test catches).
 
 ## Other scripts
 

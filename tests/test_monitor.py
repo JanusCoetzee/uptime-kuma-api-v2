@@ -610,6 +610,72 @@ class TestMonitor(UptimeKumaTestCase):
              monitor["rabbitmqPassword"]),
             (["http://127.0.0.1:15672"], "admin", "guest"))
 
+    def test_monitor_type_globalping_ping(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.GLOBALPING,
+            "name": "monitor 1",
+            "subtype": "ping",
+            "hostname": "example.org",
+            "location": "germany",
+            "protocol": "TCP",
+            "port": 443,
+            "ipFamily": "ipv4",
+            "ping_count": 5,
+        })
+        self.assertEqual(monitor["ping_count"], 5)
+
+    def test_monitor_type_globalping_http(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.GLOBALPING,
+            "name": "monitor 1",
+            "subtype": "http",
+            "url": "https://example.org/path?q=1",
+            "location": "world",
+            "protocol": "HTTP2",
+            "method": "HEAD",
+            "cacheBust": True,
+            "accepted_statuscodes": ["200-299", "301"],
+            "authMethod": AuthMethod.BEARER,
+            "bearer_token": "token",
+        })
+
+    def test_monitor_type_globalping_dns(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.GLOBALPING,
+            "name": "monitor 1",
+            "subtype": "dns",
+            "hostname": "example.org",
+            "dns_resolve_type": "DNSKEY",
+            "dns_resolve_server": "8.8.8.8",
+            "protocol": "TCP",
+        })
+        self.assertEqual(monitor["port"], 53)
+
+    def test_globalping_defaults_and_edit_keep_the_rest(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.GLOBALPING, name="monitor 1",
+            hostname="example.org")["monitorID"]
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["subtype"], monitor["location"], monitor["protocol"],
+             monitor["ping_count"], monitor["port"]),
+            ("ping", "world", "ICMP", 3, 80))
+        self.api.edit_monitor(monitor_id, location="amazon+germany")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["location"], monitor["hostname"], monitor["protocol"]),
+            ("amazon+germany", "example.org", "ICMP"))
+
+    def test_globalping_subtype_change_resets_port_and_protocol(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.GLOBALPING, name="monitor 1",
+            hostname="example.org")["monitorID"]
+        self.api.edit_monitor(monitor_id, subtype="dns")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["subtype"], monitor["protocol"], monitor["port"],
+             monitor["hostname"]), ("dns", "UDP", 53, "example.org"))
+
     def wait_for_status(self, monitor_id, status, timeout=30):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

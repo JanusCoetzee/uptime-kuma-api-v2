@@ -14,13 +14,6 @@ from ._helpers import (
 )
 
 
-# In MonitorType (generated from Kuma 2.5.6) but without argument checks or
-# payload fields yet; add_monitor/edit_monitor reject them (#118).
-UNSUPPORTED_MONITOR_TYPES = frozenset({
-    MonitorType.GLOBALPING,
-})
-
-
 def _is_ws_close_code_or_range(value) -> bool:
     if not isinstance(value, str):
         return False
@@ -30,6 +23,56 @@ def _is_ws_close_code_or_range(value) -> bool:
             for p in parts):
         return False
     return len(parts) == 1 or int(parts[0]) <= int(parts[1])
+
+
+GLOBALPING_PROTOCOLS = {
+    "ping": ("ICMP", "TCP"),
+    "http": ("HTTP2",),
+    "dns": ("UDP", "TCP"),
+}
+GLOBALPING_DNS_TYPES = (
+    "A", "AAAA", "ANY", "CNAME", "DNSKEY", "DS", "HTTPS", "MX", "NS",
+    "NSEC", "PTR", "RRSIG", "SOA", "SRV", "SVCB", "TXT")
+
+
+def _check_globalping(kwargs) -> None:
+    subtype = kwargs.get("subtype")
+    if subtype not in GLOBALPING_PROTOCOLS:
+        raise ValueError(
+            f"Unknown subtype value: {subtype!r}, "
+            "expected 'ping', 'http' or 'dns'")
+    _check_missing_arguments(
+        ["url"] if subtype == "http" else ["hostname"], kwargs)
+
+    location = kwargs.get("location")
+    if not isinstance(location, str) or not location.strip():
+        raise ValueError("location must be a non-empty string")
+    if "," in location:
+        # the form (and Globalping, which gets one magic location) allows one
+        raise ValueError("location must be a single location, not a list")
+
+    protocol = kwargs.get("protocol")
+    if protocol is not None and protocol not in GLOBALPING_PROTOCOLS[subtype]:
+        raise ValueError(
+            f"Unknown protocol value: {protocol!r} for subtype {subtype!r}, "
+            f"expected one of {', '.join(GLOBALPING_PROTOCOLS[subtype])}")
+
+    ip_family = kwargs.get("ipFamily")
+    if ip_family not in (None, "ipv4", "ipv6"):
+        raise ValueError(
+            f"Unknown ipFamily value: {ip_family!r}, "
+            "expected 'ipv4' or 'ipv6'")
+
+    if subtype == "dns" and (
+            kwargs["dns_resolve_type"] not in GLOBALPING_DNS_TYPES):
+        raise ValueError(
+            f"Unknown dns_resolve_type value: {kwargs['dns_resolve_type']}")
+
+    if subtype == "http" and kwargs.get("method") not in (
+            "HEAD", "GET", "OPTIONS"):
+        raise ValueError(
+            f"Unknown method value: {kwargs.get('method')!r}, "
+            "expected 'HEAD', 'GET' or 'OPTIONS'")
 
 
 def parse_monitor_type(data) -> None:
@@ -110,14 +153,18 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.SFTP: ["hostname", "sshUsername"],
         MonitorType.RABBITMQ: [
             "rabbitmqNodes", "rabbitmqUsername", "rabbitmqPassword"],
+        # the rest depends on the subtype, checked below
+        MonitorType.GLOBALPING: [],
     }
     type_ = kwargs["type"]
-    if type_ in UNSUPPORTED_MONITOR_TYPES:
-        raise ValueError(f"monitor type {getattr(type_, "value", type_)!r} is not supported yet (#118)")
     if type_ not in required_args_by_type:
         raise ValueError(f"unsupported monitor type: {type_}")
     required_args = required_args_by_type[type_]
     _check_missing_arguments(required_args, kwargs)
+    if kwargs.get("authMethod") == AuthMethod.BEARER:
+        _check_missing_arguments(["bearer_token"], kwargs)
+    if type_ == MonitorType.GLOBALPING:
+        _check_globalping(kwargs)
 
     conditions = dict(
         interval=dict(
@@ -135,6 +182,10 @@ def _check_arguments_monitor(kwargs) -> None:
         port=dict(
             min=0,
             max=65535,
+        ),
+        ping_count=dict(
+            min=1,
+            max=100,
         ),
         ntpStratumThreshold=dict(
             min=1,
@@ -172,7 +223,8 @@ def _check_arguments_monitor(kwargs) -> None:
             raise ValueError(f"Unknown accepted_statuscodes value: {accepted_statuscode!r}, expected 'NNN' (100-999) or 'N00-N99' (for example '200-299')")
 
     dns_resolve_type = kwargs["dns_resolve_type"]
-    if dns_resolve_type not in [
+    # globalping has more record types, checked in _check_globalping
+    if type_ != MonitorType.GLOBALPING and dns_resolve_type not in [
         "A",
         "AAAA",
         "CAA",

@@ -7,6 +7,7 @@ import datetime
 import pytest
 
 from tests.unit.fake_kuma import make_api
+from uptime_kuma_api._monitor_args import GLOBALPING_DNS_TYPES
 from uptime_kuma_api import (
     AuthMethod,
     Event,
@@ -438,6 +439,206 @@ class TestMonitorPayload:
         self.api.add_monitor(**dict(self.RABBIT, rabbitmqNodes=("http://a",)))
         (data,) = self.api.sio.sent("add")
         assert list(data["rabbitmqNodes"]) == ["http://a"]
+
+    GP_PING = dict(type=MonitorType.GLOBALPING, name="n", subtype="ping",
+                   hostname="example.org")
+    GP_HTTP = dict(type=MonitorType.GLOBALPING, name="n", subtype="http",
+                   url="https://example.org")
+    GP_DNS = dict(type=MonitorType.GLOBALPING, name="n", subtype="dns",
+                  hostname="example.org")
+
+    def test_globalping_ping_defaults(self):
+        self.api.add_monitor(type=MonitorType.GLOBALPING, name="n",
+                             hostname="h")
+        (data,) = self.api.sio.sent("add")
+        assert (data["subtype"], data["location"], data["protocol"],
+                data["ipFamily"], data["ping_count"], data["port"]) == (
+            "ping", "world", "ICMP", None, 3, 80)
+        assert "cacheBust" not in data
+
+    def test_globalping_ping_overrides(self):
+        self.api.add_monitor(**self.GP_PING, location="amazon+germany",
+                             protocol="TCP", port=443, ipFamily="ipv6",
+                             ping_count=10)
+        (data,) = self.api.sio.sent("add")
+        assert (data["location"], data["protocol"], data["port"],
+                data["ipFamily"], data["ping_count"]) == (
+            "amazon+germany", "TCP", 443, "ipv6", 10)
+
+    def test_globalping_dns_defaults_and_extra_record_types(self):
+        self.api.add_monitor(**self.GP_DNS)
+        self.api.add_monitor(**self.GP_DNS, dns_resolve_type="DNSKEY",
+                             protocol="TCP")
+        default, custom = self.api.sio.sent("add")
+        assert (default["protocol"], default["port"],
+                default["dns_resolve_type"]) == ("UDP", 53, "A")
+        assert (custom["protocol"], custom["dns_resolve_type"]) == (
+            "TCP", "DNSKEY")
+        assert "ping_count" not in default
+
+    def test_globalping_http_defaults(self):
+        self.api.add_monitor(**self.GP_HTTP)
+        (data,) = self.api.sio.sent("add")
+        assert (data["subtype"], data["protocol"], data["port"],
+                data["method"], data["url"], data["cacheBust"]) == (
+            "http", None, None, "GET", "https://example.org", False)
+        assert (data["jsonPath"], data["jsonPathOperator"],
+                data["keyword"], data["expectedValue"]) == (
+            "$", "==", None, None)
+        assert "ping_count" not in data
+
+    def test_globalping_http_options(self):
+        self.api.add_monitor(**self.GP_HTTP, protocol="HTTP2",
+                             method="HEAD", cacheBust=True, keyword="ok",
+                             invertKeyword=True, ignoreTls=True)
+        (data,) = self.api.sio.sent("add")
+        assert (data["protocol"], data["method"], data["cacheBust"],
+                data["keyword"], data["invertKeyword"],
+                data["ignoreTls"]) == ("HTTP2", "HEAD", True, "ok", True,
+                                       True)
+
+    @pytest.mark.parametrize("kwargs, missing", [
+        (GP_PING, "hostname"), (GP_DNS, "hostname"), (GP_HTTP, "url")])
+    def test_globalping_required_argument_depends_on_subtype(
+            self, kwargs, missing):
+        kwargs = {k: v for k, v in kwargs.items() if k != missing}
+        with pytest.raises(TypeError, match=missing):
+            self.api.add_monitor(**kwargs)
+
+    @pytest.mark.parametrize("field, value, message", [
+        ("subtype", "tcp", "^Unknown subtype value: 'tcp', expected 'ping', "
+                           "'http' or 'dns'$"),
+        ("subtype", None, "^Unknown subtype value: None"),
+        ("location", "", "^location must be a non-empty string$"),
+        ("location", "  ", "^location must be a non-empty string$"),
+        ("location", "a,b", "^location must be a single location, not a "
+                            "list$"),
+        ("protocol", "UDP", "^Unknown protocol value: 'UDP' for subtype "
+                            "'ping', expected one of ICMP, TCP$"),
+        ("ipFamily", "ipv5", "^Unknown ipFamily value: 'ipv5', expected "
+                             "'ipv4' or 'ipv6'$"),
+        ("ping_count", 0, "ping_count"),
+        ("ping_count", 101, "ping_count"),
+        ("port", 70000, "port"),
+    ])
+    def test_globalping_ping_rejects_bad_values(self, field, value, message):
+        with pytest.raises(ValueError, match=message):
+            self.api.add_monitor(**dict(self.GP_PING, **{field: value}))
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("kwargs, message", [
+        (dict(GP_HTTP, protocol="ICMP"), "for subtype 'http', expected one "
+                                         "of HTTP2$"),
+        (dict(GP_DNS, protocol="HTTP2"), "for subtype 'dns', expected one of "
+                                         "UDP, TCP$"),
+        (dict(GP_HTTP, method="POST"), "^Unknown method value: 'POST', "
+                                       "expected 'HEAD', 'GET' or 'OPTIONS'$"),
+        (dict(GP_DNS, dns_resolve_type="BOGUS"),
+         "^Unknown dns_resolve_type value: BOGUS$"),
+    ])
+    def test_globalping_rejects_bad_http_and_dns_values(
+            self, kwargs, message):
+        with pytest.raises(ValueError, match=message):
+            self.api.add_monitor(**kwargs)
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("field, value", [
+        ("ipFamily", "ipv4"), ("ipFamily", "ipv6"), ("ping_count", 1),
+        ("ping_count", 100), ("protocol", "ICMP"), ("protocol", "TCP")])
+    def test_globalping_ping_accepts_boundary_values(self, field, value):
+        self.api.add_monitor(**dict(self.GP_PING, **{field: value}))
+        (data,) = self.api.sio.sent("add")
+        assert data[field] == value
+
+    @pytest.mark.parametrize("method", ["HEAD", "GET", "OPTIONS"])
+    def test_globalping_http_accepts_every_method(self, method):
+        self.api.add_monitor(**self.GP_HTTP, method=method)
+        (data,) = self.api.sio.sent("add")
+        assert data["method"] == method
+
+    def test_dns_resolve_server_default_depends_on_the_type(self):
+        self.api.add_monitor(**self.GP_HTTP)
+        self.api.add_monitor(**self.GP_DNS)
+        self.api.add_monitor(type=MonitorType.DNS, name="n", hostname="h")
+        gp_http, gp_dns, dns = self.api.sio.sent("add")
+        assert (gp_http["dns_resolve_server"],
+                gp_dns["dns_resolve_server"]) == ("", "")
+        assert dns["dns_resolve_server"] == "1.1.1.1"
+
+    @pytest.mark.parametrize("record", GLOBALPING_DNS_TYPES)
+    def test_globalping_accepts_every_dns_record_type(self, record):
+        self.api.add_monitor(**self.GP_DNS, dns_resolve_type=record)
+        (data,) = self.api.sio.sent("add")
+        assert data["dns_resolve_type"] == record
+
+    @pytest.mark.parametrize("record", ["ANY", "DNSKEY", "HTTPS"])
+    def test_other_types_still_reject_globalping_only_record_types(
+            self, record):
+        with pytest.raises(ValueError, match="^Unknown dns_resolve_type"):
+            self.api.add_monitor(type=MonitorType.DNS, name="n",
+                                 hostname="h", dns_resolve_type=record)
+
+    def test_globalping_http_json_query_and_resolver_overrides(self):
+        self.api.add_monitor(**self.GP_HTTP, jsonPath="$.a",
+                             jsonPathOperator=">=", expectedValue="3",
+                             dns_resolve_server="9.9.9.9")
+        (data,) = self.api.sio.sent("add")
+        assert (data["jsonPath"], data["jsonPathOperator"],
+                data["expectedValue"], data["dns_resolve_server"]) == (
+            "$.a", ">=", "3", "9.9.9.9")
+
+    def test_globalping_explicit_port_wins_over_the_subtype_default(self):
+        self.api.add_monitor(**self.GP_DNS, port=5353)
+        self.api.add_monitor(**self.GP_HTTP, port=8443)
+        dns, http = self.api.sio.sent("add")
+        assert (dns["port"], http["port"]) == (5353, 8443)
+
+    def test_ping_over_tcp_keeps_the_default_port(self):
+        self.api.add_monitor(**self.GP_PING, protocol="TCP")
+        (data,) = self.api.sio.sent("add")
+        assert (data["protocol"], data["port"]) == ("TCP", 80)
+
+    def test_bearer_as_a_raw_string_and_empty_token(self):
+        self.api.add_monitor(**self.GP_HTTP, authMethod="bearer",
+                             bearer_token="tok")
+        (data,) = self.api.sio.sent("add")
+        assert data["bearer_token"] == "tok"
+        with pytest.raises(TypeError, match="bearer_token"):
+            self.api.add_monitor(**self.GP_HTTP, authMethod="bearer")
+
+    def test_bearer_works_for_a_plain_http_monitor(self):
+        self.api.add_monitor(type=MonitorType.HTTP, name="n",
+                             url="http://x", authMethod=AuthMethod.BEARER,
+                             bearer_token="tok")
+        (data,) = self.api.sio.sent("add")
+        assert data["bearer_token"] == "tok"
+
+    @pytest.mark.parametrize("kind", [MonitorType.PORT, MonitorType.PING,
+                                       MonitorType.DNS])
+    def test_globalping_fields_are_not_sent_for_other_types(self, kind):
+        self.api.add_monitor(type=kind, name="n", hostname="h",
+                             port=1, subtype="dns", location="x",
+                             protocol="TCP", ipFamily="ipv4", ping_count=9,
+                             cacheBust=True)
+        (data,) = self.api.sio.sent("add")
+        for key in ("subtype", "location", "protocol", "ipFamily",
+                    "ping_count", "cacheBust"):
+            assert key not in data
+
+    def test_bearer_auth_sends_the_token_only_for_bearer(self):
+        self.api.add_monitor(**self.GP_HTTP, authMethod=AuthMethod.BEARER,
+                             bearer_token="tok")
+        self.api.add_monitor(**self.GP_HTTP, bearer_token="tok")
+        bearer, plain = self.api.sio.sent("add")
+        assert (bearer["authMethod"], bearer["bearer_token"]) == (
+            AuthMethod.BEARER, "tok")
+        assert "bearer_token" not in plain
+
+    def test_bearer_auth_requires_the_token(self):
+        with pytest.raises(TypeError, match="bearer_token"):
+            self.api.add_monitor(**self.GP_HTTP,
+                                 authMethod=AuthMethod.BEARER)
+        assert self.api.sio.sent("add") == []
 
     def test_sftp_and_rabbitmq_secrets_are_not_sent_for_other_types(self):
         self.api.add_monitor(

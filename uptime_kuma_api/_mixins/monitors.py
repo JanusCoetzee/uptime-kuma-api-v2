@@ -4,6 +4,7 @@ from __future__ import annotations
 from .. import (
     Event,
     MonitorStatus,
+    MonitorType,
     UptimeKumaException
 )
 from ..docstrings import (
@@ -18,7 +19,10 @@ from .._monitor_args import (
     parse_auth_method,
     parse_monitor_type,
 )
-from .._monitor_payload import _build_monitor_data
+from .._monitor_payload import (
+    _build_monitor_data,
+    _globalping_subtype_defaults,
+)
 from ._base import MixinBase
 
 
@@ -424,6 +428,11 @@ class MonitorsMixin(MixinBase):
             }
         """
         data = self.get_monitor(id_)
+        new_subtype = kwargs.get("subtype")
+        if (data["type"] == MonitorType.GLOBALPING
+                and new_subtype not in (None, data.get("subtype"))):
+            # like Kuma's form: a stale port or protocol would not fit
+            data.update(_globalping_subtype_defaults(new_subtype))
         data.update(kwargs)
         _convert_monitor_input(data)
         _check_arguments_monitor(data)

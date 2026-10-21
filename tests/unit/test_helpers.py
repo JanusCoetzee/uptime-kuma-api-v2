@@ -23,7 +23,6 @@ from uptime_kuma_api._helpers import (
 )
 from uptime_kuma_api._mixins.maintenance import _check_arguments_maintenance
 from uptime_kuma_api._monitor_args import (
-    UNSUPPORTED_MONITOR_TYPES,
     _check_arguments_monitor,
     _convert_monitor_input,
     gen_secret,
@@ -178,14 +177,9 @@ class TestChecks:
                 if "unsupported monitor type" in str(e):
                     pytest.fail(f"{t} missing from required_args_by_type")
 
-    @pytest.mark.parametrize("t", sorted(UNSUPPORTED_MONITOR_TYPES))
-    def test_new_kuma_types_are_rejected_clearly(self, t):
-        with pytest.raises(ValueError, match=f"{t.value!r} is not supported yet"):
-            _check_arguments_monitor(self.monitor(type=t))
-
-    def test_new_kuma_type_given_as_raw_string_is_rejected_clearly(self):
-        with pytest.raises(ValueError, match="'globalping' is not supported yet"):
-            _check_arguments_monitor(self.monitor(type="globalping"))
+    def test_unknown_monitor_type_is_rejected_clearly(self):
+        with pytest.raises(ValueError, match="^unsupported monitor type: "):
+            _check_arguments_monitor(self.monitor(type="bogus"))
 
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
@@ -643,6 +637,62 @@ class TestEditMonitorShapes:
         back = self.edit(stored, sshAuthMethod="password", sshPassword="pw")
         assert (back["sshAuthMethod"], back["sshPassword"]) == (
             "password", "pw")
+
+    def test_edit_globalping_is_merged_and_validated(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="ping",
+                      hostname="h", port=80, location="world",
+                      protocol="ICMP", ipFamily=None, ping_count=3)
+        data = self.edit(stored, location="germany", ping_count=5)
+        assert (data["location"], data["ping_count"], data["hostname"],
+                data["subtype"]) == ("germany", 5, "h", "ping")
+        with pytest.raises(ValueError, match="location"):
+            self.edit(stored, location="a,b")
+        with pytest.raises(ValueError, match="for subtype 'dns'"):
+            self.edit(stored, subtype="dns", protocol="ICMP")
+
+    def test_edit_globalping_switches_subtype_with_its_required_fields(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="ping",
+                      hostname="h", port=80, location="world",
+                      protocol="ICMP", ping_count=3, url=None)
+        http = self.edit(stored, subtype="http", url="https://x",
+                         protocol=None, method="GET")
+        assert (http["subtype"], http["url"]) == ("http", "https://x")
+        dns = self.edit(stored, subtype="dns", protocol="UDP")
+        assert (dns["subtype"], dns["protocol"]) == ("dns", "UDP")
+        with pytest.raises(TypeError, match="url"):
+            self.edit(stored, subtype="http", protocol=None, method="GET")
+        with pytest.raises(ValueError, match="ping_count"):
+            self.edit(stored, ping_count=0)
+
+    @pytest.mark.parametrize("subtype, protocol, port", [
+        ("dns", "UDP", 53), ("ping", "ICMP", 80), ("http", None, None)])
+    def test_edit_globalping_subtype_change_resets_port_and_protocol(
+            self, subtype, protocol, port):
+        other = "http" if subtype != "http" else "dns"
+        stored = dict(type=MonitorType.GLOBALPING, subtype=other,
+                      hostname="h", url="https://x", method="GET",
+                      location="world", protocol="HTTP2", port=8080,
+                      dns_resolve_type="A", ping_count=3)
+        data = self.edit(stored, subtype=subtype)
+        assert (data["protocol"], data["port"]) == (protocol, port)
+        explicit = self.edit(stored, subtype=subtype, port=1234)
+        assert explicit["port"] == 1234
+
+    def test_edit_globalping_same_subtype_keeps_port_and_protocol(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="dns",
+                      hostname="h", location="world", protocol="TCP",
+                      port=5353, dns_resolve_type="A")
+        data = self.edit(stored, subtype="dns", name="x")
+        assert (data["protocol"], data["port"]) == ("TCP", 5353)
+
+    def test_edit_globalping_http_with_bearer(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="http",
+                      url="https://x", location="world", protocol=None,
+                      method="GET", authMethod=AuthMethod.BEARER,
+                      bearer_token="tok")
+        assert self.edit(stored, name="x")["bearer_token"] == "tok"
+        with pytest.raises(TypeError, match="bearer_token"):
+            self.edit(dict(stored, bearer_token=None), name="x")
 
     def test_edit_sftp_stored_without_auth_method_is_password(self):
         stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
