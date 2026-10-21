@@ -6,7 +6,7 @@ from ..docstrings import (
     append_docstring,
     tag_docstring
 )
-from .._helpers import _check_missing_arguments
+from .._helpers import _check_edit_arguments, _check_missing_arguments
 from ._base import MixinBase
 
 
@@ -206,6 +206,7 @@ class TagsMixin(MixinBase):
             }
         """
         data = self.get_tag(id_)
+        _check_edit_arguments("edit_tag", kwargs, _build_tag_data, data)
         data.update(kwargs)
         _check_arguments_tag(data)
         return self._call('editTag', data)

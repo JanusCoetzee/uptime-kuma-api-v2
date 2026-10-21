@@ -11,6 +11,7 @@ from ..docstrings import (
 )
 from .._helpers import (
     _check_argument_conditions,
+    _check_edit_arguments,
     _check_missing_arguments,
     parse_value,
 )
@@ -429,6 +430,9 @@ class MaintenanceMixin(MixinBase):
             }
         """
         maintenance = self.get_maintenance(id_)
+        _check_edit_arguments(
+            "edit_maintenance", kwargs, self._build_maintenance_data,
+            maintenance)
         maintenance.update(kwargs)
         _check_arguments_maintenance(maintenance)
         return self._call('editMaintenance', maintenance)

@@ -43,7 +43,6 @@ class TestNotification(UptimeKumaTestCase):
 
         # edit notification
         expected_notification["name"] = "notification 1 new"
-        expected_notification["default"] = False
         expected_notification["applyExisting"] = False
         expected_notification["type"] = NotificationType.PUSHDEER
         expected_notification["pushdeerKey"] = "987654321"

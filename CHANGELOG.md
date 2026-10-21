@@ -10,9 +10,13 @@ upstream project's changes) is not carried over. It remains available:
 
 ## [Unreleased]
 
+### Fixed
+
+- `edit_monitor`, `edit_proxy`, `edit_tag`, `edit_docker_host`, `edit_maintenance`, `edit_notification` and `save_status_page` reject an unknown keyword argument with `TypeError` before anything is sent, as `add_*` does (a typo such as `intervall=60` used to be sent to the server or silently ignored). The accepted names are the `add_*` parameters plus the fields of the object returned by `get_*`, so passing a fetched object back still works. One shared check, `_check_edit_arguments`, replaces seven unchecked merges (#140).
+
 ### Changed
 
-- README rewritten: what the library is, supported Kuma versions, install (not on PyPI yet, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62). `edit_monitor` does not reject unknown arguments yet, so the README limits that claim to `add_*` (#140).
+- README rewritten: what the library is, supported Kuma versions, install (not on PyPI yet, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62).
 
 ## [2.0.0] - 2026-10-21
 

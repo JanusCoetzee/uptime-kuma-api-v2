@@ -9,7 +9,8 @@ from ..docstrings import (
     append_docstring,
     monitor_docstring
 )
-from .._helpers import (int_to_bool, parse_monitor_status)
+from .._helpers import (
+    _check_edit_arguments, int_to_bool, parse_monitor_status)
 from .._monitor_args import (
     _check_arguments_monitor,
     _convert_monitor_input,
@@ -426,6 +427,8 @@ class MonitorsMixin(MixinBase):
             }
         """
         data = self.get_monitor(id_)
+        _check_edit_arguments(
+            "edit_monitor", kwargs, _build_monitor_data, data)
         new_subtype = kwargs.get("subtype")
         if (data["type"] == MonitorType.GLOBALPING
                 and new_subtype not in (None, data.get("subtype"))):

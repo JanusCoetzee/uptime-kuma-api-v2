@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import ipaddress
 import logging
 from urllib.parse import urlsplit
@@ -108,3 +109,21 @@ def _sends_credentials_in_clear(url: str) -> bool:
     parts = urlsplit(url)
     return parts.scheme.lower() in ("http", "ws") and not _is_loopback_host(
         parts.hostname)
+
+
+def _check_edit_arguments(
+        method: str, kwargs: dict, builder, current: dict,
+        extra=()) -> None:
+    """Reject keyword arguments of an ``edit_*`` call that ``add_*`` would.
+
+    An edit starts from the object the server returned, so besides the
+    parameters of the ``add_*`` builder it accepts the fields of that object
+    (a round trip of ``get_*`` into ``edit_*`` keeps working) and ``extra``.
+    """
+    params = inspect.signature(builder).parameters.values()
+    allowed = {p.name for p in params if p.kind is not p.VAR_KEYWORD}
+    allowed.update(current, extra)
+    for key in kwargs:
+        if key not in allowed:
+            raise TypeError(
+                f"{method}() got an unexpected keyword argument '{key}'")
