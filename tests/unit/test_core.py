@@ -392,7 +392,8 @@ class TestInsecureUrl:
                      quiet=False)
         message = str(caught[0].message)
         assert "s3cret" not in message and "user" not in message
-        assert "kuma.example.com:3001" in message
+        assert message.startswith(
+            "kuma.example.com:3001 is not encrypted")
 
     def test_lookalike_host_is_not_loopback(self):
         with pytest.warns(UserWarning):
