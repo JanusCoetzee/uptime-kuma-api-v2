@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from .. import (
-    Event,
-    Timeout
-)
+from ..event import Event
+from ..exceptions import Timeout
 from ._base import MixinBase
 
 

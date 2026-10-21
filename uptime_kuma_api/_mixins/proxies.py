@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from .. import (
-    Event,
-    ProxyProtocol,
-    UptimeKumaException
-)
+from ..event import Event
+from ..exceptions import UptimeKumaException
+from ..proxy_protocol import ProxyProtocol
 from ..docstrings import (
     append_docstring,
     proxy_docstring

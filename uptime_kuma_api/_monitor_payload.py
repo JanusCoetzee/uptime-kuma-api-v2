@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from . import AuthMethod, MonitorType
+from .auth_method import AuthMethod
+from .monitor_type import MonitorType
 
 
 _GLOBALPING_DEFAULT_PROTOCOL = {"ping": "ICMP", "dns": "UDP"}

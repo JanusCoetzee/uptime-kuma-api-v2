@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from .. import (
-    DockerType,
-    Event,
-    UptimeKumaException
-)
+from ..docker_type import DockerType
+from ..event import Event
+from ..exceptions import UptimeKumaException
 from ..docstrings import (
     append_docstring,
     docker_host_docstring

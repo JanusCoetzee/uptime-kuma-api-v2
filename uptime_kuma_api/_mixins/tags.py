@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from .. import (
-    Event,
-    UptimeKumaException
-)
+from ..event import Event
+from ..exceptions import UptimeKumaException
 from ..docstrings import (
     append_docstring,
     tag_docstring

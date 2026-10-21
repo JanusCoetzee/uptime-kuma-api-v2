@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 
-from .. import (
-    Event,
-    MonitorStatus,
-    MonitorType,
-    UptimeKumaException
-)
+from ..event import Event
+from ..exceptions import UptimeKumaException
+from ..monitor_status import MonitorStatus
+from ..monitor_type import MonitorType
 from ..docstrings import (
     append_docstring,
     monitor_docstring

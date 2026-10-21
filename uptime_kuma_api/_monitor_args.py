@@ -3,10 +3,8 @@ from __future__ import annotations
 import secrets
 import string
 
-from . import (
-    AuthMethod,
-    MonitorType
-)
+from .auth_method import AuthMethod
+from .monitor_type import MonitorType
 from ._helpers import (
     _check_argument_conditions,
     _check_missing_arguments,

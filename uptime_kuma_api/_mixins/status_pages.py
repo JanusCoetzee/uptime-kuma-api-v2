@@ -4,12 +4,9 @@ from urllib.parse import quote
 
 import requests
 
-from .. import (
-    Event,
-    IncidentStyle,
-    Timeout,
-    UptimeKumaException
-)
+from ..event import Event
+from ..exceptions import Timeout, UptimeKumaException
+from ..incident_style import IncidentStyle
 from .._helpers import (int_to_bool, parse_value)
 from ._base import MixinBase
 

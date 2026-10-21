@@ -80,3 +80,41 @@ files = ["uptime_kuma_api"]
 # python-socketio ships no type hints or py.typed marker.
 module = ["socketio", "socketio.*"]
 ignore_missing_imports = true
+
+[tool.importlinter]
+# Architecture rules (#71). Run with `lint-imports`.
+root_package = "uptime_kuma_api"
+
+[[tool.importlinter.contracts]]
+name = "Layers: api -> mixins -> payload/argument helpers -> shared helpers"
+type = "layers"
+layers = [
+    "uptime_kuma_api.api",
+    "uptime_kuma_api._mixins",
+    "uptime_kuma_api._monitor_args | uptime_kuma_api._monitor_payload",
+    "uptime_kuma_api._helpers",
+]
+
+[[tool.importlinter.contracts]]
+name = "Enums, constants and generated modules do not import the client"
+type = "forbidden"
+source_modules = [
+    "uptime_kuma_api.auth_method",
+    "uptime_kuma_api.docker_type",
+    "uptime_kuma_api.event",
+    "uptime_kuma_api.exceptions",
+    "uptime_kuma_api.incident_style",
+    "uptime_kuma_api.maintenance_strategy",
+    "uptime_kuma_api.monitor_status",
+    "uptime_kuma_api.monitor_type",
+    "uptime_kuma_api.proxy_protocol",
+    "uptime_kuma_api.docstrings",
+    "uptime_kuma_api.notification_providers",
+]
+forbidden_modules = [
+    "uptime_kuma_api.api",
+    "uptime_kuma_api._mixins",
+    "uptime_kuma_api._helpers",
+    "uptime_kuma_api._monitor_args",
+    "uptime_kuma_api._monitor_payload",
+]

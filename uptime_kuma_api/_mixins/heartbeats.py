@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from .. import (
-    Event
-)
+from ..event import Event
 from .._helpers import (int_to_bool, parse_monitor_status)
 from ._base import MixinBase
 

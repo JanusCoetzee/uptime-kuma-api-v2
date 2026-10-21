@@ -4,9 +4,7 @@ import ipaddress
 import logging
 from urllib.parse import urlsplit
 
-from . import (
-    MonitorStatus
-)
+from .monitor_status import MonitorStatus
 
 
 def int_to_bool(data, keys) -> None:
