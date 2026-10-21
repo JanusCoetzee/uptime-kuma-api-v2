@@ -43,6 +43,28 @@ jobs:
       - run: pip install -r requirements.txt mypy==2.4.0
       - run: mypy
 
+  generated:
+    name: generated code is current
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt BeautifulSoup4==4.15.0 Jinja2==3.1.6
+      # the pinned Kuma source the generated files must match (same ref as the test image)
+      - name: Fetch the pinned Uptime Kuma source
+        run: |
+          set -a; . docker/kuma-test/versions.env; set +a
+          git init -q uptime-kuma
+          git -C uptime-kuma fetch -q --depth 1 https://github.com/louislam/uptime-kuma.git "$KUMA_REF"
+          git -C uptime-kuma checkout -q FETCH_HEAD
+      - run: python scripts/build_monitor_types.py --check
+      - run: python scripts/build_notifications.py --check
+      - run: python scripts/build_notification_docstring.py --check
+
   unit:
     name: unit (py${{ matrix.python }})
     if: github.event_name != 'schedule'
@@ -57,7 +79,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
+      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0 Jinja2==3.1.6
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
       - run: pytest tests/unit --cov --cov-report=xml
       - name: Upload coverage report
@@ -119,7 +141,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt requests coverage==7.16.2 mutmut==3.8.0
+      - run: pip install -r requirements.txt requests Jinja2==3.1.6 coverage==7.16.2 mutmut==3.8.0
       - run: mutmut run
       - if: always()
         run: mutmut results | tee mutation-results.txt

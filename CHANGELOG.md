@@ -69,11 +69,16 @@ upstream project's changes) is not carried over. It remains available:
 
 - **Breaking:** Uptime Kuma 1.x is no longer supported. The `1.22`/`1.23`/`1.23.1` version checks are gone, so `parent`, `invertKeyword`, `timeout`, `gamedigGivenPortOnly`, `showCertificateExpiry`, `chromeExecutable` and `nscd` are always sent, and the default status page theme is `auto`. `packaging` is no longer a dependency, and these calls no longer wait for the server info event to read the version (#33).
 
+- `MonitorType` lists the 12 monitor types added in Kuma 2.x (`system-service`, `pm2`, `websocket-upgrade`, `sftp`, `manual`, `globalping`, `ntp`, `rabbitmq`, `sip-options`, `smtp`, `snmp`, `oracledb`). `add_monitor`/`edit_monitor` reject them with `ValueError: ... is not supported yet` until their arguments are implemented (#118).
+- `NotificationType` and `notification_provider_options` cover the 56 notification providers added in Kuma 2.x. **Breaking:** `NotificationType.LINENOTIFY` is gone (Kuma removed LINE Notify), and a few options are no longer required because their form field is conditional (for example `webhookCustomBody`, `webhookContentType`).
+- The `add_notification`/`edit_notification` docstrings marked required options as optional and vice versa; they now match `notification_provider_options`, and list the new providers' options.
+
 ### Security
 - Push monitor tokens are generated with `secrets` and are 32 characters long
   (they used `random` and 10 characters).
 
 ### Development
+- The generator scripts work from any directory (`KUMA_SRC` or `uptime-kuma/`), fail with the list of new monitor types / notification providers / unmatched form inputs instead of a `KeyError`, regenerate `docstrings.py`' notification options, and have a `--check` mode that a new `generated` CI job runs against the pinned Kuma ref. `scripts/README.md` documents the steps (#34).
 - mypy runs in CI (`types` job, config in `pyproject.toml`, non-strict) with no ignore list: the mixins now inherit a typing-only `MixinBase` that declares what they use from `UptimeKumaApi`, parameters that default to `None` are annotated `| None`, and `notificationIDList` no longer rebinds its parameter to a dict (#32). `delete_monitor_tag` now skips a cached monitor whose `tags` is `None` instead of raising `TypeError`.
 - `run_tests.sh` uses the from-source Kuma test image (no more `louislam/*` 1.x images) and always stops the container; CI uploads the unit-test coverage report (`coverage.xml`) as an artifact (#31).
 - Read the Docs config fixed: `install` is nested under `python:`, Sphinx comes from `docs/requirements.txt`, and `fail_on_warning` is on. `docs/conf.py` names the fork (project, GitHub banner) and credits the original author (#27).

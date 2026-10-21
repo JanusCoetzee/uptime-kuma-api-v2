@@ -14,6 +14,24 @@ from ._helpers import (
 )
 
 
+# In MonitorType (generated from Kuma 2.5.6) but without argument checks or
+# payload fields yet; add_monitor/edit_monitor reject them (#118).
+UNSUPPORTED_MONITOR_TYPES = frozenset({
+    MonitorType.SYSTEM_SERVICE,
+    MonitorType.PM2,
+    MonitorType.WEBSOCKET_UPGRADE,
+    MonitorType.SFTP,
+    MonitorType.MANUAL,
+    MonitorType.GLOBALPING,
+    MonitorType.NTP,
+    MonitorType.RABBITMQ,
+    MonitorType.SIP_OPTIONS,
+    MonitorType.SMTP,
+    MonitorType.SNMP,
+    MonitorType.ORACLEDB,
+})
+
+
 def parse_monitor_type(data) -> None:
     parse_value(data, "type", MonitorType)
 
@@ -81,6 +99,8 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.TAILSCALE_PING: ["hostname"],
     }
     type_ = kwargs["type"]
+    if type_ in UNSUPPORTED_MONITOR_TYPES:
+        raise ValueError(f"monitor type {getattr(type_, "value", type_)!r} is not supported yet (#118)")
     if type_ not in required_args_by_type:
         raise ValueError(f"unsupported monitor type: {type_}")
     required_args = required_args_by_type[type_]

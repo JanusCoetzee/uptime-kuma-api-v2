@@ -1,5 +1,25 @@
+import difflib
+import os
 import re
+import sys
+from pathlib import Path
+
 import jinja2
+
+SCRIPTS_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPTS_DIR.parent
+# Checkout of the Uptime Kuma source to scrape; override with $KUMA_SRC.
+KUMA_SRC = Path(os.environ.get("KUMA_SRC", REPO_ROOT / "uptime-kuma"))
+
+
+def require_titles(kind, found, titles, script):
+    """Fail with the list of new items instead of a bare KeyError."""
+    missing = [i for i in found if i not in titles]
+    if missing:
+        raise SystemExit(
+            f"{script}: Uptime Kuma has {kind} with no title: "
+            f"{', '.join(missing)}. Add them to the 'titles' dict in {script}."
+        )
 
 
 def deduplicate_list(items):
@@ -18,12 +38,36 @@ def parse_vue_template(path):
     return template
 
 
+def check_mode():
+    """True for --check; any other option is an error so a typo cannot fall through to writing."""
+    unknown = [a for a in sys.argv[1:] if a.startswith("-") and a != "--check"]
+    if unknown:
+        raise SystemExit(f"unknown option {unknown[0]!r}; the only option is --check")
+    return "--check" in sys.argv
+
+
 def write_to_file(template, destination, **kwargs):
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("./"))
+    checking = check_mode()
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(SCRIPTS_DIR), keep_trailing_newline=True
+    )
     template = env.get_template(template)
     rendered = template.render(**kwargs)
-    with open(destination, "w") as f:
-        f.write(rendered)
+    target = REPO_ROOT / destination
+    if checking:
+        # drift check: compare instead of writing
+        if target.read_text() != rendered:
+            diff = difflib.unified_diff(
+                target.read_text().splitlines(), rendered.splitlines(),
+                f"committed {destination}", "regenerated", lineterm="",
+            )
+            print("\n".join(list(diff)[:80]))
+            raise SystemExit(
+                f"{destination} is out of date with Uptime Kuma at {KUMA_SRC}; "
+                "regenerate it (see scripts/README.md)"
+            )
+        return
+    target.write_text(rendered)
 
 
 def diff(old, new):
