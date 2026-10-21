@@ -416,6 +416,29 @@ class TestMonitorPayload:
         (data,) = self.api.sio.sent("add")
         assert data["rabbitmqNodes"] == nodes
 
+    def test_sftp_and_rabbitmq_do_not_send_each_others_keys(self):
+        self.api.add_monitor(**self.SFTP, rabbitmqPassword="x",
+                             rabbitmqNodes=["http://a"])
+        self.api.add_monitor(**self.RABBIT, sshPassword="x", sftpPath="/x")
+        sftp, rabbit = self.api.sio.sent("add")
+        assert not [k for k in sftp if k.startswith("rabbitmq")]
+        assert not [k for k in rabbit if k.startswith("ssh")
+                    or k == "sftpPath"]
+
+    @pytest.mark.parametrize("method, extra", [
+        ("password", {}), ("privateKey", {"sshPrivateKey": "K"})])
+    def test_sftp_port_default_and_override(self, method, extra):
+        kwargs = dict(self.SFTP, sshAuthMethod=method, **extra)
+        self.api.add_monitor(**kwargs)
+        self.api.add_monitor(**kwargs, port=2222)
+        default, custom = self.api.sio.sent("add")
+        assert (default["port"], custom["port"]) == (22, 2222)
+
+    def test_rabbitmq_accepts_a_tuple_of_nodes(self):
+        self.api.add_monitor(**dict(self.RABBIT, rabbitmqNodes=("http://a",)))
+        (data,) = self.api.sio.sent("add")
+        assert list(data["rabbitmqNodes"]) == ["http://a"]
+
     def test_sftp_and_rabbitmq_secrets_are_not_sent_for_other_types(self):
         self.api.add_monitor(
             type=MonitorType.PORT, name="n", hostname="h", port=1,

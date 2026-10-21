@@ -633,6 +633,17 @@ class TestEditMonitorShapes:
         assert (keyed["sshPrivateKey"], keyed["sshAuthMethod"]) == (
             "K", "privateKey")
 
+    def test_edit_sftp_private_key_monitor_keeps_its_secrets(self):
+        stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
+                      sshUsername="u", sshAuthMethod="privateKey",
+                      sshPrivateKey="K", sshPassphrase="pp",
+                      sshPassword=None)
+        data = self.edit(stored, name="x")
+        assert (data["sshPrivateKey"], data["sshPassphrase"]) == ("K", "pp")
+        back = self.edit(stored, sshAuthMethod="password", sshPassword="pw")
+        assert (back["sshAuthMethod"], back["sshPassword"]) == (
+            "password", "pw")
+
     def test_edit_sftp_stored_without_auth_method_is_password(self):
         stored = dict(type=MonitorType.SFTP, hostname="h", port=22,
                       sshUsername="u", sshAuthMethod=None, sshPassword="pw")
