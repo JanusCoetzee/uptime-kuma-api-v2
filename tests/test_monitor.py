@@ -586,6 +586,8 @@ class TestMonitor(UptimeKumaTestCase):
         self.assertEqual((monitor["sshAuthMethod"], monitor["sshPassword"],
                           monitor["hostname"]),
                          ("password", "secret", "127.0.0.1"))
+        # edit sends the stored value of the other method back unchanged
+        self.assertEqual(monitor["sshPrivateKey"], "not-a-real-key")
 
     def test_monitor_type_rabbitmq(self):
         self.do_test_monitor_type({

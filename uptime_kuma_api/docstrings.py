@@ -127,8 +127,8 @@ def monitor_docstring(mode) -> str:
         :param str, optional jsonPathOperator: SNMP only. Comparison of the value found at ``jsonPath`` with ``expectedValue``: ``>``, ``>=``, ``<``, ``<=``, ``!=``, ``==`` or ``contains``, defaults to "=="
         :param str, optional sshUsername: SFTP only. SSH user name. Required for that type., defaults to None
         :param str, optional sshAuthMethod: SFTP only. ``password`` or ``privateKey``, defaults to "password"
-        :param str, optional sshPassword: SFTP only. Password, required for ``sshAuthMethod="password"`` and not sent otherwise., defaults to None
-        :param str, optional sshPrivateKey: SFTP only. Private key, required for ``sshAuthMethod="privateKey"`` and not sent otherwise., defaults to None
+        :param str, optional sshPassword: SFTP only. Password, required for ``sshAuthMethod="password"`` and not sent by add_monitor otherwise. edit_monitor sends the stored value of the other method back unchanged., defaults to None
+        :param str, optional sshPrivateKey: SFTP only. Private key, required for ``sshAuthMethod="privateKey"`` and not sent by add_monitor otherwise. edit_monitor sends the stored value of the other method back unchanged., defaults to None
         :param str, optional sshPassphrase: SFTP only. Passphrase of the private key, defaults to None
         :param str, optional sftpPath: SFTP only. Path that must exist on the server, defaults to None
         :param list, optional rabbitmqNodes: RABBITMQ only. Base URLs (``http://`` or ``https://``) of the management API of the nodes. At least one is required for that type., defaults to None
