@@ -239,7 +239,7 @@ class UptimeKumaApi(
             # do not wait for events that are not sent
             if (self._event_data[Event.MONITOR_LIST] == {}
                     and event in monitor_events):
-                return []
+                return {}
             time.sleep(0.01)
         time.sleep(self.wait_events)  # wait for multiple messages
         with self._lock:
