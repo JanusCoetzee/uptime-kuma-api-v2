@@ -98,6 +98,25 @@ class TestLogin(Base):
             {"username": "u", "password": "p", "token": "123"}
         ]
 
+    @pytest.mark.parametrize("username, password", [
+        ("u", None),
+        (None, "p"),
+        ("", None),
+        (None, ""),
+    ])
+    def test_login_with_only_one_credential_is_rejected(
+            self, username, password):
+        with pytest.raises(ValueError, match="together"):
+            self.api.login(username, password)
+        # nothing reached the server
+        assert self.sio.calls == []
+
+    def test_empty_string_credentials_are_still_sent(self):
+        self.sio.replies["login"] = {"ok": False, "msg": "bad"}
+        with pytest.raises(UptimeKumaException):
+            self.api.login("", "")
+        assert self.sio.sent("login")[0]["username"] == ""
+
     def test_auto_login_succeeds_when_the_event_arrives(self):
         self.api._event_auto_login()
         assert self.api.login() == {}

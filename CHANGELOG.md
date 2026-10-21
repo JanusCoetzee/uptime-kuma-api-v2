@@ -24,6 +24,8 @@ upstream project's changes) is not carried over. It remains available:
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed
+- `login()` raises `ValueError` when only one of `username` and `password` is given (it used to send `None` for the other to the server). Omit both for auto login (#12).
+- `UptimeKumaApi(...)` issues a `UserWarning` for an unencrypted `http://` or `ws://` url to a host that is not loopback (`localhost`, `127.0.0.0/8`, `::1`), because the credentials would travel in clear text (#12).
 - `api.py` is split into per-domain mixins in `uptime_kuma_api/_mixins/`
   (monitors, notifications, status pages, ...) plus `_helpers.py` and
   `_monitor_args.py`. No public change: `UptimeKumaApi` has the same 89 public
@@ -88,6 +90,7 @@ upstream project's changes) is not carried over. It remains available:
   (they used `random` and 10 characters).
 
 ### Development
+- The integration tests read the server from `UPTIME_KUMA_URL` and abort in `setUpClass`, before connecting, when it is not loopback unless `UPTIME_KUMA_TEST_ALLOW_REMOTE=1` is set: every test case deletes all monitors, notifications and more (#12).
 - The generator scripts work from any directory (`KUMA_SRC` or `uptime-kuma/`), fail with the list of new monitor types / notification providers / unmatched form inputs instead of a `KeyError`, regenerate `docstrings.py`' notification options, and have a `--check` mode that a new `generated` CI job runs against the pinned Kuma ref. `scripts/README.md` documents the steps (#34).
 - mypy runs in CI (`types` job, config in `pyproject.toml`, non-strict) with no ignore list: the mixins now inherit a typing-only `MixinBase` that declares what they use from `UptimeKumaApi`, parameters that default to `None` are annotated `| None`, and `notificationIDList` no longer rebinds its parameter to a dict (#32). `delete_monitor_tag` now skips a cached monitor whose `tags` is `None` instead of raising `TypeError`.
 - `run_tests.sh` uses the from-source Kuma test image (no more `louislam/*` 1.x images) and always stops the container; CI uploads the unit-test coverage report (`coverage.xml`) as an artifact (#31).

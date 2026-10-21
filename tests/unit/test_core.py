@@ -1,4 +1,5 @@
 import threading
+import warnings
 import time
 from unittest import mock
 
@@ -34,7 +35,7 @@ class TestConstruction:
 
     def test_ssl_verify_is_passed_to_the_client(self):
         with mock.patch("uptime_kuma_api.api.socketio.Client") as client:
-            UptimeKumaApi("http://kuma.test", ssl_verify=False)
+            UptimeKumaApi("https://kuma.test", ssl_verify=False)
         client.assert_called_once_with(ssl_verify=False)
 
     def test_connection_failure_is_wrapped(self):
@@ -43,7 +44,7 @@ class TestConstruction:
         with mock.patch("uptime_kuma_api.api.socketio.Client",
                         return_value=sio):
             with pytest.raises(UptimeKumaConnectionError) as ctx:
-                UptimeKumaApi("http://kuma.test")
+                UptimeKumaApi("https://kuma.test")
         assert isinstance(ctx.value.__cause__, OSError)
 
     def test_context_manager_disconnects(self):
@@ -341,3 +342,80 @@ class TestWaiting:
         events[0].join(5)
         assert api._version is None
         assert api.version == "2.6.0"
+
+
+class TestInsecureUrl:
+    @pytest.mark.parametrize("url", [
+        "http://kuma.example.com:3001",
+        "http://192.168.1.10:3001/",
+        "http://10.0.0.5",
+        "ws://kuma.example.com",
+        "HTTP://Kuma.Example.com",
+        "http://127.0.0.1@kuma.example.com",
+        "http://localhost@kuma.example.com:3001",
+        "http://[::ffff:10.0.0.1]:3001",
+    ])
+    def test_unencrypted_remote_url_warns_once(self, url):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            make_api(url=url, quiet=False)
+        assert len(caught) == 1
+        assert caught[0].category is UserWarning
+        assert "clear text" in str(caught[0].message)
+
+    def test_warning_points_at_the_code_creating_the_client(self):
+        with mock.patch("uptime_kuma_api.api.socketio.Client"):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                UptimeKumaApi("http://kuma.example.com")
+        assert caught[0].filename == __file__
+
+    @pytest.mark.parametrize("url", [
+        "http://localhost:3001",
+        "http://LOCALHOST:3001",
+        "http://127.0.0.1:3001",
+        "http://127.1.2.3:3001",
+        "http://[::1]:3001",
+        "http://[::ffff:127.0.0.1]:3001",
+        "https://kuma.example.com",
+        "wss://kuma.example.com",
+    ])
+    def test_loopback_and_encrypted_urls_do_not_warn(self, url):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            make_api(url=url, quiet=False)
+        assert caught == []
+
+    def test_warning_does_not_leak_credentials_in_the_url(self):
+        with pytest.warns(UserWarning) as caught:
+            make_api(url="http://user:s3cret@kuma.example.com:3001",
+                     quiet=False)
+        message = str(caught[0].message)
+        assert "s3cret" not in message and "user" not in message
+        assert "kuma.example.com:3001" in message
+
+    def test_lookalike_host_is_not_loopback(self):
+        with pytest.warns(UserWarning):
+            make_api(url="http://localhost.example.com", quiet=False)
+        with pytest.warns(UserWarning):
+            make_api(url="http://127.0.0.1.example.com", quiet=False)
+
+
+@pytest.mark.parametrize("host, expected", [
+    (None, False),
+    ("", False),
+    ("::ffff:127.0.0.1", True),
+    ("::ffff:10.0.0.1", False),
+    ("kuma.example.com", False),
+    ("localhost", True),
+    ("localhost.", True),
+    ("app.localhost", False),
+    ("127.0.0.1", True),
+    ("::1", True),
+    ("0.0.0.0", False),
+    ("192.168.0.1", False),
+    ("example.com", False),
+])
+def test_is_loopback_host(host, expected):
+    from uptime_kuma_api._helpers import _is_loopback_host
+    assert _is_loopback_host(host) is expected

@@ -7,6 +7,7 @@ the real server does (see ``PUSHES``), so ``wait_for_event(..., new=True)``
 returns.
 """
 import copy
+import warnings
 from unittest import mock
 
 from uptime_kuma_api import Event, UptimeKumaApi
@@ -62,12 +63,16 @@ class FakeSio:
         return [data for name, data in self.calls if name == event]
 
 
-def make_api(**kwargs):
+def make_api(url="http://kuma.test/", quiet=True, **kwargs):
     kwargs.setdefault("timeout", 0.3)
     kwargs.setdefault("wait_events", 0)
     sio = FakeSio()
     with mock.patch("uptime_kuma_api.api.socketio.Client", return_value=sio):
-        api = UptimeKumaApi("http://kuma.test/", **kwargs)
+        with warnings.catch_warnings():
+            if quiet:
+                # the fake host is plain http on purpose, see TestInsecureUrl
+                warnings.simplefilter("ignore", UserWarning)
+            api = UptimeKumaApi(url, **kwargs)
     sio.api = api
     api._event_data[Event.INFO] = {"version": "2.5.6"}
     return api

@@ -1,5 +1,7 @@
+import os
 import unittest
 import warnings
+from urllib.parse import urlsplit
 
 from uptime_kuma_api import (
     UptimeKumaApi,
@@ -8,8 +10,27 @@ from uptime_kuma_api import (
     DockerType,
     Timeout,
 )
+from uptime_kuma_api._helpers import _is_loopback_host
 
 token = None
+
+ALLOW_REMOTE = "UPTIME_KUMA_TEST_ALLOW_REMOTE"
+
+
+def check_safe_target(url, environ=os.environ):
+    """Refuse a url that is not loopback unless remote runs are allowed.
+
+    Every test case deletes all monitors, notifications and more from the
+    server, so pointing the suite at a real instance would wipe it.
+    """
+    host = urlsplit(url).hostname
+    if _is_loopback_host(host) or environ.get(ALLOW_REMOTE) == "1":
+        return
+    raise RuntimeError(
+        f"refusing to run the integration tests against {url!r}: they "
+        "delete all monitors, notifications and other data on the server. "
+        f"Use a throwaway local Kuma, or set {ALLOW_REMOTE}=1 if this "
+        "server really is disposable.")
 
 
 def compare(subset, superset):
@@ -36,11 +57,18 @@ def compare(subset, superset):
 
 class UptimeKumaTestCase(unittest.TestCase):
     api = None
-    url = "http://127.0.0.1:3001"
+    url = os.environ.get("UPTIME_KUMA_URL", "http://127.0.0.1:3001")
     username = "admin"
     password = "secret123"
 
+    @classmethod
+    def setUpClass(cls):
+        # before any setUp connects, logs in or deletes anything
+        check_safe_target(cls.url)
+
     def setUp(self):
+        # also here, in case a subclass overrides setUpClass without super()
+        check_safe_target(self.url)
         warnings.simplefilter("ignore", ResourceWarning)
 
         self.api = UptimeKumaApi(self.url, timeout=10, wait_events=0.01)

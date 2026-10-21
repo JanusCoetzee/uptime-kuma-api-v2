@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ipaddress
 import logging
+from urllib.parse import urlsplit
 
 from . import (
     MonitorStatus
@@ -81,3 +83,30 @@ def _check_argument_conditions(valid_params, kwargs) -> None:
                 raise ValueError(
                     f"the value of {valid_param} must not be larger "
                     f"than {max_}")
+
+
+def _is_loopback_host(host: str | None) -> bool:
+    """True for ``localhost`` and loopback IP addresses (127.0.0.0/8, ::1).
+
+    Other names are not resolved, so they count as remote.
+    """
+    if not host:
+        return False
+    host = host.lower().rstrip(".")
+    if host == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    # ::ffff:127.0.0.1 is loopback; older Pythons do not say so themselves
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    return address.is_loopback
+
+
+def _sends_credentials_in_clear(url: str) -> bool:
+    """True if ``url`` is unencrypted (http/ws) and not a loopback host."""
+    parts = urlsplit(url)
+    return parts.scheme.lower() in ("http", "ws") and not _is_loopback_host(
+        parts.hostname)
