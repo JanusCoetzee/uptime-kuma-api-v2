@@ -307,3 +307,16 @@ class TestWaiting:
         assert self.api.version == "2.5.6"
         self.api._event_data[Event.INFO] = None
         assert self.api.version == "2.5.6"
+
+    def test_version_does_not_cache_a_stale_info(self):
+        self.api._version = None
+        result = []
+        with self.api._lock:
+            reader = threading.Thread(
+                target=lambda: result.append(self.api.version))
+            reader.start()
+            time.sleep(0.1)  # the reader is now waiting for the lock
+            self.api._event_info({"version": "2.6.0"})
+        reader.join(5)
+        assert result == ["2.6.0"]
+        assert self.api._version == "2.6.0"

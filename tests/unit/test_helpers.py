@@ -64,6 +64,7 @@ class TestParsing:
         assert s.isalnum()
         assert s != gen_secret(32)
 
+
 DATABASE_TYPES = (
     MonitorType.SQLSERVER, MonitorType.POSTGRES, MonitorType.MYSQL,
     MonitorType.MONGODB, MonitorType.REDIS,
