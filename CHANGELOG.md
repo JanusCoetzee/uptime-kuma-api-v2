@@ -12,7 +12,7 @@ upstream project's changes) is not carried over. It remains available:
 
 ### Fixed
 
-- `edit_monitor`, `edit_proxy`, `edit_tag`, `edit_docker_host`, `edit_maintenance`, `edit_notification` and `save_status_page` reject an unknown keyword argument with `TypeError` before anything is sent, as `add_*` does (a typo such as `intervall=60` used to be sent to the server or silently ignored). The accepted names are the `add_*` parameters plus the fields of the object returned by `get_*`, so passing a fetched object back still works. One shared check, `_check_edit_arguments`, replaces seven unchecked merges (#140).
+- `avg_ping()`, `uptime()`, `cert_info()`, `get_heartbeats()` and `get_important_heartbeats()` return `{}`, as annotated, on a server with no monitors; they returned `[]`. `tests/test_server_checks.py` adds the first live calls of `cert_info`, `check_apprise` and `test_chrome` (#145).
 
 ### Changed
 

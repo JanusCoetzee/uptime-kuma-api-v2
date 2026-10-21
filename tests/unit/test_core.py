@@ -308,7 +308,7 @@ class TestWaiting:
     ])
     def test_monitor_events_return_empty_without_monitors(self, event):
         self.api._event_monitor_list({})
-        assert self.api._get_event_data(event) == []
+        assert self.api._get_event_data(event) == {}
 
     def test_version_times_out_without_info(self):
         self.api._event_data[Event.INFO] = None
