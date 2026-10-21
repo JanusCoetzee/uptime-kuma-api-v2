@@ -37,6 +37,32 @@ class TestMonitorPayload:
             type=MonitorType.HTTP, name="n", url="http://x", conditions=rule)
         assert self.api.sio.sent("add")[0]["conditions"] == rule
 
+    @pytest.mark.parametrize("operator", ["=", "eq", ""])
+    def test_json_query_rejects_other_operators(self, operator):
+        # Kuma would fail every check with "Invalid condition ="
+        with pytest.raises(ValueError, match="^Unknown jsonPathOperator "):
+            self.api.add_monitor(
+                type=MonitorType.JSON_QUERY, name="n", url="http://x",
+                jsonPath="a", expectedValue="1", jsonPathOperator=operator)
+        assert self.api.sio.sent("add") == []
+
+    def test_json_query_sends_the_operator_defaulting_to_equals(self):
+        # null makes Kuma 2.5 fail every check with "Invalid condition null"
+        json_query = dict(
+            type=MonitorType.JSON_QUERY, name="n", url="http://x",
+            jsonPath="installed", expectedValue="true")
+        self.api.add_monitor(**json_query)
+        self.api.add_monitor(**json_query, jsonPathOperator=">=")
+        sent = self.api.sio.sent("add")
+        assert [d["jsonPathOperator"] for d in sent] == ["==", ">="]
+
+    def test_push_token_is_sent_or_generated(self):
+        self.api.add_monitor(type=MonitorType.PUSH, name="a", pushToken="mine")
+        self.api.add_monitor(type=MonitorType.PUSH, name="b")
+        known, generated = self.api.sio.sent("add")
+        assert known["pushToken"] == "mine"
+        assert len(generated["pushToken"]) == 32
+
     def test_http_defaults(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://x")
         assert self.api.sio.sent("add") == [

@@ -263,6 +263,8 @@ def _check_arguments_monitor(kwargs) -> None:
             raise ValueError(
                 f"Unknown snmpVersion value: {snmp_version!r}, "
                 "expected '1' or '2c' (SNMPv3 is not supported by Kuma 2.5.6)")
+
+    if type_ in (MonitorType.SNMP, MonitorType.JSON_QUERY):
         operator = kwargs.get("jsonPathOperator")
         if operator not in (
                 None, ">", ">=", "<", "<=", "!=", "==", "contains"):

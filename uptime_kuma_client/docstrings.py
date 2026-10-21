@@ -124,7 +124,8 @@ def monitor_docstring(mode) -> str:
         :param bool, optional wsIgnoreSecWebsocketAcceptHeader: WEBSOCKET_UPGRADE only. Ignore the ``Sec-WebSocket-Accept`` header of the response, defaults to False
         :param str, optional snmpOid: SNMP only. OID to query, for example ``1.3.6.1.2.1.1.3.0``. Required for that type., defaults to None
         :param str, optional snmpVersion: SNMP only. ``1`` or ``2c``; ``3`` is not usable on Kuma 2.5.6 because the server does not save the username, defaults to "2c"
-        :param str, optional jsonPathOperator: SNMP only. Comparison of the value found at ``jsonPath`` with ``expectedValue``: ``>``, ``>=``, ``<``, ``<=``, ``!=``, ``==`` or ``contains``, defaults to "=="
+        :param str, optional jsonPathOperator: JSON_QUERY and SNMP only. Comparison of the value found at ``jsonPath`` with ``expectedValue``: ``>``, ``>=``, ``<``, ``<=``, ``!=``, ``==`` or ``contains``, defaults to "=="
+        :param str, optional pushToken: PUSH only. Token in the push URL, for a known value; generated when omitted, defaults to None
         :param str, optional sshUsername: SFTP only. SSH user name. Required for that type., defaults to None
         :param str, optional sshAuthMethod: SFTP only. ``password`` or ``privateKey``, defaults to "password"
         :param str, optional sshPassword: SFTP only. Password, required for ``sshAuthMethod="password"`` and not sent by add_monitor otherwise. edit_monitor sends the stored value of the other method back unchanged., defaults to None

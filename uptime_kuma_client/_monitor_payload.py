@@ -145,7 +145,12 @@ def _build_monitor_data(
         # SNMP
         snmpOid: str | None = None,
         snmpVersion: str = "2c",
+
+        # JSON_QUERY and SNMP
         jsonPathOperator: str = "==",
+
+        # PUSH
+        pushToken: str | None = None,
 
         # SFTP
         sshUsername: str | None = None,
@@ -391,12 +396,18 @@ def _build_monitor_data(
             "expectedValue": expectedValue,
         })
 
-    # JSON_QUERY
+    # JSON_QUERY: a null operator fails every check ("Invalid condition null")
     if type == MonitorType.JSON_QUERY:
         data.update({
             "jsonPath": jsonPath,
+            "jsonPathOperator": (
+                "==" if jsonPathOperator is None else jsonPathOperator),
             "expectedValue": expectedValue,
         })
+
+    # PUSH: _convert_monitor_input generates a token when none is given
+    if type == MonitorType.PUSH:
+        data["pushToken"] = pushToken
 
     # KAFKA_PRODUCER
     if type == MonitorType.KAFKA_PRODUCER:

@@ -12,6 +12,8 @@ upstream project's changes) is not carried over. It remains available:
 
 ### Fixed
 
+- `add_monitor()` for a JSON_QUERY monitor sends `jsonPathOperator` (default `"=="`); it was never put in the payload, so Kuma stored `null` and every check failed with "Invalid condition null". `jsonPathOperator` is documented, and its value checked, for JSON_QUERY as well as SNMP (#149). Monitors created earlier keep `null` until `edit_monitor(id, jsonPathOperator="==")` is run on them.
+- `add_monitor()` accepts `pushToken` for a PUSH monitor, so a known token can be set at creation; one is still generated when omitted (#149).
 - `add_monitor()` sends `conditions=[]` when the caller gives none, as the dashboard does; it sent `null`, which Kuma 2.5 stores as `null` and then fails every DNS check with "Cannot read properties of null (reading 'length')" (#147). Monitors created earlier keep `null` until `edit_monitor(id, conditions=[])` is run on them.
 - `edit_monitor`, `edit_proxy`, `edit_tag`, `edit_docker_host`, `edit_maintenance`, `edit_notification` and `save_status_page` reject an unknown keyword argument with `TypeError` before anything is sent, as `add_*` does (a typo such as `intervall=60` used to be sent to the server or silently ignored). The accepted names are the `add_*` parameters plus the fields of the object returned by `get_*`, so passing a fetched object back still works. One shared check, `_check_edit_arguments`, replaces seven unchecked merges (#140).
 - `avg_ping()`, `uptime()`, `cert_info()`, `get_heartbeats()` and `get_important_heartbeats()` return `{}`, as annotated, on a server with no monitors; they returned `[]`. `tests/test_server_checks.py` adds the first live calls of `cert_info`, `check_apprise` and `test_chrome` (#145).
