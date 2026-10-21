@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from uptime_kuma_api import UptimeKumaException, MonitorType, AuthMethod, MonitorStatus
@@ -411,6 +412,94 @@ class TestMonitor(UptimeKumaTestCase):
             "ntpRootDispersionThreshold": 20,
         }
         self.do_test_monitor_type(expected_monitor)
+
+    def test_monitor_type_system_service(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.SYSTEM_SERVICE,
+            "name": "monitor 1",
+            "system_service_name": "nginx",
+        })
+        self.assertEqual(monitor["system_service_name"], "nginx")
+
+    def test_monitor_type_pm2(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.PM2,
+            "name": "monitor 1",
+            "system_service_name": "api",
+        })
+
+    def test_system_service_name_is_changed_by_edit(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.SYSTEM_SERVICE, name="monitor 1",
+            system_service_name="nginx")["monitorID"]
+        self.api.edit_monitor(monitor_id, system_service_name="sshd")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["system_service_name"], "sshd")
+        self.assertEqual(monitor["name"], "monitor 1")
+
+    def test_system_service_name_rejected_by_the_server(self):
+        # the client only rejects blank names; the server checks the characters
+        with self.assertRaises(UptimeKumaException):
+            self.api.add_monitor(type=MonitorType.SYSTEM_SERVICE,
+                                 name="monitor 1",
+                                 system_service_name="not a service")
+        self.assertEqual(self.api.get_monitors(), [])
+
+    def test_monitor_type_sip_options(self):
+        monitor = self.do_test_monitor_type({
+            "type": MonitorType.SIP_OPTIONS,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "port": 5060,
+        })
+        self.assertEqual((monitor["hostname"], monitor["port"]),
+                         ("127.0.0.1", 5060))
+
+    def test_monitor_type_smtp(self):
+        for security in ("secure", "starttls", "nostarttls"):
+            with self.subTest(security=security):
+                self.do_test_monitor_type({
+                    "type": MonitorType.SMTP,
+                    "name": "monitor 1",
+                    "hostname": "127.0.0.1",
+                    "port": 465,
+                    "smtpSecurity": security,
+                })
+
+    def test_smtp_security_is_changed_by_edit_and_keeps_the_host(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.SMTP, name="monitor 1", hostname="127.0.0.1",
+            port=465, smtpSecurity="secure")["monitorID"]
+        self.api.edit_monitor(monitor_id, smtpSecurity="starttls", port=587)
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["smtpSecurity"], monitor["port"], monitor["hostname"]),
+            ("starttls", 587, "127.0.0.1"))
+
+    def wait_for_status(self, monitor_id, status, timeout=30):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                if self.api.get_monitor_status(monitor_id) == status:
+                    return
+            except UptimeKumaException:
+                pass  # no heartbeat yet
+            time.sleep(0.5)
+        self.assertEqual(self.api.get_monitor_status(monitor_id), status)
+
+    def test_monitor_type_manual(self):
+        # the server does not return manual_status, so check the heartbeat
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.MANUAL, name="monitor 1", manual_status=1,
+            interval=20, retryInterval=20)["monitorID"]
+        self.wait_for_status(monitor_id, MonitorStatus.UP)
+        self.api.edit_monitor(monitor_id, name="monitor 2")
+        self.assertEqual(self.api.get_monitor(monitor_id)["name"], "monitor 2")
+        self.wait_for_status(monitor_id, MonitorStatus.UP)
+        self.api.edit_monitor(monitor_id, manual_status=0)
+        self.wait_for_status(monitor_id, MonitorStatus.DOWN)
+        self.api.edit_monitor(monitor_id, manual_status=1)
+        self.wait_for_status(monitor_id, MonitorStatus.UP)
 
     def test_delete_not_existing_monitor(self):
         with self.assertRaises(UptimeKumaException):

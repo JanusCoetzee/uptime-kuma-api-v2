@@ -15,6 +15,7 @@ upstream project's changes) is not carried over. It remains available:
 - Unit tests cover 98% of the package (was 60%) with an offline fake Socket.IO client; `.coveragerc` now fails below 90%.
 - Mutation score 86.2% (was 68.0%) from exact-payload tests for monitor, maintenance, proxy, status page and settings requests; the weekly CI job now fails below 85% (`scripts/mutation_score.py`).
 - `MonitorType.NTP` can be added and edited (`hostname`, optional `port`, `ntpStratumThreshold`, `ntpTimeOffsetThreshold`, `ntpRootDispersionThreshold`). The other new Kuma 2.x monitor types are still rejected until #118 is done.
+- `MonitorType.SYSTEM_SERVICE`, `PM2`, `MANUAL`, `SIP_OPTIONS` and `SMTP` can be added and edited (`system_service_name`, `manual_status`, `smtpSecurity`, `hostname`, `port`). The remaining new types are still rejected until #118 is done (#40).
 - User guide (`docs/guide.rst`): connecting, authentication, exceptions, timing options, compatibility and regeneration notes.
 
 ### Changed
