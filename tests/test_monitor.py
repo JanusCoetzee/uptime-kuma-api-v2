@@ -497,6 +497,19 @@ class TestMonitor(UptimeKumaTestCase):
         })
         self.assertEqual(monitor["wsSubprotocol"], "soap,mqtt")
 
+    def test_websocket_upgrade_defaults_to_close_code_1000_and_goes_up(self):
+        # Kuma's own socket.io endpoint accepts a websocket upgrade
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.WEBSOCKET_UPGRADE, name="monitor 1",
+            url="ws://127.0.0.1:3001/socket.io/?EIO=4&transport=websocket",
+            interval=20, retryInterval=20)["monitorID"]
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(monitor["accepted_statuscodes"], ["1000"])
+        self.wait_for_status(monitor_id, MonitorStatus.UP)
+        self.api.edit_monitor(monitor_id, accepted_statuscodes=["1001"])
+        self.assertEqual(
+            self.api.get_monitor(monitor_id)["accepted_statuscodes"], ["1001"])
+
     def test_websocket_upgrade_flag_is_changed_by_edit(self):
         monitor_id = self.api.add_monitor(
             type=MonitorType.WEBSOCKET_UPGRADE, name="monitor 1",
@@ -521,6 +534,13 @@ class TestMonitor(UptimeKumaTestCase):
             "expectedValue": "0",
         })
         self.assertEqual(monitor["port"], 161)
+
+    def test_snmp_timeout_defaults_to_5(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.SNMP, name="monitor 1", hostname="127.0.0.1",
+            snmpOid="1.3.6.1.2.1.1.3.0", radiusPassword="public",
+            expectedValue="0")["monitorID"]
+        self.assertEqual(self.api.get_monitor(monitor_id)["timeout"], 5)
 
     def test_snmp_is_changed_by_edit_and_keeps_the_rest(self):
         monitor_id = self.api.add_monitor(

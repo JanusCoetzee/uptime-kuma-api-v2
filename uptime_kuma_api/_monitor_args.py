@@ -23,6 +23,17 @@ UNSUPPORTED_MONITOR_TYPES = frozenset({
 })
 
 
+def _is_ws_close_code_or_range(value) -> bool:
+    if not isinstance(value, str):
+        return False
+    parts = value.split("-")
+    if len(parts) not in (1, 2) or not all(
+            p.isascii() and p.isdigit() and 1000 <= int(p) <= 4999
+            for p in parts):
+        return False
+    return len(parts) == 1 or int(parts[0]) <= int(parts[1])
+
+
 def parse_monitor_type(data) -> None:
     parse_value(data, "type", MonitorType)
 
@@ -148,7 +159,15 @@ def _check_arguments_monitor(kwargs) -> None:
     ]
     accepted_statuscodes = kwargs["accepted_statuscodes"]
     for accepted_statuscode in accepted_statuscodes:
-        if accepted_statuscode not in allowed_accepted_statuscodes:
+        if type_ == MonitorType.WEBSOCKET_UPGRADE:
+            # compared with the websocket close code, not a HTTP status
+            if not _is_ws_close_code_or_range(accepted_statuscode):
+                raise ValueError(
+                    f"Unknown accepted_statuscodes value: "
+                    f"{accepted_statuscode!r}, expected a websocket close "
+                    "code 'NNNN' (1000-4999) or a range such as "
+                    "'1000-1003'")
+        elif accepted_statuscode not in allowed_accepted_statuscodes:
             raise ValueError(f"Unknown accepted_statuscodes value: {accepted_statuscode!r}, expected 'NNN' (100-999) or 'N00-N99' (for example '200-299')")
 
     dns_resolve_type = kwargs["dns_resolve_type"]
@@ -181,12 +200,13 @@ def _check_arguments_monitor(kwargs) -> None:
     if type_ == MonitorType.SNMP:
         # Kuma 2.5.6 never saves the SNMPv3 username, so v3 cannot work yet
         snmp_version = kwargs.get("snmpVersion")
-        if snmp_version not in ("1", "2c"):
+        if snmp_version not in (None, "1", "2c"):  # None: the default
             raise ValueError(
                 f"Unknown snmpVersion value: {snmp_version!r}, "
                 "expected '1' or '2c' (SNMPv3 is not supported by Kuma 2.5.6)")
         operator = kwargs.get("jsonPathOperator")
-        if operator not in (">", ">=", "<", "<=", "!=", "==", "contains"):
+        if operator not in (
+                None, ">", ">=", "<", "<=", "!=", "==", "contains"):
             raise ValueError(
                 f"Unknown jsonPathOperator value: {operator!r}, expected "
                 "'>', '>=', '<', '<=', '!=', '==' or 'contains'")

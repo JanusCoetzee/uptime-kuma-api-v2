@@ -223,9 +223,66 @@ class TestMonitorPayload:
                 second["wsIgnoreSecWebsocketAcceptHeader"]) == (
                     "soap,mqtt", True)
 
+    def test_websocket_upgrade_accepts_close_code_1000_by_default(self):
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="ws://h")
+        self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://h")
+        ws, http = self.api.sio.sent("add")
+        assert ws["accepted_statuscodes"] == ["1000"]
+        assert http["accepted_statuscodes"] == ["200-299"]
+
+    @pytest.mark.parametrize("codes", [
+        ["1000"], ["1000", "1001"], ["1000-1003"], ["4999"], ["1006-1006"]])
+    def test_websocket_upgrade_close_codes_are_accepted(self, codes):
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="ws://h", accepted_statuscodes=codes)
+        (data,) = self.api.sio.sent("add")
+        assert data["accepted_statuscodes"] == codes
+
+    @pytest.mark.parametrize("code", [
+        "999", "5000", "200-299", "1003-1000", "1000-", "-1000", "abc", "",
+        "1000-1001-1002", "\u0661\u0660\u0660\u0660", 1000])
+    def test_websocket_upgrade_rejects_other_codes(self, code):
+        with pytest.raises(ValueError, match="websocket close code"):
+            self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                                 url="ws://h", accepted_statuscodes=[code])
+        assert self.api.sio.sent("add") == []
+
+    def test_close_codes_are_not_http_status_codes(self):
+        with pytest.raises(ValueError, match="accepted_statuscodes"):
+            self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
+                                 accepted_statuscodes=["1000"])
+
+    def test_timeout_default_is_5_for_snmp_and_48_otherwise(self):
+        self.api.add_monitor(**self.SNMP)
+        self.api.add_monitor(**self.SNMP, timeout=20)
+        self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h",
+                             port=1)
+        snmp, snmp_set, port = self.api.sio.sent("add")
+        assert (snmp["timeout"], snmp_set["timeout"], port["timeout"]) == (
+            5, 20, 48)
+
     SNMP = dict(type=MonitorType.SNMP, name="n", hostname="h",
                 snmpOid="1.3.6.1.2.1.1.3.0", radiusPassword="public",
                 expectedValue="1")
+
+    @pytest.mark.parametrize("monitor_type, port", [
+        (MonitorType.DNS, 53), (MonitorType.RADIUS, 1812)])
+    def test_snmp_port_default_is_not_applied_to_other_types(
+            self, monitor_type, port):
+        given = {MonitorType.DNS: dict(hostname="h",
+                                       dns_resolve_server="1.1.1.1"),
+                 MonitorType.RADIUS: dict(
+                     radiusUsername="u", radiusPassword="p", radiusSecret="s",
+                     radiusCalledStationId="c", radiusCallingStationId="d")}
+        self.api.add_monitor(type=monitor_type, name="n", **given[monitor_type])
+        (data,) = self.api.sio.sent("add")
+        assert data["port"] == port
+
+    def test_snmp_explicit_none_json_path_uses_the_default(self):
+        self.api.add_monitor(**self.SNMP, jsonPath=None)
+        (data,) = self.api.sio.sent("add")
+        assert data["jsonPath"] == "$"
 
     def test_snmp_defaults(self):
         self.api.add_monitor(**self.SNMP)
@@ -291,6 +348,12 @@ class TestMonitorPayload:
         (MonitorType.SIP_OPTIONS, {"hostname": "h", "port": 5060}, set()),
         (MonitorType.SMTP, {"hostname": "h", "port": 25, "smtpSecurity": None},
          {"smtpSecurity"}),
+        (MonitorType.SNMP,
+         {k: v for k, v in SNMP.items() if k not in ("type", "name")},
+         {"radiusPassword", "snmpOid", "snmpVersion", "jsonPath",
+          "jsonPathOperator", "expectedValue"}),
+        (MonitorType.MYSQL, {"databaseConnectionString": "c"},
+         {"databaseQuery"}),
         (MonitorType.ORACLEDB, {"databaseConnectionString": "c"},
          {"basic_auth_user", "basic_auth_pass", "databaseQuery"}),
         (MonitorType.WEBSOCKET_UPGRADE, {"url": "ws://h"},

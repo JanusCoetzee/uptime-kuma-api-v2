@@ -44,7 +44,7 @@ def _build_monitor_data(
         oauth_client_id: str | None = None,
         oauth_client_secret: str | None = None,
         oauth_scopes: str | None = None,
-        timeout: int = 48,
+        timeout: int | None = None,
 
         # KEYWORD
         keyword: str | None = None,
@@ -135,7 +135,13 @@ def _build_monitor_data(
         jsonPathOperator: str = "==",
 ) -> dict:
     if accepted_statuscodes is None:
-        accepted_statuscodes = ["200-299"]
+        # a websocket check compares the close code, 1000 on success
+        accepted_statuscodes = (
+            ["1000"] if type == MonitorType.WEBSOCKET_UPGRADE
+            else ["200-299"])
+    if timeout is None:
+        # Kuma's form uses 5 s for SNMP, which is meant for the local network
+        timeout = 5 if type == MonitorType.SNMP else 48
 
     # the server expects an object here, an empty one when unset
     notification_ids = {} if notificationIDList is None else notificationIDList
@@ -327,9 +333,11 @@ def _build_monitor_data(
         data.update({
             "radiusPassword": radiusPassword,
             "snmpOid": snmpOid,
-            "snmpVersion": snmpVersion,
+            # a stored monitor may return null for these: use Kuma's defaults
+            "snmpVersion": "2c" if snmpVersion is None else snmpVersion,
             "jsonPath": jsonPath if jsonPath is not None else "$",
-            "jsonPathOperator": jsonPathOperator,
+            "jsonPathOperator": (
+                "==" if jsonPathOperator is None else jsonPathOperator),
             "expectedValue": expectedValue,
         })
 

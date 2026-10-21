@@ -609,9 +609,19 @@ class TestEditMonitorShapes:
         with pytest.raises(ValueError, match="snmpVersion"):
             self.edit(stored, snmpVersion="3")
 
+    def test_edit_snmp_name_only_with_missing_or_null_fields(self):
+        stored = dict(type=MonitorType.SNMP, hostname="h", port=161,
+                      snmpOid="1.3", radiusPassword="public",
+                      expectedValue="1")
+        assert self.edit(stored, name="x")["name"] == "x"
+        nulls = dict(stored, snmpVersion=None, jsonPathOperator=None,
+                     jsonPath=None)
+        assert self.edit(nulls, name="x")["name"] == "x"
+
     def test_edit_websocket_and_oracledb_fields_are_merged(self):
         ws = dict(type=MonitorType.WEBSOCKET_UPGRADE, url="ws://h",
-                  wsSubprotocol="a", wsIgnoreSecWebsocketAcceptHeader=False)
+                  accepted_statuscodes=["1000"], wsSubprotocol="a",
+                  wsIgnoreSecWebsocketAcceptHeader=False)
         data = self.edit(ws, wsIgnoreSecWebsocketAcceptHeader=True)
         assert data["wsIgnoreSecWebsocketAcceptHeader"] is True
         assert (data["url"], data["wsSubprotocol"]) == ("ws://h", "a")
