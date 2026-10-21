@@ -1,6 +1,6 @@
 import unittest
 
-from uptime_kuma_api import UptimeKumaException, ProxyProtocol
+from uptime_kuma_client import UptimeKumaException, ProxyProtocol
 from uptime_kuma_test_case import UptimeKumaTestCase
 
 

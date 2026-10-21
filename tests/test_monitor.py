@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     UptimeKumaException,
     MonitorType,
     AuthMethod,

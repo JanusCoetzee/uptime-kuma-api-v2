@@ -17,8 +17,8 @@ def int_to_bool(data, keys) -> None:
                 data[key] = True if data[key] == 1 else False
 
 
-# keep the pre-split name: callers filter on it
-logger = logging.getLogger("uptime_kuma_api.api")
+# callers filter on this name; it changed in the 2.0.0 rename (see CHANGELOG)
+logger = logging.getLogger("uptime_kuma_client.api")
 _warned_values: set[tuple] = set()
 
 

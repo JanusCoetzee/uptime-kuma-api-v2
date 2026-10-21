@@ -3,12 +3,12 @@
 Installation
 ------------
 
-To install uptime-kuma-api-v2, run this command in your terminal::
+This project is not on PyPI yet. Install it from GitHub::
 
-    $ pip install uptime-kuma-api-v2
+    $ pip install git+https://github.com/JanusCoetzee/uptime-kuma-client
 
 .. warning::
 
-   The import package is still ``uptime_kuma_api``, the same as the original
-   ``uptime-kuma-api`` distribution. If both are installed they overwrite each
-   other's files, so install only one of them.
+   The import package is ``uptime_kuma_client``. Code written for the original
+   ``uptime-kuma-api`` needs its imports updated; there is no compatibility
+   alias (see the changelog).

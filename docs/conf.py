@@ -7,20 +7,20 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import uptime_kuma_api
+import uptime_kuma_client
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'uptime-kuma-api-v2'
+project = 'uptime-kuma-client'
 copyright = (
     '2023 Lucas Held, 2025 Alexandre Magnier, 2026 Janus Coetzee. '
-    'Based on uptime-kuma-api by Lucas Held'
+    'Derived from uptime-kuma-api by Lucas Held'
 )
 author = 'Janus Coetzee'
 
-version = uptime_kuma_api.__version__
-release = uptime_kuma_api.__version__
+version = uptime_kuma_client.__version__
+release = uptime_kuma_client.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,7 +46,7 @@ html_theme = 'alabaster'
 html_theme_options = {
     "show_powered_by": False,
     "github_user": "JanusCoetzee",
-    "github_repo": "uptime-kuma-api-v2",
+    "github_repo": "uptime-kuma-client",
     "github_banner": True,
     "show_related": False,
     "note_bg": "#FFF59C",

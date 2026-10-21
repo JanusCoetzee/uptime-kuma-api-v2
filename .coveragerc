@@ -1,5 +1,5 @@
 [run]
-source = uptime_kuma_api
+source = uptime_kuma_client
 branch = True
 omit =
     *tests*

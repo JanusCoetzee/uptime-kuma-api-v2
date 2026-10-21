@@ -3,14 +3,14 @@ import unittest
 import warnings
 from urllib.parse import urlsplit
 
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     UptimeKumaApi,
     UptimeKumaException,
     MonitorType,
     DockerType,
     Timeout,
 )
-from uptime_kuma_api._helpers import _is_loopback_host
+from uptime_kuma_client._helpers import _is_loopback_host
 
 token = None
 

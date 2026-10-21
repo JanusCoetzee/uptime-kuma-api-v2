@@ -76,7 +76,7 @@ jobs:
         run: |
           python -m venv /tmp/clean
           /tmp/clean/bin/pip install dist/*.whl
-          cd /tmp && /tmp/clean/bin/python -c 'import uptime_kuma_api'
+          cd /tmp && /tmp/clean/bin/python -c 'import uptime_kuma_client'
 
   docs-build:
     name: docs-build
