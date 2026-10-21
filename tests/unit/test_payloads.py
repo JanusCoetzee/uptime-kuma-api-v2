@@ -23,6 +23,20 @@ class TestMonitorPayload:
     def _setup(self):
         self.api = make_api()
 
+    def test_conditions_default_to_an_empty_list_for_every_type(self):
+        # Kuma 2.5 fails DNS checks on null conditions (#147)
+        self.api.add_monitor(
+            type=MonitorType.DNS, name="n", hostname="example.com",
+            dns_resolve_server="1.1.1.1", dns_resolve_type="A", port=53)
+        self.api.add_monitor(type=MonitorType.GROUP, name="g")
+        assert [d["conditions"] for d in self.api.sio.sent("add")] == [[], []]
+
+    def test_conditions_given_by_the_caller_are_kept(self):
+        rule = [{"type": "expression", "andOr": "and"}]
+        self.api.add_monitor(
+            type=MonitorType.HTTP, name="n", url="http://x", conditions=rule)
+        assert self.api.sio.sent("add")[0]["conditions"] == rule
+
     def test_http_defaults(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://x")
         assert self.api.sio.sent("add") == [
@@ -30,7 +44,7 @@ class TestMonitorPayload:
                 "accepted_statuscodes": ["200-299"],
                 "authMethod": AuthMethod.NONE,
                 "body": None,
-                "conditions": None,
+                "conditions": [],
                 "databaseConnectionString": None,
                 "description": None,
                 "dns_resolve_server": "1.1.1.1",
