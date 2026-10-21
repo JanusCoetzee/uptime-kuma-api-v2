@@ -650,6 +650,20 @@ class TestEditMonitorShapes:
         with pytest.raises(ValueError, match="for subtype 'dns'"):
             self.edit(stored, subtype="dns", protocol="ICMP")
 
+    def test_edit_globalping_switches_subtype_with_its_required_fields(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="ping",
+                      hostname="h", port=80, location="world",
+                      protocol="ICMP", ping_count=3, url=None)
+        http = self.edit(stored, subtype="http", url="https://x",
+                         protocol=None, method="GET")
+        assert (http["subtype"], http["url"]) == ("http", "https://x")
+        dns = self.edit(stored, subtype="dns", protocol="UDP")
+        assert (dns["subtype"], dns["protocol"]) == ("dns", "UDP")
+        with pytest.raises(TypeError, match="url"):
+            self.edit(stored, subtype="http", protocol=None, method="GET")
+        with pytest.raises(ValueError, match="ping_count"):
+            self.edit(stored, ping_count=0)
+
     def test_edit_globalping_http_with_bearer(self):
         stored = dict(type=MonitorType.GLOBALPING, subtype="http",
                       url="https://x", location="world", protocol=None,
