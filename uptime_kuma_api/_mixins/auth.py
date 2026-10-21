@@ -136,6 +136,7 @@ class AuthMixin(MixinBase):
             defaults to ""
         :return: The server response.
         :rtype: dict
+        :raises ValueError: If only one of username and password is given.
         :raises UptimeKumaException: If the server returns an error.
 
         Example::
@@ -147,6 +148,11 @@ class AuthMixin(MixinBase):
                 'token': 'eyJhbGciOi...'
             }
         """
+        if (username is None) != (password is None):
+            raise ValueError(
+                "username and password must be given together, or both "
+                "omitted for auto login")
+
         # autologin
         if username is None and password is None:
             try:

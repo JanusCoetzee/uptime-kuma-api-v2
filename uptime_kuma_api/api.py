@@ -4,6 +4,8 @@ import functools
 import json
 import threading
 import time
+import warnings
+from urllib.parse import urlsplit
 from contextlib import contextmanager
 from copy import deepcopy
 from collections.abc import Iterator
@@ -17,6 +19,7 @@ from . import (
     UptimeKumaConnectionError,
     UptimeKumaException
 )
+from ._helpers import _sends_credentials_in_clear
 from ._mixins.monitors import MonitorsMixin
 from ._mixins.tags import TagsMixin
 from ._mixins.notifications import NotificationsMixin
@@ -110,7 +113,10 @@ class UptimeKumaApi(
             )
 
     :param str url: The url to the Uptime Kuma instance. For example
-                    ``http://127.0.0.1:3001``
+                    ``http://127.0.0.1:3001``. A ``UserWarning`` is issued
+                    for an unencrypted ``http://`` or ``ws://`` url to a
+                    host that is not loopback, because the credentials would
+                    be sent in clear text.
     :param float timeout: How many seconds the client should wait for the
                           connection, an expected event or a server
                           response. Default is ``10``.
@@ -139,6 +145,13 @@ class UptimeKumaApi(
             wait_events: float = 0.2
     ) -> None:
         self.url = url.rstrip("/")
+        if _sends_credentials_in_clear(self.url):
+            # no userinfo: the url may carry credentials for a proxy
+            host = urlsplit(self.url).netloc.rpartition("@")[2]
+            warnings.warn(
+                f"{host} is not encrypted and not a loopback host: "
+                "credentials and data are sent in clear text. Use https.",
+                UserWarning, stacklevel=2)
         self.timeout = timeout
         self.headers = headers
         self.ssl_verify = ssl_verify
