@@ -36,6 +36,8 @@ upstream project's changes) is not carried over. It remains available:
   kept as the first incident, or `None`.
 
 ### Fixed
+
+- `UptimeKumaApi.version` could cache a stale version when an INFO event arrived while it was being read; the read and cache now hold the event lock (#125).
 - Socket.IO errors no longer escape the library. `_call` raises `Timeout` for a
   Socket.IO timeout and `UptimeKumaException` for other Socket.IO errors (for
   example a closed connection), and `connect` raises the new

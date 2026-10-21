@@ -64,7 +64,7 @@ def monitor_docstring(mode) -> str:
         :param bool, optional invertKeyword: Invert Keyword. Look for the keyword to be absent rather than present., defaults to False
         :param str, optional hostname: Hostname, defaults to None
         :param int, optional packetSize: Packet Size, defaults to None
-        :param int, optional port: Port, ``type`` :attr:`~.MonitorType.DNS` defaults to ``53`` and ``type`` :attr:`~.MonitorType.RADIUS` defaults to ``1812``
+        :param int, optional port: Port, ``type`` :attr:`~.MonitorType.DNS` defaults to ``53`` and ``type`` :attr:`~.MonitorType.RADIUS` defaults to ``1812`` and ``type`` :attr:`~.MonitorType.SNMP` defaults to ``161``
         :param str, optional dns_resolve_server: Resolver Server, defaults to "1.1.1.1" ("" for GLOBALPING, which uses the probe's resolver)
         :param str, optional dns_resolve_type: Resource Record Type, defaults to "A". Available values are:
 

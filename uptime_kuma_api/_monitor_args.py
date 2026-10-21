@@ -212,7 +212,7 @@ def _check_arguments_monitor(kwargs) -> None:
     accepted_statuscodes = kwargs["accepted_statuscodes"]
     for accepted_statuscode in accepted_statuscodes:
         if type_ == MonitorType.WEBSOCKET_UPGRADE:
-            # compared with the websocket close code, not a HTTP status
+            # compared with the websocket close code, not an HTTP status
             if not _is_ws_close_code_or_range(accepted_statuscode):
                 raise ValueError(
                     f"Unknown accepted_statuscodes value: "

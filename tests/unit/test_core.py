@@ -307,3 +307,26 @@ class TestWaiting:
         assert self.api.version == "2.5.6"
         self.api._event_data[Event.INFO] = None
         assert self.api.version == "2.5.6"
+
+    def test_version_does_not_cache_a_stale_info(self):
+        # an INFO event lands after the reader has fetched the old INFO but
+        # before it caches the version: the handler must run after the cache
+        # write, so that the stale version is invalidated, not kept
+        api = self.api
+        events = []
+
+        class RacingInfo(dict):
+            def get(self, key, default=None):
+                event = threading.Thread(
+                    target=api._event_info, args=({"version": "2.6.0"},))
+                event.start()
+                events.append(event)
+                event.join(0.2)  # returns at once only if nothing blocks it
+                return super().get(key, default)
+
+        api._version = None
+        api._event_data[Event.INFO] = RacingInfo(version="2.5.6")
+        assert api.version == "2.5.6"
+        events[0].join(5)
+        assert api._version is None
+        assert api.version == "2.6.0"

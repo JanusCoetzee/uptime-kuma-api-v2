@@ -334,8 +334,9 @@ class UptimeKumaApi(
         if "version" not in data:
             # wait for the info event that is sent after login and contains the version
             return
-        self._version = None
+        # publish the new data first, then drop the cached version
         self._event_data[Event.INFO] = data
+        self._version = None
 
     @_locked
     def _event_cert_info(self, monitor_id, data) -> None:
@@ -398,6 +399,8 @@ class UptimeKumaApi(
             if time.time() - timestamp > self.timeout:
                 raise Timeout(f"Timed out while waiting for event {Event.INFO}")
             time.sleep(0.01)
-        version: str = self._event_data[Event.INFO].get("version")
-        self._version = version
+        with self._lock:
+            # read and cache together so an INFO event cannot slip in between
+            version: str = self._event_data[Event.INFO].get("version")
+            self._version = version
         return version
