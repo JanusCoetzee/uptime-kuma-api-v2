@@ -925,7 +925,7 @@ class TestOtherPayloads:
 
     @pytest.mark.parametrize("kwargs, absent", [
         ({"nscd": True}, "chromeExecutable"),
-        ({"chromeExecutable": "c"}, "nscd"),
+        ({"chromeExecutable": "c"}, "checkBeta"),
     ])
     def test_set_settings_forwards_each_option_alone(self, kwargs, absent):
         self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
@@ -933,6 +933,21 @@ class TestOtherPayloads:
         ((data, _),) = self.api.sio.sent("setSettings")
         assert kwargs.items() <= data.items()
         assert absent not in data
+
+    def test_set_settings_does_not_stop_nscd_when_it_was_never_saved(self):
+        # Kuma reads an unset nscd as "on" but stops the service when
+        # setSettings gets no value for it
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
+        self.api.set_settings(checkBeta=True)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["nscd"] is True
+
+    def test_set_settings_keeps_a_stored_nscd_off(self):
+        self.api.sio.replies["getSettings"] = {
+            "ok": True, "data": {"nscd": False}}
+        self.api.set_settings(checkBeta=True)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["nscd"] is False
 
     def test_set_settings_all_arguments(self):
         sio = self.api.sio
@@ -942,11 +957,48 @@ class TestOtherPayloads:
             serverTimezone="Z", entryPage="p", searchEngineIndex=True,
             primaryBaseURL="u", steamAPIKey="k", dnsCache=True,
             tlsExpiryNotifyDays=[1], disableAuth=True, trustProxy=True,
-            chromeExecutable="c", nscd=False)
+            chromeExecutable="c", nscd=False,
+            domainExpiryNotifyDays=[3, 30], globalpingApiToken="tok")
         self.api.set_settings(password="pw", **values)
         ((data, password),) = sio.sent("setSettings")
         assert data == values
         assert password == "pw"
+
+
+    @pytest.mark.parametrize("kwargs, absent", [
+        ({"domainExpiryNotifyDays": [5]}, "globalpingApiToken"),
+        ({"globalpingApiToken": "t"}, "domainExpiryNotifyDays"),
+    ])
+    def test_set_settings_new_keys_are_independent(self, kwargs, absent):
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
+        self.api.set_settings(**kwargs)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert kwargs.items() <= data.items()
+        assert absent not in data
+
+    def test_set_settings_keeps_the_stored_new_keys(self):
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {
+            "domainExpiryNotifyDays": [9], "globalpingApiToken": "kept"}}
+        self.api.set_settings(checkBeta=True)
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["domainExpiryNotifyDays"] == [9]
+        assert data["globalpingApiToken"] == "kept"
+
+    @pytest.mark.parametrize("days", [
+        [0], [-1], [1.5], ["7"], [True], 7, "7", [7, None]])
+    def test_set_settings_rejects_bad_domain_expiry_days(self, days):
+        with pytest.raises(
+                ValueError,
+                match="^domainExpiryNotifyDays must be a list of positive "
+                      "integers$"):
+            self.api.set_settings(domainExpiryNotifyDays=days)
+        assert self.api.sio.sent("setSettings") == []
+
+    def test_set_settings_accepts_empty_domain_expiry_days(self):
+        self.api.sio.replies["getSettings"] = {"ok": True, "data": {}}
+        self.api.set_settings(domainExpiryNotifyDays=[])
+        ((data, _),) = self.api.sio.sent("setSettings")
+        assert data["domainExpiryNotifyDays"] == []
 
 
 class TestConstructorDefaults:
