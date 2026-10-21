@@ -105,4 +105,3 @@ class MonitorType(str, Enum):
 
     STEAM = "steam"
     """Steam Game Server"""
-

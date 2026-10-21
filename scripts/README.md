@@ -28,7 +28,7 @@ Review the diff, run `pytest tests/unit` and commit.
 
 `python scripts/build_monitor_types.py --check` (and the same for
 `build_notifications.py` and `build_notification_docstring.py`) regenerate in memory and fail with a diff if the
-committed file differs. The `generated` CI job runs both against the pinned ref,
+committed file differs. The `generated` CI job runs all three against the pinned ref,
 so bumping `KUMA_REF` without regenerating fails CI.
 
 ## When a script fails

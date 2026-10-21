@@ -39,6 +39,9 @@ def parse_vue_template(path):
 
 
 def write_to_file(template, destination, **kwargs):
+    unknown = [a for a in sys.argv[1:] if a.startswith("-") and a != "--check"]
+    if unknown:
+        raise SystemExit(f"unknown option {unknown[0]!r}; the only option is --check")
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(SCRIPTS_DIR), keep_trailing_newline=True
     )

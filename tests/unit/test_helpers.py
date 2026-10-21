@@ -180,7 +180,7 @@ class TestChecks:
 
     @pytest.mark.parametrize("t", sorted(UNSUPPORTED_MONITOR_TYPES))
     def test_new_kuma_types_are_rejected_clearly(self, t):
-        with pytest.raises(ValueError, match="is not supported yet"):
+        with pytest.raises(ValueError, match=f"{t.value!r} is not supported yet"):
             _check_arguments_monitor(self.monitor(type=t))
 
     def test_proxy(self):

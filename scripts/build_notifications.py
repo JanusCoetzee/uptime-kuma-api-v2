@@ -156,7 +156,7 @@ def build_notification_providers():
     require_titles("notification providers", found, all_titles, "build_notifications.py")
 
     # get inputs
-    for path in glob.glob(f'{root}/src/components/notifications/*'):
+    for path in sorted(glob.glob(f'{root}/src/components/notifications/*')):
         if path.endswith("index.js"):
             continue
         with open(path) as f:
@@ -211,8 +211,8 @@ def build_notification_providers():
                 orphans.append(f"{os.path.basename(path)}: {param_name}")
     if orphans:
         raise SystemExit(
-            "build_notifications.py: form inputs no provider reads (add them "
-            "to 'ignored_orphan_inputs' or fix the scraping):\n  "
+            "build_notifications.py: form inputs no provider reads (fix the "
+            "scraping, or the provider if it should read them):\n  "
             + "\n  ".join(orphans)
         )
     return providers
