@@ -123,7 +123,7 @@ The server has about 108 provider classes (109 files minus the base class) in 2.
 
 Not in the library (name-normalised comparison, so a few may be false positives; `rocket.chat` was checked and is present): 360messenger, 46elks, amootsms, bale, bearsms, bitrix24, brevo, callmebot, cellsynt, clickup, egosms, evolution, flowtriq, fluxer, googlesheets, grafanaoncall, gtxmessaging, halopsa, heiioncall, jiraservicemanagement, keep, max, milky, nextcloudtalk, notifery, notifyapp, onechat, onesender, ooredoo, openwa, pinglet, plivo, pumble, pushplus, resend, sendgrid, sevenio, signalgrid, signl4, smsgateway, smsir, smspartner, smsplanet, spugpush, techuluspush, telnyx, teltonika, threema, turbosmtp, vk, vkteams, waha, webpush, whapi, wpush, wxpusher, yzj.
 
-In the library but not in 2.5.6: `linenotify`, `pushbytechulus`. These look removed or renamed upstream, so existing users of them need a deprecation path.
+In the library but not in 2.5.6: `linenotify`, which Kuma removed; it was dropped from the library in #34. `pushbytechulus` is not missing: the server file is `techulus-push.js` and the type is still `PushByTechulus`, so it matches (as does `techuluspush` in the list above, a name-normalisation false positive).
 
 Fix = regenerate `notification_providers.py` with `scripts/build_notifications.py` against the 2.5.6 checkout (see the generated-code story). The script scrapes Vue components and will probably need updating for 2.x.
 
