@@ -197,7 +197,8 @@ def _build_monitor_data(
         "upsideDown": upsideDown,
         "resendInterval": resendInterval,
         "description": description,
-        "conditions": conditions,
+        # Kuma 2.5 fails DNS checks on null; the dashboard saves []
+        "conditions": [] if conditions is None else conditions,
         "httpBodyEncoding": httpBodyEncoding,
     }
 

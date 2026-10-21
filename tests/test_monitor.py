@@ -249,6 +249,14 @@ class TestMonitor(UptimeKumaTestCase):
         }
         self.do_test_monitor_type(expected_monitor)
 
+    def test_add_monitor_saves_empty_conditions_by_default(self):
+        # null makes Kuma 2.5 fail DNS checks (#147)
+        r = self.api.add_monitor(
+            type=MonitorType.DNS, name="monitor 1", hostname="127.0.0.1",
+            port=8888, dns_resolve_server="1.1.1.1", dns_resolve_type="A")
+        monitor = self.api.get_monitor(r["monitorID"])
+        self.assertEqual(monitor["conditions"], [])
+
     def test_monitor_type_docker(self):
         docker_host_id = self.add_docker_host()
         expected_monitor = {
