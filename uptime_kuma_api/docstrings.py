@@ -115,6 +115,9 @@ def monitor_docstring(mode) -> str:
             - **accessKeyId** (*str*, *optional*): AccessKey Id, defaults to None
             - **secretAccessKey** (*str*, *optional*): Secret AccessKey, defaults to None
             - **sessionToken** (*str*, *optional*): Session Token, defaults to None
+        :param int, optional ntpStratumThreshold: NTP only. Maximum acceptable stratum; the monitor is down at or above it (1-15), defaults to 5
+        :param int, optional ntpTimeOffsetThreshold: NTP only. Maximum acceptable clock offset in milliseconds, defaults to 1000
+        :param int, optional ntpRootDispersionThreshold: NTP only. Maximum acceptable root dispersion in milliseconds, defaults to 500
     """
 
 
