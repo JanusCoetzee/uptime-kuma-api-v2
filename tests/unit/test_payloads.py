@@ -196,10 +196,147 @@ class TestMonitorPayload:
         (data,) = self.api.sio.sent("add")
         assert not set(kwargs) & set(data)
 
+    def test_oracledb_sends_connection_login_and_query(self):
+        self.api.add_monitor(
+            type=MonitorType.ORACLEDB, name="n",
+            databaseConnectionString="host:1521/XEPDB1",
+            basic_auth_user="scott", basic_auth_pass="tiger",
+            databaseQuery="SELECT 1 FROM DUAL")
+        (data,) = self.api.sio.sent("add")
+        assert data["databaseConnectionString"] == "host:1521/XEPDB1"
+        assert (data["basic_auth_user"], data["basic_auth_pass"]) == (
+            "scott", "tiger")
+        assert data["databaseQuery"] == "SELECT 1 FROM DUAL"
+
+    def test_websocket_upgrade_defaults_and_overrides(self):
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="wss://example.org/socket")
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="wss://example.org/socket",
+                             wsSubprotocol="soap,mqtt",
+                             wsIgnoreSecWebsocketAcceptHeader=True)
+        first, second = self.api.sio.sent("add")
+        assert first["url"] == "wss://example.org/socket"
+        assert (first["wsSubprotocol"],
+                first["wsIgnoreSecWebsocketAcceptHeader"]) == ("", False)
+        assert (second["wsSubprotocol"],
+                second["wsIgnoreSecWebsocketAcceptHeader"]) == (
+                    "soap,mqtt", True)
+
+    def test_websocket_upgrade_accepts_close_code_1000_by_default(self):
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="ws://h")
+        self.api.add_monitor(type=MonitorType.HTTP, name="n", url="http://h")
+        ws, http = self.api.sio.sent("add")
+        assert ws["accepted_statuscodes"] == ["1000"]
+        assert http["accepted_statuscodes"] == ["200-299"]
+
+    @pytest.mark.parametrize("codes", [
+        ["1000"], ["1000", "1001"], ["1000-1003"], ["4999"], ["1006-1006"]])
+    def test_websocket_upgrade_close_codes_are_accepted(self, codes):
+        self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                             url="ws://h", accepted_statuscodes=codes)
+        (data,) = self.api.sio.sent("add")
+        assert data["accepted_statuscodes"] == codes
+
+    @pytest.mark.parametrize("code", [
+        "999", "5000", "200-299", "1003-1000", "1000-", "-1000", "abc", "",
+        "1000-1001-1002", "\u0661\u0660\u0660\u0660", 1000])
+    def test_websocket_upgrade_rejects_other_codes(self, code):
+        with pytest.raises(ValueError, match="websocket close code"):
+            self.api.add_monitor(type=MonitorType.WEBSOCKET_UPGRADE, name="n",
+                                 url="ws://h", accepted_statuscodes=[code])
+        assert self.api.sio.sent("add") == []
+
+    def test_close_codes_are_not_http_status_codes(self):
+        with pytest.raises(ValueError, match="accepted_statuscodes"):
+            self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
+                                 accepted_statuscodes=["1000"])
+
+    def test_timeout_default_is_5_for_snmp_and_48_otherwise(self):
+        self.api.add_monitor(**self.SNMP)
+        self.api.add_monitor(**self.SNMP, timeout=20)
+        self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h",
+                             port=1)
+        snmp, snmp_set, port = self.api.sio.sent("add")
+        assert (snmp["timeout"], snmp_set["timeout"], port["timeout"]) == (
+            5, 20, 48)
+
+    SNMP = dict(type=MonitorType.SNMP, name="n", hostname="h",
+                snmpOid="1.3.6.1.2.1.1.3.0", radiusPassword="public",
+                expectedValue="1")
+
+    @pytest.mark.parametrize("monitor_type, port", [
+        (MonitorType.DNS, 53), (MonitorType.RADIUS, 1812)])
+    def test_snmp_port_default_is_not_applied_to_other_types(
+            self, monitor_type, port):
+        given = {MonitorType.DNS: dict(hostname="h",
+                                       dns_resolve_server="1.1.1.1"),
+                 MonitorType.RADIUS: dict(
+                     radiusUsername="u", radiusPassword="p", radiusSecret="s",
+                     radiusCalledStationId="c", radiusCallingStationId="d")}
+        self.api.add_monitor(type=monitor_type, name="n", **given[monitor_type])
+        (data,) = self.api.sio.sent("add")
+        assert data["port"] == port
+
+    def test_snmp_explicit_none_json_path_uses_the_default(self):
+        self.api.add_monitor(**self.SNMP, jsonPath=None)
+        (data,) = self.api.sio.sent("add")
+        assert data["jsonPath"] == "$"
+
+    def test_snmp_defaults(self):
+        self.api.add_monitor(**self.SNMP)
+        (data,) = self.api.sio.sent("add")
+        assert data["port"] == 161
+        assert (data["snmpVersion"], data["jsonPath"],
+                data["jsonPathOperator"]) == ("2c", "$", "==")
+        assert data["radiusPassword"] == "public"
+        assert (data["snmpOid"], data["expectedValue"]) == (
+            "1.3.6.1.2.1.1.3.0", "1")
+
+    def test_snmp_overrides(self):
+        self.api.add_monitor(**self.SNMP, port=1161, snmpVersion="1",
+                             jsonPath="$.x", jsonPathOperator=">=")
+        (data,) = self.api.sio.sent("add")
+        assert (data["port"], data["snmpVersion"], data["jsonPath"],
+                data["jsonPathOperator"]) == (1161, "1", "$.x", ">=")
+
+    @pytest.mark.parametrize("missing", [
+        "hostname", "snmpOid", "radiusPassword", "expectedValue"])
+    def test_snmp_required_arguments(self, missing):
+        kwargs = {k: v for k, v in self.SNMP.items() if k != missing}
+        with pytest.raises(TypeError, match=missing):
+            self.api.add_monitor(**kwargs)
+
+    @pytest.mark.parametrize("version", ["3", "2", 2, "v2c", ""])
+    def test_snmp_rejects_other_versions(self, version):
+        with pytest.raises(ValueError, match="^Unknown snmpVersion value: .*, "
+                           r"expected '1' or '2c' \(SNMPv3 is not supported "
+                           r"by Kuma 2.5.6\)$"):
+            self.api.add_monitor(**self.SNMP, snmpVersion=version)
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("operator", [
+        ">", ">=", "<", "<=", "!=", "==", "contains"])
+    def test_snmp_accepts_every_operator(self, operator):
+        self.api.add_monitor(**self.SNMP, jsonPathOperator=operator)
+        (data,) = self.api.sio.sent("add")
+        assert data["jsonPathOperator"] == operator
+
+    @pytest.mark.parametrize("operator", ["=", "<>", "CONTAINS", ""])
+    def test_snmp_rejects_other_operators(self, operator):
+        with pytest.raises(ValueError, match="^Unknown jsonPathOperator "
+                           "value: .*expected '>', '>=', '<', '<=', '!=', "
+                           "'==' or 'contains'$"):
+            self.api.add_monitor(**self.SNMP, jsonPathOperator=operator)
+        assert self.api.sio.sent("add") == []
+
     def test_new_type_fields_are_only_sent_for_their_type(self):
         self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h", port=1)
         (data,) = self.api.sio.sent("add")
-        for key in ("system_service_name", "smtpSecurity", "manual_status"):
+        for key in ("system_service_name", "smtpSecurity", "manual_status",
+                    "wsSubprotocol", "wsIgnoreSecWebsocketAcceptHeader",
+                    "snmpOid", "snmpVersion", "jsonPathOperator"):
             assert key not in data
 
     @pytest.mark.parametrize("monitor_type, given, extra", [
@@ -211,6 +348,16 @@ class TestMonitorPayload:
         (MonitorType.SIP_OPTIONS, {"hostname": "h", "port": 5060}, set()),
         (MonitorType.SMTP, {"hostname": "h", "port": 25, "smtpSecurity": None},
          {"smtpSecurity"}),
+        (MonitorType.SNMP,
+         {k: v for k, v in SNMP.items() if k not in ("type", "name")},
+         {"radiusPassword", "snmpOid", "snmpVersion", "jsonPath",
+          "jsonPathOperator", "expectedValue"}),
+        (MonitorType.MYSQL, {"databaseConnectionString": "c"},
+         {"databaseQuery"}),
+        (MonitorType.ORACLEDB, {"databaseConnectionString": "c"},
+         {"basic_auth_user", "basic_auth_pass", "databaseQuery"}),
+        (MonitorType.WEBSOCKET_UPGRADE, {"url": "ws://h"},
+         {"wsSubprotocol", "wsIgnoreSecWebsocketAcceptHeader"}),
     ])
     def test_new_types_only_add_their_own_keys(self, monitor_type, given, extra):
         # compare against a type that sends no type specific fields
@@ -280,6 +427,8 @@ class TestMonitorValidation:
         (MonitorType.SIP_OPTIONS, {"hostname": "h"}),
         (MonitorType.SMTP, {}),
         (MonitorType.SMTP, {"hostname": "h"}),
+        (MonitorType.ORACLEDB, {}),
+        (MonitorType.WEBSOCKET_UPGRADE, {}),
     ])
     def test_required_arguments_per_type(self, monitor_type, given):
         with pytest.raises(TypeError):
