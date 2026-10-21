@@ -1,7 +1,7 @@
 # Generator scripts
 
-`uptime_kuma_api/monitor_type.py`, `uptime_kuma_api/notification_providers.py`
-and the notification options in `uptime_kuma_api/docstrings.py` are generated from the Uptime Kuma source. They were last generated from
+`uptime_kuma_client/monitor_type.py`, `uptime_kuma_client/notification_providers.py`
+and the notification options in `uptime_kuma_client/docstrings.py` are generated from the Uptime Kuma source. They were last generated from
 **Uptime Kuma 2.5.6** (commit `7ca4a3d`, the ref pinned in
 `docker/kuma-test/versions.env`).
 

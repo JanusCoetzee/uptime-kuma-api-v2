@@ -1,6 +1,6 @@
 import unittest
 
-from uptime_kuma_api import DockerType, UptimeKumaException
+from uptime_kuma_client import DockerType, UptimeKumaException
 from uptime_kuma_test_case import UptimeKumaTestCase
 
 

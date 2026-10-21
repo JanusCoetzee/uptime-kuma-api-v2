@@ -8,12 +8,12 @@ import pytest
 import requests
 import socketio
 
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     AuthMethod, Event, Timeout, UptimeKumaApi, UptimeKumaConnectionError,
     UptimeKumaException,
     MaintenanceStrategy, MonitorStatus, MonitorType, NotificationType,
 )
-from uptime_kuma_api._helpers import (
+from uptime_kuma_client._helpers import (
     _check_argument_conditions,
     _check_missing_arguments,
     _warned_values,
@@ -21,20 +21,20 @@ from uptime_kuma_api._helpers import (
     parse_monitor_status,
     parse_value,
 )
-from uptime_kuma_api._mixins.maintenance import _check_arguments_maintenance
-from uptime_kuma_api._monitor_args import (
+from uptime_kuma_client._mixins.maintenance import _check_arguments_maintenance
+from uptime_kuma_client._monitor_args import (
     _check_arguments_monitor,
     _convert_monitor_input,
     gen_secret,
 )
-from uptime_kuma_api._mixins.notifications import (
+from uptime_kuma_client._mixins.notifications import (
     _build_notification_data,
     _check_arguments_notification,
 )
-from uptime_kuma_api._mixins.proxies import _check_arguments_proxy
-from uptime_kuma_api._mixins.settings import _merge_settings
-from uptime_kuma_api._mixins.status_pages import _build_status_page_response
-from uptime_kuma_api._mixins.tags import _check_arguments_tag
+from uptime_kuma_client._mixins.proxies import _check_arguments_proxy
+from uptime_kuma_client._mixins.settings import _merge_settings
+from uptime_kuma_client._mixins.status_pages import _build_status_page_response
+from uptime_kuma_client._mixins.tags import _check_arguments_tag
 
 
 class TestParsing:
@@ -352,7 +352,7 @@ class TestGetStatusPageHttp:
         api._call = lambda event, slug: {"config": {}}
         return api
 
-    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
+    @mock.patch("uptime_kuma_client._mixins.status_pages.requests.get")
     def test_passes_verify_headers_and_escaped_slug(self, get):
         get.return_value.json.return_value = {}
         self.api().get_status_page("a/../b?x")
@@ -360,7 +360,7 @@ class TestGetStatusPageHttp:
             "https://kuma/api/status-page/a%2F..%2Fb%3Fx",
             timeout=5, verify=False, headers={"X-Auth": "t"})
 
-    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
+    @mock.patch("uptime_kuma_client._mixins.status_pages.requests.get")
     def test_error_mapping(self, get):
         cases = [
             (requests.exceptions.Timeout("t"), Timeout),
@@ -373,7 +373,7 @@ class TestGetStatusPageHttp:
                 self.api().get_status_page("s")
             assert cm.value.__cause__ is exc
 
-    @mock.patch("uptime_kuma_api._mixins.status_pages.requests.get")
+    @mock.patch("uptime_kuma_client._mixins.status_pages.requests.get")
     def test_invalid_json(self, get):
         get.return_value.json.side_effect = ValueError("not json")
         with pytest.raises(UptimeKumaException):
@@ -477,7 +477,7 @@ class TestUnknownEnumLogging:
         _warned_values.clear()
 
     def test_warns_once_and_keeps_raw_value(self, caplog):
-        caplog.set_level(logging.WARNING, logger="uptime_kuma_api.api")
+        caplog.set_level(logging.WARNING, logger="uptime_kuma_client.api")
         d = {"type": "brand-new-type"}
         parse_value(d, "type", MonitorType)
         assert d["type"] == "brand-new-type"

@@ -1,4 +1,4 @@
-from uptime_kuma_api import UptimeKumaApi
+from uptime_kuma_client import UptimeKumaApi
 
 # Snapshot of the public names of UptimeKumaApi taken before it was split into
 # per-domain mixins (#35). Adding or removing a public method must be a

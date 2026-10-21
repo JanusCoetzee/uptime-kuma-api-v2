@@ -7,8 +7,8 @@ import datetime
 import pytest
 
 from tests.unit.fake_kuma import make_api
-from uptime_kuma_api._monitor_args import GLOBALPING_DNS_TYPES
-from uptime_kuma_api import (
+from uptime_kuma_client._monitor_args import GLOBALPING_DNS_TYPES
+from uptime_kuma_client import (
     AuthMethod,
     Event,
     MaintenanceStrategy,

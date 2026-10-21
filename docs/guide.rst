@@ -6,12 +6,12 @@ User guide
 Connecting
 ==========
 
-Create an :class:`~uptime_kuma_api.UptimeKumaApi` and log in. Using it as a
+Create an :class:`~uptime_kuma_client.UptimeKumaApi` and log in. Using it as a
 context manager disconnects for you:
 
 .. code-block:: python
 
-    from uptime_kuma_api import UptimeKumaApi
+    from uptime_kuma_client import UptimeKumaApi
 
     with UptimeKumaApi("http://127.0.0.1:3001") as api:
         api.login("admin", "secret123")
@@ -81,10 +81,10 @@ Exceptions
 
 Errors from the library use two kinds of exceptions:
 
-* :class:`~uptime_kuma_api.UptimeKumaException`: the server refused a request
-  or the connection failed. :class:`~uptime_kuma_api.Timeout` is a subclass,
+* :class:`~uptime_kuma_client.UptimeKumaException`: the server refused a request
+  or the connection failed. :class:`~uptime_kuma_client.Timeout` is a subclass,
   raised when an expected event or response does not arrive within ``timeout``
-  seconds. :class:`~uptime_kuma_api.UptimeKumaConnectionError` is a subclass,
+  seconds. :class:`~uptime_kuma_client.UptimeKumaConnectionError` is a subclass,
   raised when the connection cannot be established. Low-level Socket.IO errors
   are wrapped in these, with the original error as ``__cause__``.
 * Built-in ``TypeError`` and ``ValueError``: raised before anything is sent
@@ -93,7 +93,7 @@ Errors from the library use two kinds of exceptions:
 
 .. code-block:: python
 
-    from uptime_kuma_api import MonitorType, Timeout, UptimeKumaException
+    from uptime_kuma_client import MonitorType, Timeout, UptimeKumaException
 
     with UptimeKumaApi("http://127.0.0.1:3001") as api:
         api.login("admin", "secret123")
@@ -136,9 +136,8 @@ Compatibility
 =============
 
 ========================  ===============================
-Uptime Kuma               uptime-kuma-api-v2
+Uptime Kuma               uptime-kuma-client
 ========================  ===============================
-2.0.0-beta.2              1.0.0 - 1.0.3
 2.5.6                     2.0.0
 ========================  ===============================
 

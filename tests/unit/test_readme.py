@@ -14,7 +14,7 @@ from unittest import mock
 
 import pytest
 
-import uptime_kuma_api
+import uptime_kuma_client
 from tests.unit.fake_kuma import FakeSio
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,15 +37,16 @@ def run_block(name, monkeypatch, replies):
     monkeypatch.setenv("KUMA_PASS", "secret")
     sio = FakeSio()
     sio.replies.update(replies)
-    init = uptime_kuma_api.UptimeKumaApi.__init__
+    init = uptime_kuma_client.UptimeKumaApi.__init__
 
     def init_and_link(self, *args, **kwargs):
         init(self, *args, **kwargs)
         sio.api = self  # lets the fake push the list update after a change
 
-    with mock.patch("uptime_kuma_api.api.socketio.Client", return_value=sio):
+    client = "uptime_kuma_client.api.socketio.Client"
+    with mock.patch(client, return_value=sio):
         with mock.patch.object(
-                uptime_kuma_api.UptimeKumaApi, "__init__", init_and_link):
+                uptime_kuma_client.UptimeKumaApi, "__init__", init_and_link):
             exec(compile(BLOCKS[name], f"README:{name}", "exec"), {})
     return sio
 
@@ -93,8 +94,8 @@ def kuma_version():
 
 def test_version_table_matches_the_repository():
     rows = re.findall(r"^\| ([\w.-]+) \| (.+?) \|$", README, re.M)
-    assert (kuma_version(), f"{uptime_kuma_api.__version__} (tested in CI)") \
-        in rows
+    version = uptime_kuma_client.__version__
+    assert (kuma_version(), f"{version} (tested in CI)") in rows
 
 
 def test_kuma_version_prose_matches_the_repository():
@@ -132,9 +133,9 @@ def test_local_links_exist(path):
 
 
 def test_exception_contract_in_the_readme():
-    for sub in (uptime_kuma_api.Timeout,
-                uptime_kuma_api.UptimeKumaConnectionError):
-        assert issubclass(sub, uptime_kuma_api.UptimeKumaException)
+    for sub in (uptime_kuma_client.Timeout,
+                uptime_kuma_client.UptimeKumaConnectionError):
+        assert issubclass(sub, uptime_kuma_client.UptimeKumaException)
     assert "Timeout" in README and "UptimeKumaConnectionError" in README
 
 
@@ -158,31 +159,38 @@ def test_tested_marker_names_are_known():
     "http://localhost:3001", "http://127.0.0.1:3001", "http://[::1]:3001",
 ])
 def test_encrypted_and_loopback_urls_do_not_warn(url):
-    with mock.patch("uptime_kuma_api.api.socketio.Client"):
+    with mock.patch("uptime_kuma_client.api.socketio.Client"):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            uptime_kuma_api.UptimeKumaApi(url)
+            uptime_kuma_client.UptimeKumaApi(url)
 
 
 @pytest.mark.parametrize("url", [
     "http://kuma.example.com", "ws://kuma.example.com"])
 def test_clear_text_remote_urls_warn(url):
-    with mock.patch("uptime_kuma_api.api.socketio.Client"):
+    with mock.patch("uptime_kuma_client.api.socketio.Client"):
         with pytest.warns(UserWarning, match="not encrypted"):
-            uptime_kuma_api.UptimeKumaApi(url)
+            uptime_kuma_client.UptimeKumaApi(url)
 
 
 def test_certificates_are_verified_unless_turned_off():
-    with mock.patch("uptime_kuma_api.api.socketio.Client") as client:
-        uptime_kuma_api.UptimeKumaApi("https://kuma.test")
+    with mock.patch("uptime_kuma_client.api.socketio.Client") as client:
+        uptime_kuma_client.UptimeKumaApi("https://kuma.test")
         assert client.call_args.kwargs["ssl_verify"] is True
-        uptime_kuma_api.UptimeKumaApi("https://kuma.test", ssl_verify=False)
+        uptime_kuma_client.UptimeKumaApi("https://kuma.test", ssl_verify=False)
         assert client.call_args.kwargs["ssl_verify"] is False
 
 
 @pytest.mark.parametrize("args", [("admin", None), (None, "secret")])
 def test_login_needs_both_credentials_or_neither(args):
-    with mock.patch("uptime_kuma_api.api.socketio.Client"):
-        api = uptime_kuma_api.UptimeKumaApi("https://kuma.test")
+    with mock.patch("uptime_kuma_client.api.socketio.Client"):
+        api = uptime_kuma_client.UptimeKumaApi("https://kuma.test")
     with pytest.raises(ValueError, match="together"):
         api.login(*args)
+
+
+def test_readme_uses_the_project_name_from_pyproject():
+    name = tomllib.loads(
+        (ROOT / "pyproject.toml").read_text())["project"]["name"]
+    assert README.startswith(f"# {name}\n")
+    assert f"| Uptime Kuma | {name} |" in README

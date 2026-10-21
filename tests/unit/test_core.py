@@ -7,7 +7,7 @@ import pytest
 import socketio
 
 from tests.unit.fake_kuma import make_api
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     Event,
     Timeout,
     UptimeKumaApi,
@@ -34,14 +34,14 @@ class TestConstruction:
             assert name in api.sio.handlers
 
     def test_ssl_verify_is_passed_to_the_client(self):
-        with mock.patch("uptime_kuma_api.api.socketio.Client") as client:
+        with mock.patch("uptime_kuma_client.api.socketio.Client") as client:
             UptimeKumaApi("https://kuma.test", ssl_verify=False)
         client.assert_called_once_with(ssl_verify=False)
 
     def test_connection_failure_is_wrapped(self):
         sio = make_api().sio
         sio.connect_error = OSError("refused")
-        with mock.patch("uptime_kuma_api.api.socketio.Client",
+        with mock.patch("uptime_kuma_client.api.socketio.Client",
                         return_value=sio):
             with pytest.raises(UptimeKumaConnectionError) as ctx:
                 UptimeKumaApi("https://kuma.test")
@@ -364,7 +364,7 @@ class TestInsecureUrl:
         assert "clear text" in str(caught[0].message)
 
     def test_warning_points_at_the_code_creating_the_client(self):
-        with mock.patch("uptime_kuma_api.api.socketio.Client"):
+        with mock.patch("uptime_kuma_client.api.socketio.Client"):
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
                 UptimeKumaApi("http://kuma.example.com")
@@ -418,5 +418,5 @@ class TestInsecureUrl:
     ("example.com", False),
 ])
 def test_is_loopback_host(host, expected):
-    from uptime_kuma_api._helpers import _is_loopback_host
+    from uptime_kuma_client._helpers import _is_loopback_host
     assert _is_loopback_host(host) is expected

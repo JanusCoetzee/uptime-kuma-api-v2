@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from tests.unit.fake_kuma import make_api
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     AuthMethod,
     Event,
     IncidentStyle,
@@ -236,7 +236,7 @@ def http_reply(payload=None, error=None):
 
 
 class TestStatusPages(Base):
-    GET = "uptime_kuma_api._mixins.status_pages.requests.get"
+    GET = "uptime_kuma_client._mixins.status_pages.requests.get"
 
     @pytest.fixture(autouse=True)
     def _setup_more(self, _setup):

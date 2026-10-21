@@ -4,7 +4,7 @@ from utils import REPO_ROOT, check_mode
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from uptime_kuma_api import notification_provider_options  # noqa: E402
+from uptime_kuma_client import notification_provider_options  # noqa: E402
 
 data = {
     "lunaseaTarget": """Allowed values: "device", "user".""",
@@ -130,7 +130,7 @@ for provider in notification_provider_options:
         lines.append(line)
 
 # replace the generated block (the contiguous "Notification option for" lines)
-path = REPO_ROOT / "uptime_kuma_api" / "docstrings.py"
+path = REPO_ROOT / "uptime_kuma_client" / "docstrings.py"
 old = path.read_text().split("\n")
 marker = "Notification option for ``type``"
 idx = [
@@ -145,7 +145,7 @@ new = "\n".join(old[:start] + lines + old[end:])
 if check_mode():
     if new != path.read_text():
         raise SystemExit(
-            "uptime_kuma_api/docstrings.py is out of date; "
+            "uptime_kuma_client/docstrings.py is out of date; "
             "run scripts/build_notification_docstring.py")
 else:
     path.write_text(new)

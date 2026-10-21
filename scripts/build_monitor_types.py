@@ -63,6 +63,6 @@ def parse_monitor_types():
 monitor_types = parse_monitor_types()
 
 write_to_file(
-    "monitor_type.py.j2", "uptime_kuma_api/monitor_type.py",
+    "monitor_type.py.j2", "uptime_kuma_client/monitor_type.py",
     monitor_types=monitor_types
 )

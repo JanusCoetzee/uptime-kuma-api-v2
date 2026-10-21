@@ -69,7 +69,7 @@ class UptimeKumaApi(
     url (e.g. 'http://127.0.0.1:3001'), username and password to initialize
     the connection.
 
-        >>> from uptime_kuma_api import UptimeKumaApi
+        >>> from uptime_kuma_client import UptimeKumaApi
         >>> api = UptimeKumaApi('INSERT_URL')
         >>> api.login('INSERT_USERNAME', 'INSERT_PASSWORD')
         {
@@ -98,7 +98,7 @@ class UptimeKumaApi(
 
     .. code-block:: python
 
-        from uptime_kuma_api import UptimeKumaApi
+        from uptime_kuma_client import UptimeKumaApi
 
         with UptimeKumaApi('INSERT_URL') as api:
             api.login('INSERT_USERNAME', 'INSERT_PASSWORD')

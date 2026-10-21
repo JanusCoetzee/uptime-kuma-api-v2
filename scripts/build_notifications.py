@@ -262,7 +262,7 @@ for notification_provider in notification_providers:
 
 write_to_file(
     "notification_providers.py.j2",
-    "uptime_kuma_api/notification_providers.py",
+    "uptime_kuma_client/notification_providers.py",
     notification_providers=notification_providers,
     notification_provider_conditions=notification_provider_conditions
 )

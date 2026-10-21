@@ -10,7 +10,7 @@ import copy
 import warnings
 from unittest import mock
 
-from uptime_kuma_api import Event, UptimeKumaApi
+from uptime_kuma_client import Event, UptimeKumaApi
 
 
 # The list event the real server pushes after each change request.
@@ -67,7 +67,8 @@ def make_api(url="http://kuma.test/", quiet=True, **kwargs):
     kwargs.setdefault("timeout", 0.3)
     kwargs.setdefault("wait_events", 0)
     sio = FakeSio()
-    with mock.patch("uptime_kuma_api.api.socketio.Client", return_value=sio):
+    client = "uptime_kuma_client.api.socketio.Client"
+    with mock.patch(client, return_value=sio):
         with warnings.catch_warnings():
             if quiet:
                 # the fake host is plain http on purpose, see TestInsecureUrl

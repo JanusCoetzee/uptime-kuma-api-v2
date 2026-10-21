@@ -12,7 +12,7 @@ upstream project's changes) is not carried over. It remains available:
 
 ### Changed
 
-- README rewritten: what the library is, supported Kuma versions, install (the `uptime-kuma-api-v2` PyPI project is not ours, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62). `edit_monitor` does not reject unknown arguments yet, so the README limits that claim to `add_*` (#140).
+- README rewritten: what the library is, supported Kuma versions, install (not on PyPI yet, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62). `edit_monitor` does not reject unknown arguments yet, so the README limits that claim to `add_*` (#140).
 
 ## [2.0.0] - 2026-10-21
 
@@ -33,8 +33,9 @@ First release with the library's own version number: it is independent of the Up
 
 ### Changed
 - `login()` raises `ValueError` when only one of `username` and `password` is given (it used to send `None` for the other to the server). Omit both for auto login (#12).
+- **Breaking:** the project is renamed to `uptime-kuma-client` and the import package from `uptime_kuma_api` to `uptime_kuma_client`, because the PyPI name `uptime-kuma-api-v2` belongs to another project and the import name clashed with the original distribution. It is described as derived from lucasheld/uptime-kuma-api and maintained independently, no longer as a fork. Replace `import uptime_kuma_api` with `import uptime_kuma_client` and any `uptime_kuma_client.api` logger filter with `uptime_kuma_client.api`; there is no alias. 2.0.0 is the first release under the new name, and nothing was published under either name from this repository before, so the entries below that mention the package use the new name (#142).
 - `UptimeKumaApi(...)` issues a `UserWarning` for an unencrypted `http://` or `ws://` url to a host that is not loopback (`localhost`, `127.0.0.0/8`, `::1`), because the credentials would travel in clear text (#12).
-- `api.py` is split into per-domain mixins in `uptime_kuma_api/_mixins/`
+- `api.py` is split into per-domain mixins in `uptime_kuma_client/_mixins/`
   (monitors, notifications, status pages, ...) plus `_helpers.py` and
   `_monitor_args.py`. No public change: `UptimeKumaApi` has the same 89 public
   names and behaviour, and `setup.py` now ships the `_mixins` subpackage.
@@ -44,7 +45,7 @@ First release with the library's own version number: it is independent of the Up
   to reset unspecified settings to library defaults, for example
   `keepDataPeriodDays` back to 180. Pass values explicitly if you relied on
   the reset.
-- `uptime_kuma_api` defines `__all__` (the enums, exceptions, `Event`, `UptimeKumaApi`, the notification provider tables and the version metadata). `from uptime_kuma_api import *` no longer also binds the submodule names (`api`, `monitor_type`, ...) (#58).
+- `uptime_kuma_client` defines `__all__` (the enums, exceptions, `Event`, `UptimeKumaApi`, the notification provider tables and the version metadata). `from uptime_kuma_client import *` no longer also binds the submodule names (`api`, `monitor_type`, ...) (#58).
 - `get_status_page` returns an `incidents` list (Kuma 2.5.x). `incident` is
   kept as the first incident, or `None`.
 
@@ -68,10 +69,10 @@ First release with the library's own version number: it is independent of the Up
 - `login()` without credentials now raises a `Timeout` that says the server probably requires a username and password, instead of a bare "timed out waiting for event autoLogin".
 - The heartbeat cache keeps 150 heartbeats per monitor, not 149. The ordering of `get_heartbeats` (oldest first) and `get_important_heartbeats` (newest first) is now documented.
 - `add_monitor_tag` and `delete_monitor_tag` no longer fail when the monitor cache is not loaded yet, and caches the raw server response like the other monitor events.
-- Unknown enum values from a newer server (for example a new monitor type) are logged once as a warning on the `uptime_kuma_api.api` logger. The returned value is still the raw one.
+- Unknown enum values from a newer server (for example a new monitor type) are logged once as a warning on the `uptime_kuma_client.api` logger. The returned value is still the raw one.
 - The `add_*`/`edit_*` docstrings now list `:raises TypeError:` (missing or unknown arguments) and `:raises ValueError:` (invalid values). The status page theme error names the valid themes.
 - Removed a no-op `except: raise` and a commented-out method; `wait_for_event` is annotated `Iterator[None]`; `run_tests.sh` uses a bash shebang and quotes its variables.
-- README lists the supported Uptime Kuma versions, and README and the install page warn about the `uptime_kuma_api` import-name conflict with the original distribution.
+- README lists the supported Uptime Kuma versions, and README and the install page cover installation and the package rename.
 
 - `UptimeKumaApi.version` is cached and no longer sleeps `wait_events` on every access, so `add_monitor`, `add_status_page` and `set_settings` are about a second faster.
 
@@ -104,7 +105,7 @@ First release with the library's own version number: it is independent of the Up
 - mypy runs in CI (`types` job, config in `pyproject.toml`, non-strict) with no ignore list: the mixins now inherit a typing-only `MixinBase` that declares what they use from `UptimeKumaApi`, parameters that default to `None` are annotated `| None`, and `notificationIDList` no longer rebinds its parameter to a dict (#32). `delete_monitor_tag` now skips a cached monitor whose `tags` is `None` instead of raising `TypeError`.
 - `run_tests.sh` uses the from-source Kuma test image (no more `louislam/*` 1.x images) and always stops the container; CI uploads the unit-test coverage report (`coverage.xml`) as an artifact (#31).
 - Read the Docs config fixed: `install` is nested under `python:`, Sphinx comes from `docs/requirements.txt`, and `fail_on_warning` is on. `docs/conf.py` names the fork (project, GitHub banner) and credits the original author (#27).
-- Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_api/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
+- Packaging metadata moved from `setup.py` to `pyproject.toml` (setuptools backend, version read from `uptime_kuma_client/__version__.py`); `setup.py` and its `os.system` publish shortcut are gone. The wheel ships `py.typed` (classifier `Typing :: Typed`), `requests` is a declared dependency, and the licence uses an SPDX expression (#26).
 - Unit tests are pytest-style (plain `assert`, fixtures, `parametrize`, `caplog`) and CI runs `pytest tests/unit --cov` (#93). Same coverage (99.21%); the old `subTest` loops are now separate parametrized cases (240 tests, was 194 plus subtests).
 - Server-free unit tests (`tests/unit`), PEP 8 linting with ruff, pre-commit
   hooks, a coverage ratchet (target 90%), scheduled mutation testing with

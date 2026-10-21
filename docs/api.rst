@@ -4,7 +4,7 @@
 Main Interface
 --------------
 
-.. module:: uptime_kuma_api
+.. module:: uptime_kuma_client
 
 .. autoclass:: UptimeKumaApi
     :inherited-members:

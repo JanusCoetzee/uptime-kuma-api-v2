@@ -2,7 +2,7 @@
 import pytest
 
 from tests.unit.fake_kuma import make_api
-from uptime_kuma_api import (
+from uptime_kuma_client import (
     DockerType,
     Event,
     MaintenanceStrategy,

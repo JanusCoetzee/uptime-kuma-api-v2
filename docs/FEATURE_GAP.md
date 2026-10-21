@@ -1,4 +1,4 @@
-# Feature gap: uptime-kuma-api-v2 vs. current Uptime Kuma
+# Feature gap: uptime-kuma-client vs. current Uptime Kuma
 
 Compared on 2026-10-19.
 
@@ -22,7 +22,7 @@ Probed `http://kuma.indlovu.local:3001` on 2026-10-19 with only unauthenticated 
 | `GET /api/status-page/homelab` keys | `config`, **`incidents`**, `maintenanceList`, `publicGroupList` |
 | `config` keys | include `analyticsType`, `analyticsId`, `analyticsScriptUrl`, `autoRefreshInterval`, `rssTitle`, `showOnlyLastHeartbeat` (as the CHANGELOG describes) |
 
-**New finding (confirmed live and in the 2.5.6 source):** the status page response uses `incidents`, a **list**, and no longer has `incident`. `get_status_page` reads `r2.get("incident")` ([api.py:2020](../uptime_kuma_api/api.py#L2020)), so incidents are silently never returned on 2.5.x. The CHANGELOG entry describing the "missing `incident` key" is actually a rename. The returned shape changes from one dict to a list, which is a public-API decision for the fix.
+**New finding (confirmed live and in the 2.5.6 source):** the status page response uses `incidents`, a **list**, and no longer has `incident`. `get_status_page` reads `r2.get("incident")` ([api.py:2020](../uptime_kuma_client/api.py#L2020)), so incidents are silently never returned on 2.5.x. The CHANGELOG entry describing the "missing `incident` key" is actually a rename. The returned shape changes from one dict to a list, which is a public-API decision for the fix.
 
 ### 0.1 Authenticated read-only probe (same day)
 
