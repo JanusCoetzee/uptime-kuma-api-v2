@@ -35,5 +35,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Conventions
 
+- `README.md` is tested by `tests/unit/test_readme.py`: a python block needs a `<!-- tested: NAME -->` marker and a test, and the version table must match `__version__` and `docker/kuma-test/versions.env`. Update the README and the test together.
 - Version lives in [uptime_kuma_api/__version__.py](uptime_kuma_api/__version__.py) (read dynamically by pyproject.toml); update [CHANGELOG.md](CHANGELOG.md) and the supported-versions table in [README.md](README.md) when bumping or adding Uptime Kuma support.
 - `env/` (a committed venv) and `build/` (stale build output that differs from source) are tracked in git by mistake. They are not source, so ignore them and never edit them.

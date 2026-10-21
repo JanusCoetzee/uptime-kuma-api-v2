@@ -10,6 +10,10 @@ upstream project's changes) is not carried over. It remains available:
 
 ## [Unreleased]
 
+### Changed
+
+- README rewritten: what the library is, supported Kuma versions, install (the `uptime-kuma-api-v2` PyPI project is not ours, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62). `edit_monitor` does not reject unknown arguments yet, so the README limits that claim to `add_*` (#140).
+
 ## [2.0.0] - 2026-10-21
 
 First release with the library's own version number: it is independent of the Uptime Kuma version (2.5.6 is the tested one, see the README table) and follows semantic versioning from here on (#72). It collects everything below since 1.0.3.
