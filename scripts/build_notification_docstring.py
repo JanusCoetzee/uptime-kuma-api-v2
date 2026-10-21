@@ -32,16 +32,20 @@ data = {
 
     "promosmsAllowLongSMS": "Allow long SMS.",
 
-    "promosmsPhoneNumber": "Phone number (for Polish recipient You can skip area codes).",
+    "promosmsPhoneNumber": (
+        "Phone number (for Polish recipient You can skip area codes)."),
 
-    "promosmsSMSType": """
-
-    Available values are:
-
-    - ``0``: SMS FLASH - Message will automatically show on recipient device. Limited only to Polish recipients.
-    - ``1``: SMS ECO - cheap but slow and often overloaded. Limited only to Polish recipients.
-    - ``3``: SMS FULL - Premium tier of SMS, You can use your Sender Name (You need to register name first). Reliable for alerts.
-    - ``4``: SMS SPEED - Highest priority in system. Very quick and reliable but costly (about twice of SMS FULL price).""",
+    "promosmsSMSType": (
+        "\n\n    Available values are:\n\n"
+        "    - ``0``: SMS FLASH - Message will automatically show on "
+        "recipient device. Limited only to Polish recipients.\n"
+        "    - ``1``: SMS ECO - cheap but slow and often overloaded. "
+        "Limited only to Polish recipients.\n"
+        "    - ``3``: SMS FULL - Premium tier of SMS, You can use your "
+        "Sender Name (You need to register name first). Reliable for "
+        "alerts.\n"
+        "    - ``4``: SMS SPEED - Highest priority in system. Very quick "
+        "and reliable but costly (about twice of SMS FULL price)."),
 
     "smseagleEncoding": "True to send messages in unicode.",
 
@@ -57,7 +61,8 @@ data = {
 
     "smseagleToken": "API Access token.",
 
-    "smseagleRecipient": "Recipient(s) (multiple must be separated with comma).",
+    "smseagleRecipient": (
+        "Recipient(s) (multiple must be separated with comma)."),
 
     "smseagleUrl": "Your SMSEagle device URL.",
 
@@ -79,7 +84,8 @@ data = {
 
     "splunkRestURL": "Splunk Rest URL.",
 
-    "opsgeniePriority": "Priority. Available values are numbers between ``1`` and ``5``.",
+    "opsgeniePriority": (
+        "Priority. Available values are numbers between ``1`` and ``5``."),
 
     "opsgenieRegion": """Region. Available values are:
 
@@ -110,10 +116,16 @@ for provider in notification_provider_options:
         type_ = provider_options[option]["type"]
         required = provider_options[option]["required"]
         text = data.get(option)
-        line = f"        :param {type_}{'' if required else ', optional'} {option}: Notification option for ``type`` :attr:`~.NotificationType.{provider.name}`."
+        optional = "" if required else ", optional"
+        line = (
+            f"        :param {type_}{optional} {option}: Notification "
+            "option for ``type`` "
+            f":attr:`~.NotificationType.{provider.name}`.")
         if text:
             # continuation lines are indented under the :param line
-            text = "\n".join(("        " + t if t.strip() and i else t) for i, t in enumerate(text.split("\n")))
+            text = "\n".join(
+                ("        " + t if t.strip() and i else t)
+                for i, t in enumerate(text.split("\n")))
             line += text if text.startswith("\n") else f" {text}"
         lines.append(line)
 
@@ -121,13 +133,19 @@ for provider in notification_provider_options:
 path = REPO_ROOT / "uptime_kuma_api" / "docstrings.py"
 old = path.read_text().split("\n")
 marker = "Notification option for ``type``"
-idx = [i for i, line in enumerate(old) if marker in line.split(":param")[-1][:200] and line.lstrip().startswith(":param")]
-# multi-line option texts continue on following lines; the block ends at the closing quotes
+idx = [
+    i for i, line in enumerate(old)
+    if marker in line.split(":param")[-1][:200]
+    and line.lstrip().startswith(":param")]
+# multi-line option texts continue on following lines; the block ends at
+# the closing quotes
 start, last = idx[0], idx[-1]
 end = old.index('    """', last)
 new = "\n".join(old[:start] + lines + old[end:])
 if check_mode():
     if new != path.read_text():
-        raise SystemExit("uptime_kuma_api/docstrings.py is out of date; run scripts/build_notification_docstring.py")
+        raise SystemExit(
+            "uptime_kuma_api/docstrings.py is out of date; "
+            "run scripts/build_notification_docstring.py")
 else:
     path.write_text(new)
