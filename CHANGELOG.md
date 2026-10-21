@@ -16,7 +16,7 @@ upstream project's changes) is not carried over. It remains available:
 
 ### Changed
 
-- README rewritten: what the library is, supported Kuma versions, install (not on PyPI yet, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62). `edit_monitor` does not reject unknown arguments yet, so the README limits that claim to `add_*` (#140).
+- README rewritten: what the library is, supported Kuma versions, install (not on PyPI yet, so install from GitHub), a login/add-monitor/disconnect example, error handling, security notes and a development quickstart. The dead Read the Docs link and the upstream CI badge are gone. `tests/unit/test_readme.py` runs the README's code blocks against the offline fake client and checks its version table, Python version, security claims and local links (#62).
 
 ## [2.0.0] - 2026-10-21
 

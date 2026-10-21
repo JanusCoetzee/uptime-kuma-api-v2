@@ -9,7 +9,7 @@ The code examples, the version numbers, the links, the security behaviour and th
 ## What it is
 
 - A client for **Uptime Kuma 2.x** (1.x is not supported). Requires Python 3.12+.
-- Arguments are validated before anything is sent: a missing or unknown argument to the `add_*` methods raises `TypeError`, an invalid value raises `ValueError`. Errors from the server or the connection raise `UptimeKumaException` or a subclass.
+- Arguments are validated before anything is sent: an unknown argument to the `add_*` and `edit_*` methods (and `save_status_page`), or a missing one to `add_*`, raises `TypeError`, an invalid value raises `ValueError`. Errors from the server or the connection raise `UptimeKumaException` or a subclass.
 - It is derived from [lucasheld/uptime-kuma-api](https://github.com/lucasheld/uptime-kuma-api) but is maintained independently: the library has its own version number and follows Uptime Kuma 2.5, and the argument validation and exception contract above are part of its documented behaviour. Expect API changes between major versions only (see [CHANGELOG.md](CHANGELOG.md)).
 
 ## Supported Uptime Kuma versions

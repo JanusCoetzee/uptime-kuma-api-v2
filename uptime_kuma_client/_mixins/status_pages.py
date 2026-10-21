@@ -7,7 +7,7 @@ import requests
 from ..event import Event
 from ..exceptions import Timeout, UptimeKumaException
 from ..incident_style import IncidentStyle
-from .._helpers import (int_to_bool, parse_value)
+from .._helpers import (_check_edit_arguments, int_to_bool, parse_value)
 from ._base import MixinBase
 
 
@@ -310,6 +310,9 @@ class StatusPagesMixin(MixinBase):
         # analyticsType to "none" produces the same "Invalid analytics type"
         # error. The server accepts whatever it returned; round-trip it.
         status_page = self.get_status_page(slug)
+        _check_edit_arguments(
+            "save_status_page", kwargs, self._build_status_page_data,
+            status_page)
         public_group_list = status_page.pop("publicGroupList", [])
         status_page.pop("incident", None)
         status_page.pop("incidents", None)

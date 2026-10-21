@@ -7,7 +7,7 @@ from ..docstrings import (
     append_docstring,
     docker_host_docstring
 )
-from .._helpers import parse_value
+from .._helpers import _check_edit_arguments, parse_value
 from ._base import MixinBase
 
 
@@ -158,6 +158,8 @@ class DockerHostsMixin(MixinBase):
             }
         """
         data = self.get_docker_host(id_)
+        _check_edit_arguments(
+            "edit_docker_host", kwargs, _build_docker_host_data, data)
         data.update(kwargs)
         _convert_docker_host_input(data)
         with self.wait_for_event(Event.DOCKER_HOST_LIST, new=True):
