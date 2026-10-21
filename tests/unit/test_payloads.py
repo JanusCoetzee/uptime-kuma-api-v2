@@ -556,6 +556,15 @@ class TestMonitorPayload:
         (data,) = self.api.sio.sent("add")
         assert data["method"] == method
 
+    def test_dns_resolve_server_default_depends_on_the_type(self):
+        self.api.add_monitor(**self.GP_HTTP)
+        self.api.add_monitor(**self.GP_DNS)
+        self.api.add_monitor(type=MonitorType.DNS, name="n", hostname="h")
+        gp_http, gp_dns, dns = self.api.sio.sent("add")
+        assert (gp_http["dns_resolve_server"],
+                gp_dns["dns_resolve_server"]) == ("", "")
+        assert dns["dns_resolve_server"] == "1.1.1.1"
+
     @pytest.mark.parametrize("record", GLOBALPING_DNS_TYPES)
     def test_globalping_accepts_every_dns_record_type(self, record):
         self.api.add_monitor(**self.GP_DNS, dns_resolve_type=record)

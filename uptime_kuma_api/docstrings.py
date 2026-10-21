@@ -65,7 +65,7 @@ def monitor_docstring(mode) -> str:
         :param str, optional hostname: Hostname, defaults to None
         :param int, optional packetSize: Packet Size, defaults to None
         :param int, optional port: Port, ``type`` :attr:`~.MonitorType.DNS` defaults to ``53`` and ``type`` :attr:`~.MonitorType.RADIUS` defaults to ``1812``
-        :param str, optional dns_resolve_server: Resolver Server, defaults to "1.1.1.1"
+        :param str, optional dns_resolve_server: Resolver Server, defaults to "1.1.1.1" ("" for GLOBALPING, which uses the probe's resolver)
         :param str, optional dns_resolve_type: Resource Record Type, defaults to "A". Available values are:
 
             - "A"
@@ -134,7 +134,7 @@ def monitor_docstring(mode) -> str:
         :param list, optional rabbitmqNodes: RABBITMQ only. Base URLs (``http://`` or ``https://``) of the management API of the nodes. At least one is required for that type., defaults to None
         :param str, optional rabbitmqUsername: RABBITMQ only. Required for that type., defaults to None
         :param str, optional rabbitmqPassword: RABBITMQ only. Required for that type., defaults to None
-        :param str, optional subtype: GLOBALPING only. ``ping``, ``http`` or ``dns``, defaults to "ping". ``ping`` needs ``hostname``, ``http`` needs ``url`` (``method`` HEAD, GET or OPTIONS) and ``dns`` needs ``hostname`` (``dns_resolve_type`` may also be ANY, DNSKEY, DS, HTTPS, NSEC, RRSIG or SVCB)
+        :param str, optional subtype: GLOBALPING only. ``ping``, ``http`` or ``dns``, defaults to "ping". ``ping`` needs ``hostname``, ``http`` needs ``url`` (``method`` HEAD, GET or OPTIONS) and ``dns`` needs ``hostname`` (``dns_resolve_type`` may also be ANY, DNSKEY, DS, HTTPS, NSEC, RRSIG or SVCB). ``edit_monitor`` resets ``port`` and ``protocol`` to the new subtype's defaults when the subtype changes, unless you pass them
         :param str, optional location: GLOBALPING only. One Globalping location, for example ``world``, ``germany`` or ``amazon+germany``, defaults to "world"
         :param str, optional protocol: GLOBALPING only. ``ICMP`` or ``TCP`` for ping, ``UDP`` or ``TCP`` for dns, ``HTTP2`` for http (None selects it from the URL). Defaults to ``ICMP`` for ping, ``UDP`` for dns and None for http
         :param str, optional ipFamily: GLOBALPING only. ``ipv4`` or ``ipv6``, None selects it automatically, defaults to None

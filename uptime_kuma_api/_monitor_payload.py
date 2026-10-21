@@ -3,6 +3,18 @@ from __future__ import annotations
 from . import AuthMethod, MonitorType
 
 
+_GLOBALPING_DEFAULT_PROTOCOL = {"ping": "ICMP", "dns": "UDP"}
+_GLOBALPING_DEFAULT_PORT = {"ping": 80, "dns": 53}
+
+
+def _globalping_subtype_defaults(subtype: str) -> dict:
+    """The protocol and port Kuma's form sets when the subtype changes."""
+    return {
+        "protocol": _GLOBALPING_DEFAULT_PROTOCOL.get(subtype),
+        "port": _GLOBALPING_DEFAULT_PORT.get(subtype),
+    }
+
+
 def _build_monitor_data(
         type: MonitorType,
         name: str,
@@ -69,7 +81,7 @@ def _build_monitor_data(
         port: int | None = None,
 
         # DNS
-        dns_resolve_server: str = "1.1.1.1",
+        dns_resolve_server: str | None = None,
         dns_resolve_type: str = "A",
 
         # MQTT
@@ -163,6 +175,10 @@ def _build_monitor_data(
         accepted_statuscodes = (
             ["1000"] if type == MonitorType.WEBSOCKET_UPGRADE
             else ["200-299"])
+    if dns_resolve_server is None:
+        # Kuma's form leaves it empty for globalping (the probe's resolver)
+        dns_resolve_server = (
+            "" if type == MonitorType.GLOBALPING else "1.1.1.1")
     if timeout is None:
         # Kuma's form uses 5 s for SNMP, which is meant for the local network
         timeout = 5 if type == MonitorType.SNMP else 48
@@ -286,7 +302,7 @@ def _build_monitor_data(
             port = 22
         elif type == MonitorType.GLOBALPING:
             # the port only matters for TCP pings
-            port = {"ping": 80, "dns": 53}.get(subtype)
+            port = _GLOBALPING_DEFAULT_PORT.get(subtype)
     data.update({
         "port": port,
     })
@@ -435,7 +451,7 @@ def _build_monitor_data(
     # GLOBALPING: the probe runs from "location", the check is the subtype
     if type == MonitorType.GLOBALPING:
         if protocol is None:
-            protocol = {"ping": "ICMP", "dns": "UDP"}.get(subtype)
+            protocol = _GLOBALPING_DEFAULT_PROTOCOL.get(subtype)
         data.update({
             "subtype": subtype,
             "location": location,

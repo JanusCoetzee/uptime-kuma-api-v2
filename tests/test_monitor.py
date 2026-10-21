@@ -666,6 +666,16 @@ class TestMonitor(UptimeKumaTestCase):
             (monitor["location"], monitor["hostname"], monitor["protocol"]),
             ("amazon+germany", "example.org", "ICMP"))
 
+    def test_globalping_subtype_change_resets_port_and_protocol(self):
+        monitor_id = self.api.add_monitor(
+            type=MonitorType.GLOBALPING, name="monitor 1",
+            hostname="example.org")["monitorID"]
+        self.api.edit_monitor(monitor_id, subtype="dns")
+        monitor = self.api.get_monitor(monitor_id)
+        self.assertEqual(
+            (monitor["subtype"], monitor["protocol"], monitor["port"],
+             monitor["hostname"]), ("dns", "UDP", 53, "example.org"))
+
     def wait_for_status(self, monitor_id, status, timeout=30):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:

@@ -664,6 +664,27 @@ class TestEditMonitorShapes:
         with pytest.raises(ValueError, match="ping_count"):
             self.edit(stored, ping_count=0)
 
+    @pytest.mark.parametrize("subtype, protocol, port", [
+        ("dns", "UDP", 53), ("ping", "ICMP", 80), ("http", None, None)])
+    def test_edit_globalping_subtype_change_resets_port_and_protocol(
+            self, subtype, protocol, port):
+        other = "http" if subtype != "http" else "dns"
+        stored = dict(type=MonitorType.GLOBALPING, subtype=other,
+                      hostname="h", url="https://x", method="GET",
+                      location="world", protocol="HTTP2", port=8080,
+                      dns_resolve_type="A", ping_count=3)
+        data = self.edit(stored, subtype=subtype)
+        assert (data["protocol"], data["port"]) == (protocol, port)
+        explicit = self.edit(stored, subtype=subtype, port=1234)
+        assert explicit["port"] == 1234
+
+    def test_edit_globalping_same_subtype_keeps_port_and_protocol(self):
+        stored = dict(type=MonitorType.GLOBALPING, subtype="dns",
+                      hostname="h", location="world", protocol="TCP",
+                      port=5353, dns_resolve_type="A")
+        data = self.edit(stored, subtype="dns", name="x")
+        assert (data["protocol"], data["port"]) == ("TCP", 5353)
+
     def test_edit_globalping_http_with_bearer(self):
         stored = dict(type=MonitorType.GLOBALPING, subtype="http",
                       url="https://x", location="world", protocol=None,
