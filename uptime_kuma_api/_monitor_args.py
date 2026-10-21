@@ -100,7 +100,7 @@ def _check_arguments_monitor(kwargs) -> None:
     }
     type_ = kwargs["type"]
     if type_ in UNSUPPORTED_MONITOR_TYPES:
-        raise ValueError(f"monitor type {type_.value!r} is not supported yet (#118)")
+        raise ValueError(f"monitor type {getattr(type_, "value", type_)!r} is not supported yet (#118)")
     if type_ not in required_args_by_type:
         raise ValueError(f"unsupported monitor type: {type_}")
     required_args = required_args_by_type[type_]

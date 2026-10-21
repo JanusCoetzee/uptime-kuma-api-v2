@@ -1,6 +1,6 @@
 import sys
 
-from utils import REPO_ROOT
+from utils import REPO_ROOT, check_mode
 
 sys.path.insert(0, str(REPO_ROOT))
 
@@ -126,7 +126,7 @@ idx = [i for i, line in enumerate(old) if marker in line.split(":param")[-1][:20
 start, last = idx[0], idx[-1]
 end = old.index('    """', last)
 new = "\n".join(old[:start] + lines + old[end:])
-if "--check" in sys.argv:
+if check_mode():
     if new != path.read_text():
         raise SystemExit("uptime_kuma_api/docstrings.py is out of date; run scripts/build_notification_docstring.py")
 else:

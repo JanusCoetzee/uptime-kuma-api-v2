@@ -183,6 +183,10 @@ class TestChecks:
         with pytest.raises(ValueError, match=f"{t.value!r} is not supported yet"):
             _check_arguments_monitor(self.monitor(type=t))
 
+    def test_new_kuma_type_given_as_raw_string_is_rejected_clearly(self):
+        with pytest.raises(ValueError, match="'smtp' is not supported yet"):
+            _check_arguments_monitor(self.monitor(type="smtp"))
+
     def test_proxy(self):
         ok = dict(protocol="http", host="h", port=8080)
         _check_arguments_proxy(ok)

@@ -38,17 +38,23 @@ def parse_vue_template(path):
     return template
 
 
-def write_to_file(template, destination, **kwargs):
+def check_mode():
+    """True for --check; any other option is an error so a typo cannot fall through to writing."""
     unknown = [a for a in sys.argv[1:] if a.startswith("-") and a != "--check"]
     if unknown:
         raise SystemExit(f"unknown option {unknown[0]!r}; the only option is --check")
+    return "--check" in sys.argv
+
+
+def write_to_file(template, destination, **kwargs):
+    checking = check_mode()
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(SCRIPTS_DIR), keep_trailing_newline=True
     )
     template = env.get_template(template)
     rendered = template.render(**kwargs)
     target = REPO_ROOT / destination
-    if "--check" in sys.argv:
+    if checking:
         # drift check: compare instead of writing
         if target.read_text() != rendered:
             diff = difflib.unified_diff(
