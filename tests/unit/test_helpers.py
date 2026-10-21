@@ -581,6 +581,23 @@ class TestEditMonitorShapes:
         with pytest.raises(ValueError, match="ntpStratumThreshold"):
             self.edit(stored, ntpStratumThreshold=16)
 
+    def test_edit_new_type_fields_are_merged_and_validated(self):
+        smtp = dict(type=MonitorType.SMTP, hostname="h", port=465,
+                    smtpSecurity="secure")
+        data = self.edit(smtp, smtpSecurity="starttls")
+        assert (data["smtpSecurity"], data["hostname"], data["port"]) == (
+            "starttls", "h", 465)
+        assert self.edit(smtp, smtpSecurity="nostarttls")["smtpSecurity"] \
+            == "nostarttls"
+        with pytest.raises(ValueError, match="smtpSecurity"):
+            self.edit(smtp, smtpSecurity="tls")
+        service = dict(type=MonitorType.PM2, system_service_name="a")
+        assert self.edit(service, system_service_name="b")[
+            "system_service_name"] == "b"
+        manual = dict(type=MonitorType.MANUAL, manual_status=1)
+        with pytest.raises(ValueError, match="manual_status"):
+            self.edit(manual, manual_status=2)
+
     def test_edit_only_name_keeps_the_rest(self):
         data = self.edit(name="new")
         assert data["name"] == "new"

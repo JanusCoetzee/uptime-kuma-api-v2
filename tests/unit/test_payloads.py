@@ -210,6 +210,7 @@ class TestMonitorValidation:
         (MonitorType.SYSTEM_SERVICE, {}),
         (MonitorType.PM2, {}),
         (MonitorType.SIP_OPTIONS, {}),
+        (MonitorType.SIP_OPTIONS, {"hostname": "h"}),
         (MonitorType.SMTP, {}),
         (MonitorType.SMTP, {"hostname": "h"}),
     ])

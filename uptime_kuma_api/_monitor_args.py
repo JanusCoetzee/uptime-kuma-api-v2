@@ -95,7 +95,7 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.SYSTEM_SERVICE: ["system_service_name"],
         MonitorType.PM2: ["system_service_name"],
         MonitorType.MANUAL: [],
-        MonitorType.SIP_OPTIONS: ["hostname"],
+        MonitorType.SIP_OPTIONS: ["hostname", "port"],
         MonitorType.SMTP: ["hostname", "port"],
     }
     type_ = kwargs["type"]
