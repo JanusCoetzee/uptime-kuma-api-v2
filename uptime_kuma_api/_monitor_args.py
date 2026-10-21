@@ -165,6 +165,11 @@ def _check_arguments_monitor(kwargs) -> None:
     ]:
         raise ValueError(f"Unknown dns_resolve_type value: {dns_resolve_type}")
 
+    if type_ in (MonitorType.SYSTEM_SERVICE, MonitorType.PM2):
+        # the server trims the name and rejects an empty one
+        if not str(kwargs["system_service_name"]).strip():
+            raise ValueError("system_service_name must not be empty")
+
     if type_ == MonitorType.SMTP:
         smtp_security = kwargs.get("smtpSecurity")
         if smtp_security not in (None, "secure", "starttls", "nostarttls"):

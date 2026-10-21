@@ -128,32 +128,99 @@ class TestMonitorPayload:
         (data,) = self.api.sio.sent("add")
         assert (data["hostname"], data["port"]) == ("sip.example", 5060)
 
-    def test_smtp_security(self):
+    @pytest.mark.parametrize("name", ["", "  ", "\t"])
+    @pytest.mark.parametrize("monitor_type", [
+        MonitorType.SYSTEM_SERVICE, MonitorType.PM2])
+    def test_blank_service_name_is_rejected(self, monitor_type, name):
+        with pytest.raises(ValueError, match="^system_service_name must not be empty$"):
+            self.api.add_monitor(type=monitor_type, name="n",
+                                 system_service_name=name)
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("monitor_type", [
+        MonitorType.SIP_OPTIONS, MonitorType.SMTP])
+    @pytest.mark.parametrize("port, ok", [
+        (0, True), (65535, True), (-1, False), (65536, False)])
+    def test_port_bounds(self, monitor_type, port, ok):
+        def add():
+            self.api.add_monitor(type=monitor_type, name="n", hostname="h",
+                                 port=port)
+        if ok:
+            add()
+            assert self.api.sio.sent("add")[0]["port"] == port
+        else:
+            with pytest.raises(ValueError, match="port"):
+                add()
+            assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("security", ["secure", "starttls", "nostarttls"])
+    def test_smtp_security_values_are_sent(self, security):
         self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
-                             port=465, smtpSecurity="secure")
+                             port=25, smtpSecurity=security)
+        (data,) = self.api.sio.sent("add")
+        assert data["smtpSecurity"] == security
+
+    def test_smtp_security_defaults_to_none(self):
         self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
                              port=25)
-        secure, default = self.api.sio.sent("add")
-        assert secure["smtpSecurity"] == "secure"
-        assert default["smtpSecurity"] is None
-        with pytest.raises(ValueError, match="smtpSecurity"):
-            self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
-                                 port=25, smtpSecurity="tls")
+        (data,) = self.api.sio.sent("add")
+        assert data["smtpSecurity"] is None
 
-    def test_manual_status(self):
-        for status in (0, 1, None):
-            self.api.add_monitor(type=MonitorType.MANUAL, name="n",
-                                 manual_status=status)
-        assert [d["manual_status"] for d in self.api.sio.sent("add")] == [0, 1, None]
+    @pytest.mark.parametrize("security", ["tls", "SECURE", "", "ssl", 1])
+    def test_smtp_security_rejects_other_values(self, security):
+        with pytest.raises(ValueError, match="^Unknown smtpSecurity value: .*"
+                           "expected 'secure', 'starttls' or 'nostarttls'$"):
+            self.api.add_monitor(type=MonitorType.SMTP, name="n",
+                                 hostname="h", port=25, smtpSecurity=security)
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("status", [0, 1, None])
+    def test_manual_status_values_are_sent(self, status):
+        self.api.add_monitor(type=MonitorType.MANUAL, name="n",
+                             manual_status=status)
+        (data,) = self.api.sio.sent("add")
+        assert data["manual_status"] == status
+
+    @pytest.mark.parametrize("status", [2, -1, "1", "up"])
+    def test_manual_status_rejects_other_values(self, status):
         with pytest.raises(ValueError, match="manual_status"):
             self.api.add_monitor(type=MonitorType.MANUAL, name="n",
-                                 manual_status=2)
+                                 manual_status=status)
+        assert self.api.sio.sent("add") == []
+
+    @pytest.mark.parametrize("kwargs", [
+        {"smtpSecurity": "tls"}, {"manual_status": 2}])
+    def test_other_types_do_not_validate_fields_they_do_not_send(self, kwargs):
+        self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h",
+                             port=1, **kwargs)
+        (data,) = self.api.sio.sent("add")
+        assert not set(kwargs) & set(data)
 
     def test_new_type_fields_are_only_sent_for_their_type(self):
         self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h", port=1)
         (data,) = self.api.sio.sent("add")
         for key in ("system_service_name", "smtpSecurity", "manual_status"):
             assert key not in data
+
+    @pytest.mark.parametrize("monitor_type, given, extra", [
+        (MonitorType.SYSTEM_SERVICE, {"system_service_name": "nginx"},
+         {"system_service_name"}),
+        (MonitorType.PM2, {"system_service_name": "api"},
+         {"system_service_name"}),
+        (MonitorType.MANUAL, {"manual_status": 1}, {"manual_status"}),
+        (MonitorType.SIP_OPTIONS, {"hostname": "h", "port": 5060}, set()),
+        (MonitorType.SMTP, {"hostname": "h", "port": 25, "smtpSecurity": None},
+         {"smtpSecurity"}),
+    ])
+    def test_new_types_only_add_their_own_keys(self, monitor_type, given, extra):
+        # compare against a type that sends no type specific fields
+        self.api.add_monitor(type=MonitorType.GROUP, name="n")
+        self.api.add_monitor(type=monitor_type, name="n", **given)
+        base, data = self.api.sio.sent("add")
+        base.pop("type")
+        data.pop("type")
+        assert set(data) - set(base) == extra
+        assert set(base) <= set(data)
 
     def test_basic_auth_fields_but_not_ntlm_ones(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
