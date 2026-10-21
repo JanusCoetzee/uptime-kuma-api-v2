@@ -79,7 +79,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0
+      - run: pip install -r requirements.txt pytest==9.1.1 pytest-cov==7.1.0 Jinja2==3.1.6
       # fail_under (the coverage ratchet, target 90) lives in .coveragerc
       - run: pytest tests/unit --cov --cov-report=xml
       - name: Upload coverage report
@@ -141,7 +141,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt requests coverage==7.16.2 mutmut==3.8.0
+      - run: pip install -r requirements.txt requests Jinja2==3.1.6 coverage==7.16.2 mutmut==3.8.0
       - run: mutmut run
       - if: always()
         run: mutmut results | tee mutation-results.txt

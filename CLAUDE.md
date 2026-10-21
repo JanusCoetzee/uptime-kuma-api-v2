@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - Install dev deps: `pip install -r requirements.txt -r dev-requirements.txt`
-- Unit tests (no server needed, offline): `pytest tests/unit`. They need `python-socketio` and `requests` installed (importing the package pulls them in). Known bugs are pinned with `@pytest.mark.xfail(strict=True, reason=...)`. Write them pytest-style (plain `assert`, fixtures, `parametrize`, `pytest.raises`, `caplog`); the integration tests outside `unit/` stay `unittest`.
+- Unit tests (no server needed, offline): `pytest tests/unit`. They need `python-socketio` and `requests` installed (importing the package pulls them in), plus `Jinja2` for the `scripts/` helper tests. Known bugs are pinned with `@pytest.mark.xfail(strict=True, reason=...)`. Write them pytest-style (plain `assert`, fixtures, `parametrize`, `pytest.raises`, `caplog`); the integration tests outside `unit/` stay `unittest`.
   - Coverage (`fail_under = 90` in `.coveragerc`, only ever raise it; see #57): `pytest tests/unit --cov`. The unit tests use the offline fake client in `tests/unit/fake_kuma.py` (`make_api()`), which records requests and answers from canned replies.
   - Lint (PEP 8 via ruff `E,W,F,B`, config in `pyproject.toml`; per-file ignores there are debt, never add to them): `pre-commit run --all-files`. Install the hooks once with `pre-commit install`. `master` is blocked from direct commits by a hook.
   - Types (mypy, non-strict, config in `pyproject.toml`): `mypy`. A mixin that uses a new `UptimeKumaApi` member must get it declared in [_mixins/_base.py](uptime_kuma_api/_mixins/_base.py); rename or remove it there too, mypy does not flag a stale stub.
