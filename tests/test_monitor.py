@@ -1,3 +1,4 @@
+import time
 import unittest
 
 from uptime_kuma_api import UptimeKumaException, MonitorType, AuthMethod, MonitorStatus
@@ -411,6 +412,51 @@ class TestMonitor(UptimeKumaTestCase):
             "ntpRootDispersionThreshold": 20,
         }
         self.do_test_monitor_type(expected_monitor)
+
+    def test_monitor_type_system_service(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.SYSTEM_SERVICE,
+            "name": "monitor 1",
+            "system_service_name": "nginx",
+        })
+
+    def test_monitor_type_pm2(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.PM2,
+            "name": "monitor 1",
+            "system_service_name": "api",
+        })
+
+    def test_monitor_type_sip_options(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.SIP_OPTIONS,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "port": 5060,
+        })
+
+    def test_monitor_type_smtp(self):
+        self.do_test_monitor_type({
+            "type": MonitorType.SMTP,
+            "name": "monitor 1",
+            "hostname": "127.0.0.1",
+            "port": 465,
+            "smtpSecurity": "secure",
+        })
+
+    def test_monitor_type_manual(self):
+        # the server does not return manual_status, so check the heartbeat
+        r = self.api.add_monitor(type=MonitorType.MANUAL, name="monitor 1",
+                                 manual_status=1, interval=20, retryInterval=20)
+        monitor_id = r["monitorID"]
+        time.sleep(3)
+        self.assertEqual(self.api.get_monitor_status(monitor_id), MonitorStatus.UP)
+        self.api.edit_monitor(monitor_id, name="monitor 2")
+        time.sleep(3)
+        self.assertEqual(self.api.get_monitor_status(monitor_id), MonitorStatus.UP)
+        self.api.edit_monitor(monitor_id, manual_status=0)
+        time.sleep(3)
+        self.assertEqual(self.api.get_monitor_status(monitor_id), MonitorStatus.DOWN)
 
     def test_delete_not_existing_monitor(self):
         with self.assertRaises(UptimeKumaException):

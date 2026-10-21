@@ -115,6 +115,15 @@ def _build_monitor_data(
         ntpStratumThreshold: int = 5,
         ntpTimeOffsetThreshold: int = 1000,
         ntpRootDispersionThreshold: int = 500,
+
+        # SYSTEM_SERVICE, PM2
+        system_service_name: str | None = None,
+
+        # SMTP
+        smtpSecurity: str | None = None,
+
+        # MANUAL
+        manual_status: int | None = None,
 ) -> dict:
     if accepted_statuscodes is None:
         accepted_statuscodes = ["200-299"]
@@ -318,4 +327,17 @@ def _build_monitor_data(
             "ntpTimeOffsetThreshold": ntpTimeOffsetThreshold,
             "ntpRootDispersionThreshold": ntpRootDispersionThreshold,
         })
+
+    # SYSTEM_SERVICE, PM2
+    if type in [MonitorType.SYSTEM_SERVICE, MonitorType.PM2]:
+        data["system_service_name"] = system_service_name
+
+    # SMTP
+    if type == MonitorType.SMTP:
+        data["smtpSecurity"] = smtpSecurity
+
+    # MANUAL
+    if type == MonitorType.MANUAL:
+        data["manual_status"] = manual_status
+
     return data

@@ -118,6 +118,9 @@ def monitor_docstring(mode) -> str:
         :param int, optional ntpStratumThreshold: NTP only. Maximum acceptable stratum; the monitor is down at or above it (1-15), defaults to 5
         :param int, optional ntpTimeOffsetThreshold: NTP only. Maximum acceptable clock offset in milliseconds, defaults to 1000
         :param int, optional ntpRootDispersionThreshold: NTP only. Maximum acceptable root dispersion in milliseconds, defaults to 500
+        :param str, optional system_service_name: SYSTEM_SERVICE and PM2 only. Name of the system service, or of the pm2 process. Required for those types., defaults to None
+        :param str, optional smtpSecurity: SMTP only. "secure" (SMTPS), "starttls" (require STARTTLS) or "nostarttls" (ignore STARTTLS), defaults to None (server default)
+        :param int, optional manual_status: MANUAL only. 1 sets the monitor up, 0 sets it down; it stays pending when not set. The server does not return this value; editing without it keeps the current one., defaults to None
     """
 
 

@@ -114,6 +114,47 @@ class TestMonitorPayload:
             self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: bad})
         self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: good})
 
+    @pytest.mark.parametrize("monitor_type", [
+        MonitorType.SYSTEM_SERVICE, MonitorType.PM2])
+    def test_service_name_types_send_the_name(self, monitor_type):
+        self.api.add_monitor(type=monitor_type, name="n",
+                             system_service_name="nginx")
+        (data,) = self.api.sio.sent("add")
+        assert data["system_service_name"] == "nginx"
+
+    def test_sip_options_sends_host_and_port(self):
+        self.api.add_monitor(type=MonitorType.SIP_OPTIONS, name="n",
+                             hostname="sip.example", port=5060)
+        (data,) = self.api.sio.sent("add")
+        assert (data["hostname"], data["port"]) == ("sip.example", 5060)
+
+    def test_smtp_security(self):
+        self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
+                             port=465, smtpSecurity="secure")
+        self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
+                             port=25)
+        secure, default = self.api.sio.sent("add")
+        assert secure["smtpSecurity"] == "secure"
+        assert default["smtpSecurity"] is None
+        with pytest.raises(ValueError, match="smtpSecurity"):
+            self.api.add_monitor(type=MonitorType.SMTP, name="n", hostname="h",
+                                 port=25, smtpSecurity="tls")
+
+    def test_manual_status(self):
+        for status in (0, 1, None):
+            self.api.add_monitor(type=MonitorType.MANUAL, name="n",
+                                 manual_status=status)
+        assert [d["manual_status"] for d in self.api.sio.sent("add")] == [0, 1, None]
+        with pytest.raises(ValueError, match="manual_status"):
+            self.api.add_monitor(type=MonitorType.MANUAL, name="n",
+                                 manual_status=2)
+
+    def test_new_type_fields_are_only_sent_for_their_type(self):
+        self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h", port=1)
+        (data,) = self.api.sio.sent("add")
+        for key in ("system_service_name", "smtpSecurity", "manual_status"):
+            assert key not in data
+
     def test_basic_auth_fields_but_not_ntlm_ones(self):
         self.api.add_monitor(type=MonitorType.HTTP, name="n", url="u",
                              authMethod=AuthMethod.HTTP_BASIC,
@@ -166,6 +207,11 @@ class TestMonitorValidation:
         (MonitorType.POSTGRES, {}),
         (MonitorType.JSON_QUERY, {"url": "u"}),
         (MonitorType.NTP, {}),
+        (MonitorType.SYSTEM_SERVICE, {}),
+        (MonitorType.PM2, {}),
+        (MonitorType.SIP_OPTIONS, {}),
+        (MonitorType.SMTP, {}),
+        (MonitorType.SMTP, {"hostname": "h"}),
     ])
     def test_required_arguments_per_type(self, monitor_type, given):
         with pytest.raises(TypeError):

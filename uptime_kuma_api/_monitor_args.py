@@ -17,15 +17,10 @@ from ._helpers import (
 # In MonitorType (generated from Kuma 2.5.6) but without argument checks or
 # payload fields yet; add_monitor/edit_monitor reject them (#118).
 UNSUPPORTED_MONITOR_TYPES = frozenset({
-    MonitorType.SYSTEM_SERVICE,
-    MonitorType.PM2,
     MonitorType.WEBSOCKET_UPGRADE,
     MonitorType.SFTP,
-    MonitorType.MANUAL,
     MonitorType.GLOBALPING,
     MonitorType.RABBITMQ,
-    MonitorType.SIP_OPTIONS,
-    MonitorType.SMTP,
     MonitorType.SNMP,
     MonitorType.ORACLEDB,
 })
@@ -97,6 +92,11 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.KAFKA_PRODUCER: ["kafkaProducerTopic", "kafkaProducerMessage"],
         MonitorType.TAILSCALE_PING: ["hostname"],
         MonitorType.NTP: ["hostname"],
+        MonitorType.SYSTEM_SERVICE: ["system_service_name"],
+        MonitorType.PM2: ["system_service_name"],
+        MonitorType.MANUAL: [],
+        MonitorType.SIP_OPTIONS: ["hostname"],
+        MonitorType.SMTP: ["hostname", "port"],
     }
     type_ = kwargs["type"]
     if type_ in UNSUPPORTED_MONITOR_TYPES:
@@ -164,6 +164,20 @@ def _check_arguments_monitor(kwargs) -> None:
         "TXT",
     ]:
         raise ValueError(f"Unknown dns_resolve_type value: {dns_resolve_type}")
+
+    if type_ == MonitorType.SMTP:
+        smtp_security = kwargs.get("smtpSecurity")
+        if smtp_security not in (None, "secure", "starttls", "nostarttls"):
+            raise ValueError(
+                f"Unknown smtpSecurity value: {smtp_security!r}, "
+                "expected 'secure', 'starttls' or 'nostarttls'")
+
+    if type_ == MonitorType.MANUAL:
+        manual_status = kwargs.get("manual_status")
+        if manual_status not in (None, 0, 1):
+            raise ValueError(
+                f"Unknown manual_status value: {manual_status!r}, "
+                "expected 0 (down) or 1 (up)")
 
     if type_ == MonitorType.KAFKA_PRODUCER:
         # a missing or None option means the server default mechanism
