@@ -56,7 +56,9 @@ def _check_arguments_notification(kwargs) -> None:
     _check_missing_arguments(required_args, kwargs)
 
     type_ = kwargs["type"]
-    required_args = [i for i, j in notification_provider_options[type_].items() if j["required"]]
+    required_args = [
+        i for i, j in notification_provider_options[type_].items()
+        if j["required"]]
     _check_missing_arguments(required_args, kwargs)
     _check_argument_conditions(notification_provider_conditions, kwargs)
 

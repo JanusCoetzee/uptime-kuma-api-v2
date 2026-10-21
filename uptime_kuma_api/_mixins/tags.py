@@ -43,7 +43,8 @@ class TagsMixin(MixinBase):
             if self._event_data[Event.MONITOR_LIST] is not None:
                 self._event_data[Event.MONITOR_LIST][str(monitor_id)] = monitor
 
-    def add_monitor_tag(self, tag_id: int, monitor_id: int, value: str = "") -> dict:
+    def add_monitor_tag(
+            self, tag_id: int, monitor_id: int, value: str = "") -> dict:
         """
         Add a tag to a monitor.
 
@@ -69,7 +70,8 @@ class TagsMixin(MixinBase):
         self._refresh_monitor_cache(monitor_id)
         return r
 
-    def delete_monitor_tag(self, tag_id: int, monitor_id: int, value: str = "") -> dict:
+    def delete_monitor_tag(
+            self, tag_id: int, monitor_id: int, value: str = "") -> dict:
         """
         Delete a tag from a monitor.
 
@@ -101,7 +103,9 @@ class TagsMixin(MixinBase):
                     i.get("tags") for i in self.get_monitors()
                 ] for y in x or []
             ]
-            if {"monitor_id": monitor_id, "tag_id": tag_id, "value": value} not in tags:
+            wanted = {
+                "monitor_id": monitor_id, "tag_id": tag_id, "value": value}
+            if wanted not in tags:
                 raise UptimeKumaException("monitor tag does not exist")
             r = self._call('deleteMonitorTag', (tag_id, monitor_id, value))
             self._refresh_monitor_cache(monitor_id)

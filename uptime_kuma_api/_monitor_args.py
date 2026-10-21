@@ -90,7 +90,8 @@ def gen_secret(length: int) -> str:
 
 def _convert_monitor_return(monitor) -> None:
     if isinstance(monitor["notificationIDList"], dict):
-        monitor["notificationIDList"] = [int(i) for i in monitor["notificationIDList"].keys()]
+        monitor["notificationIDList"] = [
+            int(i) for i in monitor["notificationIDList"].keys()]
 
 
 def _convert_monitor_input(kwargs) -> None:
@@ -122,7 +123,8 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.PORT: ["hostname", "port"],
         MonitorType.PING: ["hostname"],
         MonitorType.KEYWORD: ["url", "keyword", "maxredirects"],
-        MonitorType.GRPC_KEYWORD: ["grpcUrl", "keyword", "grpcServiceName", "grpcMethod"],
+        MonitorType.GRPC_KEYWORD: [
+            "grpcUrl", "keyword", "grpcServiceName", "grpcMethod"],
         MonitorType.DNS: ["hostname", "dns_resolve_server", "port"],
         MonitorType.DOCKER: ["docker_container", "docker_host"],
         MonitorType.PUSH: [],
@@ -133,12 +135,15 @@ def _check_arguments_monitor(kwargs) -> None:
         MonitorType.POSTGRES: ["databaseConnectionString"],
         MonitorType.MYSQL: ["databaseConnectionString"],
         MonitorType.MONGODB: ["databaseConnectionString"],
-        MonitorType.RADIUS: ["radiusUsername", "radiusPassword", "radiusSecret", "radiusCalledStationId", "radiusCallingStationId"],
+        MonitorType.RADIUS: [
+            "radiusUsername", "radiusPassword", "radiusSecret",
+            "radiusCalledStationId", "radiusCallingStationId"],
         MonitorType.REDIS: ["databaseConnectionString"],
         MonitorType.GROUP: [],
         MonitorType.JSON_QUERY: ["url", "jsonPath", "expectedValue"],
         MonitorType.REAL_BROWSER: ["url"],
-        MonitorType.KAFKA_PRODUCER: ["kafkaProducerTopic", "kafkaProducerMessage"],
+        MonitorType.KAFKA_PRODUCER: [
+            "kafkaProducerTopic", "kafkaProducerMessage"],
         MonitorType.TAILSCALE_PING: ["hostname"],
         MonitorType.NTP: ["hostname"],
         MonitorType.SYSTEM_SERVICE: ["system_service_name"],
@@ -220,7 +225,10 @@ def _check_arguments_monitor(kwargs) -> None:
                     "code 'NNNN' (1000-4999) or a range such as "
                     "'1000-1003'")
         elif accepted_statuscode not in allowed_accepted_statuscodes:
-            raise ValueError(f"Unknown accepted_statuscodes value: {accepted_statuscode!r}, expected 'NNN' (100-999) or 'N00-N99' (for example '200-299')")
+            raise ValueError(
+                f"Unknown accepted_statuscodes value: "
+                f"{accepted_statuscode!r}, expected 'NNN' (100-999) or "
+                "'N00-N99' (for example '200-299')")
 
     dns_resolve_type = kwargs["dns_resolve_type"]
     # globalping has more record types, checked in _check_globalping
@@ -293,7 +301,8 @@ def _check_arguments_monitor(kwargs) -> None:
 
     if type_ == MonitorType.KAFKA_PRODUCER:
         # a missing or None option means the server default mechanism
-        kafkaProducerSaslOptions_mechanism = (kwargs.get("kafkaProducerSaslOptions") or {}).get("mechanism")
+        sasl_options = kwargs.get("kafkaProducerSaslOptions") or {}
+        kafkaProducerSaslOptions_mechanism = sasl_options.get("mechanism")
         if kafkaProducerSaslOptions_mechanism is None:
             kafkaProducerSaslOptions_mechanism = "None"
         if kafkaProducerSaslOptions_mechanism not in [
@@ -303,4 +312,6 @@ def _check_arguments_monitor(kwargs) -> None:
             "scram-sha-512",
             "aws",
         ]:
-            raise ValueError(f"Unknown kafkaProducerSaslOptions[\"mechanism\"] value: {kafkaProducerSaslOptions_mechanism}")
+            raise ValueError(
+                "Unknown kafkaProducerSaslOptions[\"mechanism\"] value: "
+                f"{kafkaProducerSaslOptions_mechanism}")

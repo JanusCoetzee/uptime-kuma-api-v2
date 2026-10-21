@@ -81,7 +81,8 @@ class ApiKeysMixin(MixinBase):
         Adds a new api key.
 
         :param str name: Name of the api key.
-        :param str expires: Expiration date of the api key. Set to ``None`` to disable expiration.
+        :param str expires: Expiration date of the api key. Set to ``None`` to
+            disable expiration.
         :param bool active: True to activate api key.
         :return: The server response.
         :rtype: dict
