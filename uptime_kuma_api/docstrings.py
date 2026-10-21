@@ -134,6 +134,13 @@ def monitor_docstring(mode) -> str:
         :param list, optional rabbitmqNodes: RABBITMQ only. Base URLs (``http://`` or ``https://``) of the management API of the nodes. At least one is required for that type., defaults to None
         :param str, optional rabbitmqUsername: RABBITMQ only. Required for that type., defaults to None
         :param str, optional rabbitmqPassword: RABBITMQ only. Required for that type., defaults to None
+        :param str, optional subtype: GLOBALPING only. ``ping``, ``http`` or ``dns``, defaults to "ping". ``ping`` needs ``hostname``, ``http`` needs ``url`` (``method`` HEAD, GET or OPTIONS) and ``dns`` needs ``hostname`` (``dns_resolve_type`` may also be ANY, DNSKEY, DS, HTTPS, NSEC, RRSIG or SVCB)
+        :param str, optional location: GLOBALPING only. One Globalping location, for example ``world``, ``germany`` or ``amazon+germany``, defaults to "world"
+        :param str, optional protocol: GLOBALPING only. ``ICMP`` or ``TCP`` for ping, ``UDP`` or ``TCP`` for dns, ``HTTP2`` for http (None selects it from the URL). Defaults to ``ICMP`` for ping, ``UDP`` for dns and None for http
+        :param str, optional ipFamily: GLOBALPING only. ``ipv4`` or ``ipv6``, None selects it automatically, defaults to None
+        :param int, optional ping_count: GLOBALPING ping only. Number of echo requests, 1 to 100, defaults to 3
+        :param bool, optional cacheBust: GLOBALPING http only. Adds a random query parameter to every request, defaults to False
+        :param str, optional bearer_token: Token for ``authMethod=AuthMethod.BEARER``, which requires it., defaults to None
         :param int, optional manual_status: MANUAL only. 1 sets the monitor up, 0 sets it down; it stays pending when not set. The server does not return this value; editing without it keeps the current one., defaults to None
     """
 
