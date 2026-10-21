@@ -20,7 +20,11 @@ class TestConstruction:
         api = make_api(headers={"X-A": "1"})
         assert api.url == "http://kuma.test"
         assert api.sio.connected
-        assert api.sio.connect_args == ("http://kuma.test/socket.io/", 0.3, {"X-A": "1"})
+        assert api.sio.connect_args == (
+            "http://kuma.test/socket.io/",
+            0.3,
+            {"X-A": "1"},
+        )
 
     def test_every_event_has_a_handler(self):
         api = make_api()
@@ -150,7 +154,9 @@ class TestEventHandlers:
         self.api._event_heartbeat_list("1", [{"a": 1}], False)
         self.api._event_heartbeat_list("1", [{"a": 2}], False)
         assert self.data[Event.HEARTBEAT_LIST][1] == [{"a": 2}, {"a": 1}]
-        assert all(isinstance(b, dict) for b in self.data[Event.HEARTBEAT_LIST][1])
+        assert all(
+            isinstance(b, dict) for b in self.data[Event.HEARTBEAT_LIST][1]
+        )
 
     def test_heartbeat_list_merge_keeps_the_150_newest(self):
         self.api._event_heartbeat_list("1", [{"n": i} for i in range(100)],
@@ -194,7 +200,10 @@ class TestEventHandlers:
     def test_important_heartbeat_list_extends_with_the_new_beats(self):
         self.api._event_important_heartbeat_list("2", [{"a": 1}], False)
         self.api._event_important_heartbeat_list("2", [{"a": 2}], False)
-        assert self.data[Event.IMPORTANT_HEARTBEAT_LIST][2] == [{"a": 2}, {"a": 1}]
+        assert self.data[Event.IMPORTANT_HEARTBEAT_LIST][2] == [
+            {"a": 2},
+            {"a": 1},
+        ]
 
     def test_avg_ping_and_uptime_are_keyed_by_int_id(self):
         self.api._event_avg_ping("3", 12)
@@ -215,7 +224,9 @@ class TestEventHandlers:
     def test_important_heartbeat_is_prepended(self):
         self.api._event_heartbeat({"monitorID": 1, "important": True, "n": 1})
         self.api._event_heartbeat({"monitorID": 1, "important": True, "n": 2})
-        assert [b["n"] for b in self.data[Event.IMPORTANT_HEARTBEAT_LIST][1]] == [2, 1]
+        assert [
+            b["n"] for b in self.data[Event.IMPORTANT_HEARTBEAT_LIST][1]
+        ] == [2, 1]
 
     def test_info_without_version_is_ignored(self):
         self.api._event_info({"primaryBaseURL": "x"})

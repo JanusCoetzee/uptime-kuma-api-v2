@@ -12,7 +12,8 @@ class TestInfo(UptimeKumaTestCase):
 
     def test_info_with_version(self):
         # If wait_events is set to 0, the first info event is normally used.
-        # The info event handler needs to drop this first event without a version.
+        # The info event handler needs to drop this first event without a
+        # version.
         self.api.logout()
         self.api.disconnect()
         self.api = UptimeKumaApi(self.url, wait_events=0)

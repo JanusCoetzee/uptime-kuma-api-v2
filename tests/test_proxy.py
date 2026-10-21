@@ -31,7 +31,7 @@ class TestProxy(UptimeKumaTestCase):
 
         # get proxies
         proxies = self.api.get_proxies()
-        self.assertTrue(type(proxies[0]["protocol"]) == ProxyProtocol)
+        self.assertTrue(type(proxies[0]["protocol"]) is ProxyProtocol)
         proxy = self.find_by_id(proxies, proxy_id)
         self.assertIsNotNone(proxy)
         self.compare(proxy, expected_proxy)

@@ -43,7 +43,9 @@ class TestMonitors(Base):
         (monitor,) = self.api.get_monitors()
         assert monitor["notificationIDList"] == [3]
         # the cache itself keeps the raw form
-        assert self.data[Event.MONITOR_LIST]["1"]["notificationIDList"] == {"3": True}
+        assert self.data[Event.MONITOR_LIST]["1"]["notificationIDList"] == {
+            "3": True
+        }
 
     def test_get_monitor_converts_the_reply(self):
         self.sio.replies["getMonitor"] = {"ok": True, "monitor": raw_monitor()}
@@ -358,7 +360,10 @@ class TestStatusPages(Base):
                 "ok": True, "incident": {"id": 7, "style": "primary"}}
             self.api.edit_incident("s", 7, "t", "c")
             sent = self.sio.sent("editIncident")[0][2]
-            assert (sent["style"], sent["pin"]) == (IncidentStyle.PRIMARY, True)
+            assert (sent["style"], sent["pin"]) == (
+                IncidentStyle.PRIMARY,
+                True,
+            )
 
     def test_resolve_incident(self):
         with mock.patch(self.GET, http_reply(self.page)):
@@ -395,7 +400,12 @@ class TestStatusPages(Base):
     def test_build_status_page_data(self):
         slug, config, icon, groups = self.api._build_status_page_data(
             "s", id=1, title="t")
-        assert (slug, config["theme"], icon, groups) == ("s", "auto", "/icon.svg", [])
+        assert (slug, config["theme"], icon, groups) == (
+            "s",
+            "auto",
+            "/icon.svg",
+            [],
+        )
         assert "showCertificateExpiry" in config
         with pytest.raises(ValueError):
             self.api._build_status_page_data("s", id=1, title="t",

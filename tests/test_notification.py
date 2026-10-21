@@ -35,9 +35,9 @@ class TestNotification(UptimeKumaTestCase):
 
         # get notifications
         notifications = self.api.get_notifications()
-        self.assertTrue(type(notifications[0]["type"]) == NotificationType)
+        self.assertTrue(type(notifications[0]["type"]) is NotificationType)
         notification = self.find_by_id(notifications, notification_id)
-        self.assertTrue(type(notification["type"]) == NotificationType)
+        self.assertTrue(type(notification["type"]) is NotificationType)
         self.assertIsNotNone(notification)
         self.compare(notification, expected_notification)
 
@@ -49,7 +49,9 @@ class TestNotification(UptimeKumaTestCase):
         expected_notification["pushdeerKey"] = "987654321"
         del expected_notification["telegramChatID"]
         del expected_notification["telegramBotToken"]
-        r = self.api.edit_notification(notification_id, **expected_notification)
+        r = self.api.edit_notification(
+            notification_id, **expected_notification
+        )
         self.assertEqual(r["msg"], "Saved.")
         notification = self.api.get_notification(notification_id)
         self.compare(notification, expected_notification)

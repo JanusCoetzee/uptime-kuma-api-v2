@@ -3,7 +3,8 @@
 ``make_api`` builds a real ``UptimeKumaApi`` whose ``sio`` is a ``FakeSio``.
 Requests are recorded in ``FakeSio.calls`` and answered from ``replies``;
 change requests also count as a pushed list update of the right list, like
-the real server does (see ``PUSHES``), so ``wait_for_event(..., new=True)`` returns.
+the real server does (see ``PUSHES``), so ``wait_for_event(..., new=True)``
+returns.
 """
 import copy
 from unittest import mock

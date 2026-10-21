@@ -58,10 +58,15 @@ class TestPassThroughCalls(Base):
         self.api.change_password("old", "new")
         assert self.sio.sent("setup") == [("admin", "pw")]
         assert self.sio.sent("verifyToken") == [("123456", "pw")]
-        assert self.sio.sent("changePassword") == [{"currentPassword": "old", "newPassword": "new"}]
+        assert self.sio.sent("changePassword") == [
+            {"currentPassword": "old", "newPassword": "new"}
+        ]
 
     def test_wrapped_replies(self):
-        self.sio.replies["getMonitorBeats"] = {"ok": True, "data": [{"important": 1}]}
+        self.sio.replies["getMonitorBeats"] = {
+            "ok": True,
+            "data": [{"important": 1}],
+        }
         self.sio.replies["getGameList"] = {"ok": True, "gameList": ["g"]}
         self.sio.replies["getMonitorMaintenance"] = {"ok": True,
                                                      "monitors": [{"id": 1}]}
@@ -89,7 +94,9 @@ class TestLogin(Base):
     def test_login_sends_credentials(self):
         self.sio.replies["login"] = {"ok": True, "token": "t"}
         assert self.api.login("u", "p", token="123") == {"token": "t"}
-        assert self.sio.sent("login") == [{"username": "u", "password": "p", "token": "123"}]
+        assert self.sio.sent("login") == [
+            {"username": "u", "password": "p", "token": "123"}
+        ]
 
     def test_auto_login_succeeds_when_the_event_arrives(self):
         self.api._event_auto_login()
@@ -110,7 +117,9 @@ class TestApiKeys(Base):
     def test_get(self):
         assert self.api.get_api_keys() == [{"id": 1, "name": "k"}]
         assert self.api.get_api_key(1)["name"] == "k"
-        with pytest.raises(UptimeKumaException, match="api key does not exist"):
+        with pytest.raises(
+            UptimeKumaException, match="api key does not exist"
+        ):
             self.api.get_api_key(2)
 
     def test_add_converts_active_to_int(self):
@@ -212,7 +221,10 @@ class TestProxies(Base):
 
 class TestTags(Base):
     def test_tag_crud(self):
-        self.sio.replies["getTags"] = {"ok": True, "tags": [{"id": 1, "name": "n", "color": "c"}]}
+        self.sio.replies["getTags"] = {
+            "ok": True,
+            "tags": [{"id": 1, "name": "n", "color": "c"}],
+        }
         self.sio.replies["addTag"] = {"ok": True, "tag": {"id": 2}}
         assert self.api.get_tags()[0]["id"] == 1
         assert self.api.get_tag(1)["name"] == "n"
@@ -293,7 +305,9 @@ class TestSettings(Base):
 
     def test_set_settings_keeps_unspecified_values(self):
         self.sio.replies["getSettings"] = {
-            "ok": True, "data": {"keepDataPeriodDays": 180, "tlsExpiryNotifyDays": [7]}}
+            "ok": True,
+            "data": {"keepDataPeriodDays": 180, "tlsExpiryNotifyDays": [7]},
+        }
         self.api.set_settings(keepDataPeriodDays=30, password="pw")
         data, password = self.sio.sent("setSettings")[0]
         assert data["keepDataPeriodDays"] == 30

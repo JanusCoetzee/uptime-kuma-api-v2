@@ -1,7 +1,13 @@
 import unittest
 import warnings
 
-from uptime_kuma_api import UptimeKumaApi, UptimeKumaException, MonitorType, DockerType, Timeout
+from uptime_kuma_api import (
+    UptimeKumaApi,
+    UptimeKumaException,
+    MonitorType,
+    DockerType,
+    Timeout,
+)
 
 token = None
 
@@ -9,17 +15,17 @@ token = None
 def compare(subset, superset):
     for key, value in subset.items():
         value2 = superset.get(key)
-        if type(value) == list:
+        if type(value) is list:
             for i in range(len(value)):
                 if not value2:
                     return False
-                elif type(value[i]) == list or type(value[i]) == dict:
+                elif type(value[i]) is list or type(value[i]) is dict:
                     if not compare(value[i], value2[i]):
                         return False
                 else:
                     if value[i] != value2[i]:
                         return False
-        elif type(value) == dict:
+        elif type(value) is dict:
             if not compare(value, value2):
                 return False
         else:

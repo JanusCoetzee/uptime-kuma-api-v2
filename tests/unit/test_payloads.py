@@ -91,18 +91,29 @@ class TestMonitorPayload:
             assert key not in data
 
     def test_ntp_defaults_and_overrides(self):
-        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="pool.ntp.org")
-        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", port=124,
-                             ntpStratumThreshold=3, ntpTimeOffsetThreshold=50,
-                             ntpRootDispersionThreshold=20)
+        self.api.add_monitor(
+            type=MonitorType.NTP, name="n", hostname="pool.ntp.org"
+        )
+        self.api.add_monitor(
+            type=MonitorType.NTP,
+            name="n",
+            hostname="h",
+            port=124,
+            ntpStratumThreshold=3,
+            ntpTimeOffsetThreshold=50,
+            ntpRootDispersionThreshold=20,
+        )
         first, second = self.api.sio.sent("add")
         assert first["type"] == MonitorType.NTP
         assert first["hostname"] == "pool.ntp.org"
         assert (first["ntpStratumThreshold"], first["ntpTimeOffsetThreshold"],
                 first["ntpRootDispersionThreshold"]) == (5, 1000, 500)
         assert second["port"] == 124
-        assert (second["ntpStratumThreshold"], second["ntpTimeOffsetThreshold"],
-                second["ntpRootDispersionThreshold"]) == (3, 50, 20)
+        assert (
+            second["ntpStratumThreshold"],
+            second["ntpTimeOffsetThreshold"],
+            second["ntpRootDispersionThreshold"],
+        ) == (3, 50, 20)
 
     @pytest.mark.parametrize("field, bad, good", [
         ("ntpStratumThreshold", 0, 1),
@@ -112,8 +123,12 @@ class TestMonitorPayload:
     ])
     def test_ntp_threshold_bounds(self, field, bad, good):
         with pytest.raises(ValueError, match=field):
-            self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: bad})
-        self.api.add_monitor(type=MonitorType.NTP, name="n", hostname="h", **{field: good})
+            self.api.add_monitor(
+                type=MonitorType.NTP, name="n", hostname="h", **{field: bad}
+            )
+        self.api.add_monitor(
+            type=MonitorType.NTP, name="n", hostname="h", **{field: good}
+        )
 
     @pytest.mark.parametrize("monitor_type", [
         MonitorType.SYSTEM_SERVICE, MonitorType.PM2])
@@ -133,7 +148,9 @@ class TestMonitorPayload:
     @pytest.mark.parametrize("monitor_type", [
         MonitorType.SYSTEM_SERVICE, MonitorType.PM2])
     def test_blank_service_name_is_rejected(self, monitor_type, name):
-        with pytest.raises(ValueError, match="^system_service_name must not be empty$"):
+        with pytest.raises(
+            ValueError, match="^system_service_name must not be empty$"
+        ):
             self.api.add_monitor(type=monitor_type, name="n",
                                  system_service_name=name)
         assert self.api.sio.sent("add") == []
@@ -276,7 +293,9 @@ class TestMonitorPayload:
                  MonitorType.RADIUS: dict(
                      radiusUsername="u", radiusPassword="p", radiusSecret="s",
                      radiusCalledStationId="c", radiusCallingStationId="d")}
-        self.api.add_monitor(type=monitor_type, name="n", **given[monitor_type])
+        self.api.add_monitor(
+            type=monitor_type, name="n", **given[monitor_type]
+        )
         (data,) = self.api.sio.sent("add")
         assert data["port"] == port
 
@@ -652,7 +671,9 @@ class TestMonitorPayload:
             assert key not in data
 
     def test_new_type_fields_are_only_sent_for_their_type(self):
-        self.api.add_monitor(type=MonitorType.PORT, name="n", hostname="h", port=1)
+        self.api.add_monitor(
+            type=MonitorType.PORT, name="n", hostname="h", port=1
+        )
         (data,) = self.api.sio.sent("add")
         for key in ("system_service_name", "smtpSecurity", "manual_status",
                     "wsSubprotocol", "wsIgnoreSecWebsocketAcceptHeader",
@@ -679,7 +700,9 @@ class TestMonitorPayload:
         (MonitorType.WEBSOCKET_UPGRADE, {"url": "ws://h"},
          {"wsSubprotocol", "wsIgnoreSecWebsocketAcceptHeader"}),
     ])
-    def test_new_types_only_add_their_own_keys(self, monitor_type, given, extra):
+    def test_new_types_only_add_their_own_keys(
+        self, monitor_type, given, extra
+    ):
         # compare against a type that sends no type specific fields
         self.api.add_monitor(type=MonitorType.GROUP, name="n")
         self.api.add_monitor(type=monitor_type, name="n", **given)
@@ -784,7 +807,10 @@ class TestMaintenancePayload:
                 "durationMinutes": 60,
                 "intervalDay": 1,
                 "strategy": MaintenanceStrategy.MANUAL,
-                "timeRange": [{"hours": 2, "minutes": 0}, {"hours": 3, "minutes": 0}],
+                "timeRange": [
+                    {"hours": 2, "minutes": 0},
+                    {"hours": 3, "minutes": 0},
+                ],
                 "timezoneOption": None,
                 "title": "t",
                 "weekdays": [],
@@ -1011,7 +1037,12 @@ class TestConstructorDefaults:
                 for k, v in params.items()
                 if k != "self" and v.default is not inspect.Parameter.empty
             }
-        ) == {"timeout": 10, "headers": None, "ssl_verify": True, "wait_events": 0.2}
+        ) == {
+            "timeout": 10,
+            "headers": None,
+            "ssl_verify": True,
+            "wait_events": 0.2,
+        }
 
     @pytest.mark.parametrize("event", [
         Event.MONITOR_LIST, Event.NOTIFICATION_LIST, Event.PROXY_LIST,
