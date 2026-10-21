@@ -1,7 +1,7 @@
 import glob
 import json
-import os
 import re
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 
@@ -208,7 +208,7 @@ def build_notification_providers():
                             "required": required
                         }
             if not input_found:
-                orphans.append(f"{os.path.basename(path)}: {param_name}")
+                orphans.append(f"{Path(path).name}: {param_name}")
     if orphans:
         raise SystemExit(
             "build_notifications.py: form inputs no provider reads (fix the "
