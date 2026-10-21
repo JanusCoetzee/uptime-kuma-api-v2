@@ -29,7 +29,11 @@ def _check_arguments_maintenance(kwargs) -> None:
     _check_missing_arguments(required_args, kwargs)
 
     strategy = kwargs["strategy"]
-    if strategy in [MaintenanceStrategy.RECURRING_INTERVAL, MaintenanceStrategy.RECURRING_WEEKDAY, MaintenanceStrategy.RECURRING_DAY_OF_MONTH]:
+    if strategy in [
+        MaintenanceStrategy.RECURRING_INTERVAL,
+        MaintenanceStrategy.RECURRING_WEEKDAY,
+        MaintenanceStrategy.RECURRING_DAY_OF_MONTH,
+    ]:
         required_args = ["dateRange"]
         _check_missing_arguments(required_args, kwargs)
 
@@ -318,7 +322,7 @@ class MaintenanceMixin(MixinBase):
                 "maintenanceID": 1
             }
 
-        Example (strategy: :attr:`~.MaintenanceStrategy.RECURRING_DAY_OF_MONTH`)::
+        Example (:attr:`~.MaintenanceStrategy.RECURRING_DAY_OF_MONTH`)::
 
             >>> api.add_maintenance(
             ...     title="test",
@@ -572,7 +576,8 @@ class MaintenanceMixin(MixinBase):
         Adds status pages to a maintenance.
 
         :param int id_: Id of the maintenance to add the monitors to.
-        :param list status_pages: The list of status pages to add to the maintenance.
+        :param list status_pages: The list of status pages to add to the
+            maintenance.
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.

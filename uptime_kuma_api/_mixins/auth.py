@@ -117,15 +117,23 @@ class AuthMixin(MixinBase):
         """
         return self._call('disable2FA', password)
 
-    def login(self, username: str | None = None, password: str | None = None, token: str = "") -> dict:
+    def login(
+            self,
+            username: str | None = None,
+            password: str | None = None,
+            token: str = "") -> dict:
         """
         Login.
 
-        If username and password is not provided, auto login is performed if disableAuth is enabled.
+        If username and password is not provided, auto login is performed if
+        disableAuth is enabled.
 
-        :param str, optional username: Username. Must be None if disableAuth is enabled., defaults to None
-        :param str, optional password: Password. Must be None if disableAuth is enabled., defaults to None
-        :param str, optional token: 2FA Token. Required if 2FA is enabled., defaults to ""
+        :param str, optional username: Username. Must be None if disableAuth is
+            enabled., defaults to None
+        :param str, optional password: Password. Must be None if disableAuth is
+            enabled., defaults to None
+        :param str, optional token: 2FA Token. Required if 2FA is enabled.,
+            defaults to ""
         :return: The server response.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error.
@@ -136,7 +144,7 @@ class AuthMixin(MixinBase):
             >>> password = "secret123"
             >>> api.login(username, password)
             {
-                'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNjcxMTk3MjkzfQ.lpho_LuKMnoltXOdA7-jZ98gXOU-UbEIuxMwMRm4Nz0'
+                'token': 'eyJhbGciOi...'
             }
         """
         # autologin
