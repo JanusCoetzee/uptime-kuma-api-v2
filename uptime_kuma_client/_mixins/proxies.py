@@ -9,6 +9,7 @@ from ..docstrings import (
 )
 from .._helpers import (
     _check_argument_conditions,
+    _check_edit_arguments,
     _check_missing_arguments,
     int_to_bool,
     parse_value,
@@ -181,6 +182,8 @@ class ProxiesMixin(MixinBase):
             }
         """
         proxy = self.get_proxy(id_)
+        _check_edit_arguments(
+            "edit_proxy", kwargs, _build_proxy_data, proxy)
         proxy.update(kwargs)
         _check_arguments_proxy(proxy)
         with self.wait_for_event(Event.PROXY_LIST, new=True):

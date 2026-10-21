@@ -15,6 +15,7 @@ from ..docstrings import (
 )
 from .._helpers import (
     _check_argument_conditions,
+    _check_edit_arguments,
     _check_missing_arguments,
     parse_value,
 )
@@ -209,6 +210,12 @@ class NotificationsMixin(MixinBase):
             }
         """
         notification = self.get_notification(id_)
+        known_options = [
+            option for options in notification_provider_options.values()
+            for option in options]
+        _check_edit_arguments(
+            "edit_notification", kwargs, _build_notification_data,
+            notification, known_options)
 
         # remove old notification provider options from notification object
         if "type" in kwargs and kwargs["type"] != notification["type"]:
