@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import datetime
 
-from .. import (
-    Event,
-    MaintenanceStrategy,
-    UptimeKumaException
-)
+from ..event import Event
+from ..exceptions import UptimeKumaException
+from ..maintenance_strategy import MaintenanceStrategy
 from ..docstrings import (
     append_docstring,
     maintenance_docstring

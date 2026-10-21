@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 
-from .. import (
-    Event,
+from ..event import Event
+from ..exceptions import UptimeKumaException
+from ..notification_providers import (
     NotificationType,
-    UptimeKumaException,
     notification_provider_conditions,
-    notification_provider_options
+    notification_provider_options,
 )
 from ..docstrings import (
     append_docstring,

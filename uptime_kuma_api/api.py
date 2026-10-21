@@ -13,12 +13,8 @@ from typing import Any
 
 import socketio
 
-from . import (
-    Event,
-    Timeout,
-    UptimeKumaConnectionError,
-    UptimeKumaException
-)
+from .event import Event
+from .exceptions import Timeout, UptimeKumaConnectionError, UptimeKumaException
 from ._helpers import _sends_credentials_in_clear
 from ._mixins.monitors import MonitorsMixin
 from ._mixins.tags import TagsMixin
