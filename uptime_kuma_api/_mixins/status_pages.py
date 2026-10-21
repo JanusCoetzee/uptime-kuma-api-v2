@@ -447,7 +447,7 @@ class StatusPagesMixin(MixinBase):
         :param str title: Title
         :param str content: Content
         :param IncidentStyle, optional style: Style, defaults to :attr:`~.IncidentStyle.PRIMARY`
-        :param bool, optional pin: Whether the incident stays pinned, defaults to ``True``
+        :param bool, optional pin: Whether the incident is pinned, defaults to ``True``. The server pins the incident again on every edit unless this is ``False``, also one that was unpinned or resolved.
         :return: The edited incident.
         :rtype: dict
         :raises UptimeKumaException: If the server returns an error, for
@@ -482,6 +482,7 @@ class StatusPagesMixin(MixinBase):
         }
         r = self._call(
             'editIncident', (slug, incident_id, incident))["incident"]
+        self.save_status_page(slug)
         parse_incident_style(r)
         return r
 
@@ -512,6 +513,7 @@ class StatusPagesMixin(MixinBase):
             }
         """
         r = self._call('resolveIncident', (slug, incident_id))["incident"]
+        self.save_status_page(slug)
         parse_incident_style(r)
         return r
 
@@ -534,4 +536,6 @@ class StatusPagesMixin(MixinBase):
                 'msgi18n': True
             }
         """
-        return self._call('deleteIncident', (slug, incident_id))
+        r = self._call('deleteIncident', (slug, incident_id))
+        self.save_status_page(slug)
+        return r
