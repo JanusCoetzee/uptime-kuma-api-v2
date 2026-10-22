@@ -396,6 +396,20 @@ class TestMonitor(UptimeKumaTestCase):
         }
         self.do_test_monitor_type(expected_monitor)
 
+    def test_add_json_query_monitor_saves_the_default_operator(self):
+        # a null operator fails every check: "Invalid condition null" (#149)
+        r = self.api.add_monitor(
+            type=MonitorType.JSON_QUERY, name="monitor 1",
+            url="http://127.0.0.1", jsonPath="installed", expectedValue="true")
+        monitor = self.api.get_monitor(r["monitorID"])
+        self.assertEqual(monitor["jsonPathOperator"], "==")
+
+    def test_add_push_monitor_with_a_known_token(self):
+        r = self.api.add_monitor(
+            type=MonitorType.PUSH, name="monitor 1", pushToken="a" * 32)
+        monitor = self.api.get_monitor(r["monitorID"])
+        self.assertEqual(monitor["pushToken"], "a" * 32)
+
     def test_monitor_type_real_browser(self):
         expected_monitor = {
             "type": MonitorType.REAL_BROWSER,
